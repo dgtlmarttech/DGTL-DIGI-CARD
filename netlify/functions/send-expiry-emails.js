@@ -1,11 +1,20 @@
 const { schedule } = require('@netlify/functions');
 const { SendMailClient } = require('zeptomail');
-import { db } from '../../src/firebase/firebase'
+const admin = require('firebase-admin');
+
+// Init Firebase Admin once
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
+  });
+}
+const db = admin.firestore();
+
 
 
 // Initialize ZeptoMail client
-const zeptoUrl = process.env.ZEPTO_URL || 'https://api.zeptomail.com/';
-const zeptoToken = process.env.ZEPTO_TOKEN;
+const zeptoUrl = process.env.NEXT_PUBLIC_ZEPTO_URL || 'https://api.zeptomail.com/';
+const zeptoToken = process.env.NEXT_PUBLIC_ZEPTO_TOKEN;
 
 if (!zeptoToken) {
   console.error('Missing ZEPTO_TOKEN! Function will not work.');
@@ -534,7 +543,17 @@ const checkAndSendEmails = async () => {
   }
 };
 
-// Export as scheduled function - runs every day at 9 AM UTC
-const handler = schedule('0 9 * * *', checkAndSendEmails);
+// Allow manual testing via HTTP
+const handler = async (event, context) => {
+  // If called via HTTP (for testing)
+  if (event.httpMethod === 'GET') {
+    console.log('🧪 Manual test triggered via HTTP');
+    return await checkAndSendEmails(event, context);
+  }
+  
+  // If called via schedule
+  console.log('⏰ Scheduled trigger activated');
+  return await checkAndSendEmails(event, context);
+};
 
-module.exports = { handler };
+exports.handler = schedule('0 0 * * *', handler);
