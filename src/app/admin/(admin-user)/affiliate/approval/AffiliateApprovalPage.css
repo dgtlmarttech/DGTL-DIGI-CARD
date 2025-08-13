@@ -1,0 +1,131 @@
+.approval-container {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.approval-heading {
+  text-align: center;
+  font-size: 28px;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.affiliate-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.affiliate-table th,
+.affiliate-table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: left;
+  color:#060606;
+}
+
+.affiliate-table th {
+  color:#fff;
+  background-color: #272525;
+  font-weight: bold;
+}
+
+.approve-btn,
+.view-btn {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-right: 6px;
+}
+
+.approve-btn:disabled {
+  background: #999;
+  cursor: not-allowed;
+}
+
+.view-btn {
+  background: #16a34a; /* Green for view info */
+  margin-top: 5px;
+}
+
+#bank-details{
+  color:#060606;
+  margin:auto;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.modal-content h2 {
+  margin-top: 0;
+}
+
+.modal-content p,
+.modal-content ul {
+  font-size: 14px;
+  color: #555;
+}
+
+.modal-content ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.modal-content ul li {
+  margin-bottom: 6px;
+}
+
+.close-btn {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 10px;
+  display: block;
+  width: 100%;
+}
+
+@media (max-width: 600px) {
+  .affiliate-table th,
+  .affiliate-table td {
+    font-size: 12px;
+    padding: 8px;
+  }
+
+  .approve-btn,
+  .view-btn {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+}

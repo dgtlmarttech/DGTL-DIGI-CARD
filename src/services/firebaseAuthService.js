@@ -1,0 +1,296 @@
+import { 
+    signInWithEmailAndPassword, 
+    createUserWithEmailAndPassword, 
+    signOut, 
+    sendPasswordResetEmail, 
+    sendEmailVerification ,
+    fetchSignInMethodsForEmail,
+  } from "firebase/auth";
+  import { 
+    collection, doc, getDoc, getDocs, query, setDoc, where, updateDoc 
+  } from "firebase/firestore";
+  import { auth, db } from "../firebase/firebase";
+  import {sendWelcomeEmail} from "./triggerMail";
+
+
+  
+// Safely access the window object only on the client side
+const getActionCodeSettings = () => {
+  if (typeof window !== 'undefined') {
+    return {
+      url: `${window.location.origin}/signin`,
+      handleCodeInApp: true,
+    };
+  }
+  return {
+    url: 'https://my.dgtldigicard.com/signin', // A fallback URL for server-side
+    handleCodeInApp: true,
+  };
+};
+  
+  const signInUsingEmailPassword = async (email, password) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      console.log("Signed in successfully");
+    } catch (e) {
+      console.log("signInUsingEmailPassword error ", e);
+      alert(emailAuthException(e.code));
+    }
+  };
+  
+  const signUpUsingEmailPassword = async (data) => {
+  try {
+    const { firstName, lastName, password, confirmPassword, ...userData } = data;
+    const userCreds = await createUserWithEmailAndPassword(auth, data.email, password);
+    
+    let user = userCreds.user;
+    const customUID = `${firstName}_${lastName}_${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const userDocRef = doc(db, "users", user.uid);
+    await setDoc(userDocRef, {
+      uid: user.uid,
+      customUID: customUID,
+      firstName: firstName,
+      lastName: lastName,
+      email: data.email,
+      mobile: userData.mobile || "",
+      affiliateRef: userData.affiliateRef || "",
+      // Business fields with default empty values
+      businessName: userData.businessName || "",
+      website: userData.website || "",
+      address: userData.address || "",
+      about: userData.about || "",
+      // Profile completion status
+      profileCompleted: false,
+      businessInfoCompleted: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+
+    await sendWelcomeEmail(data.email, `${firstName} ${lastName}`, customUID);
+
+    console.log("User registered with Firebase UID:", user.uid, " and Custom UID:", customUID);
+  } catch (e) {
+    console.error("signUpUsingEmailPassword error:", e.message);
+    throw new Error(emailAuthException(e.code));
+  }
+};
+  
+  const resetPasswordUsingEmail = async (email) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      console.log("Password reset link sent to email");
+      alert("Password reset link sent to " + email);
+    } catch (e) {
+      console.log("resetPasswordUsingEmail error ", e.message);
+      alert(emailAuthException(e.code));
+    }
+  };
+  
+  const sendEmailVerificationLink = (user) => {
+    sendEmailVerification(user, getActionCodeSettings)
+      .then(() => {
+        alert(`Email verification link sent to ${user.email}`);
+      })
+      .catch((e) => {
+        console.log("sendEmailVerificationLink error ", e.message);
+        alert(emailAuthException(e.code));
+      });
+  };
+  
+  const signOutUser = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.log("signOutUser error ", e.message);
+      alert(emailAuthException(e.code));
+    }
+  };
+  
+  const getUserData = async (userId) => {
+    try {
+      console.log('test',userId);
+      let userDocRef = doc(db, "users", userId);
+      let docSnapshot = await getDoc(userDocRef);
+  
+      if (!docSnapshot.exists()) {
+        const usersCollection = collection(db, "users");
+        const querySnapshot = await getDocs(query(usersCollection, where("customUID", "==", userId)));
+  
+        if (querySnapshot.empty) {
+          alert("ERROR: User not found!");
+          return null;
+        }
+  
+        docSnapshot = querySnapshot.docs[0];
+      }
+  console.log(docSnapshot.data())
+      return docSnapshot.data();
+      
+    } catch (e) {
+      console.error("getUserData error:", e);
+      alert(e.message);
+    }
+  };
+  
+  const updateUserData = async (userId, updatedData) => {
+    try {
+      if (!userId || !updatedData) {
+        return;
+      }
+  
+      let userDocRef = doc(db, "users", userId);
+      let docSnapshot = await getDoc(userDocRef);
+  
+      if (!docSnapshot.exists()) {
+        const usersCollection = collection(db, "users");
+        const querySnapshot = await getDocs(query(usersCollection, where("customUID", "==", userId)));
+  
+        if (querySnapshot.empty) {
+          alert("ERROR: User not found!");
+          return null;
+        }
+  
+        userDocRef = querySnapshot.docs[0].ref;
+      }
+  
+      delete updatedData["uid"];
+  
+      await setDoc(userDocRef, { ...updatedData }, { merge: true });
+  
+      console.log("User data updated successfully.");
+      return true;
+    } catch (e) {
+      console.error("updateUserData error:", e);
+      alert(e.message);
+    }
+  };
+  
+  const emailAuthException = (code) => {
+    switch (code) {
+      case 'auth/user-not-found':
+        return 'User does not exist with this email';
+      case 'auth/wrong-password':
+        return 'Invalid e-mail/password';
+      case 'auth/invalid-email':
+        return 'Enter a valid e-mail';
+      case 'auth/email-already-in-use':
+        return 'User already exist with this email';
+      case 'auth/weak-password':
+        return 'Password entered is too weak.';
+      case 'auth/too-many-requests':
+        return 'Requests are blocked from this device due to unusual activity. Try again after some time';
+      default:
+        return 'Something went wrong';
+    }
+  };
+  
+  const updateUserPaymentStatus = async (userId, paymentData) => {
+    try {
+      const userRef = doc(db, "users", userId);
+  
+      // Calculate expiry date: one year from today
+      const expireDate = new Date();
+      expireDate.setFullYear(expireDate.getFullYear() + 1);
+  
+      await updateDoc(userRef, {
+        isPremium: true,
+        paymentData, // payment details (paymentId, orderId, signature, etc.)
+        expireDate: expireDate.toISOString(), // store as ISO string
+      });
+  
+      console.log("User payment status updated successfully");
+    } catch (error) {
+      console.error("Error updating user payment status:", error);
+    }
+  };
+  
+ 
+
+  //userinfo functions 
+
+  /**
+ * Blocks a user by setting the `blocked` flag to true in their Firestore document.
+ * @param {string} userId - The Firestore document ID of the user.
+ * @returns {Promise<boolean>}
+ */
+const blockUser = async (userId) => {
+  try {
+    const userDoc = doc(db, "users", userId);
+    await updateDoc(userDoc, { blocked: true });
+    console.log(`User ${userId} blocked successfully.`);
+    return true;
+  } catch (error) {
+    console.error("Error blocking user:", error);
+    throw error;
+  }
+};
+
+/**
+ * Unblocks a user by setting the `blocked` flag to false in their Firestore document.
+ * @param {string} userId - The Firestore document ID of the user.
+ * @returns {Promise<boolean>}
+ */
+const unblockUser = async (userId) => {
+  try {
+    const userDoc = doc(db, "users", userId);
+    await updateDoc(userDoc, { blocked: false });
+    console.log(`User ${userId} unblocked successfully.`);
+    return true;
+  } catch (error) {
+    console.error("Error unblocking user:", error);
+    throw error;
+  }
+};
+
+/**
+ * Retrieves all users from Firestore.
+ * @returns {Promise<Array>} An array of user objects including the document ID.
+ */
+const getAllUsers = async () => {
+  try {
+    const usersCollection = collection(db, "users");
+    const usersSnapshot = await getDocs(usersCollection);
+    return usersSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    throw error;
+  }
+};
+
+
+
+const checkEmailExists = async (email) => {
+  try {
+    const signInMethods = await fetchSignInMethodsForEmail(auth, email);
+    return signInMethods.length > 0; // True if email exists, false otherwise
+  } catch (error) {
+    console.error("Error checking email:", error);
+    return false;
+  }
+};
+
+  
+
+  
+  /* -------------------------------------------------------------------
+     Exports
+  ---------------------------------------------------------------------*/
+  export {
+    blockUser,
+    getAllUsers,
+    unblockUser,
+    signInUsingEmailPassword, 
+    signUpUsingEmailPassword, 
+    resetPasswordUsingEmail,
+    sendEmailVerificationLink,
+    signOutUser,
+    getUserData,
+    updateUserData,
+    updateUserPaymentStatus,
+    checkEmailExists
+  };
+  

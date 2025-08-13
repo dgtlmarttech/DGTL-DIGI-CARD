@@ -1,0 +1,99 @@
+/* Home.css */
+
+.home-container {
+    max-width: 1000px;
+    margin: auto;
+    padding: 40px 20px;
+    text-align: center;
+    font-family: 'Roboto', sans-serif;
+  }
+  
+  .home-title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+  }
+  
+  .home-intro {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 30px;
+  }
+  
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+  
+  .feature-card {
+    background: linear-gradient(135deg, #f6f8fa, #eaeef1);
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Colored headings */
+  .banner-heading {
+    color: #ff5722;
+  }
+  .user-heading {
+    color: #009688;
+  }
+  .mailer-heading {
+    color: #3f51b5;
+  }
+  .affiliate-heading {
+    color: #673ab7;
+  }
+  
+  /* Icon container - now fully colored */
+  .feature-icon-container {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    border-radius: 50%;
+  }
+  
+  /* Larger icons inside a colored circle */
+  .feature-icon {
+    width: 40px;
+    height: 40px;
+    color: white;
+  }
+  
+  /* Unique colors for each feature */
+  .banner .feature-icon-container {
+    background: #ff5722;
+  }
+  .user-info .feature-icon-container {
+    background: #009688;
+  }
+  .mailer .feature-icon-container {
+    background: #3f51b5;
+  }
+  .affiliate .feature-icon-container {
+    background: #673ab7;
+  }
+  
+  .feature-card h2 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+  }
+  
+  .feature-card p {
+    font-size: 1rem;
+    color: #555;
+  }
+  
