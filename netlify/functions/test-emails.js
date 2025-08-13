@@ -332,4 +332,4 @@ const handler = async (event, context) => {
   return await checkAndSendEmails(event, context);
 };
 
-exports.handler = schedule('rate(1 day)', handler);
+xports.handler = schedule('0 0 * * *', handler);
