@@ -332,5 +332,4 @@ const handler = async (event, context) => {
   return await checkAndSendEmails(event, context);
 };
 
-// Export for both scheduled and manual testing
-module.exports = { handler };
+exports.handler = schedule('rate(1 day)', handler);

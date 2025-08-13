@@ -2,4 +2,4 @@
   functions = "netlify/functions"
 
 [functions]
-  external_node_modules = ["firebase-admin"]
+  external_node_modules = ["firebase-admin","zeptomail"]
