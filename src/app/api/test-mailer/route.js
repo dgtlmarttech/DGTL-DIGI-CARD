@@ -1,7 +1,7 @@
 // /app/api/test-mailer/route.js
 import { NextResponse } from 'next/server';
 import { SendMailClient } from 'zeptomail';
-import getEmailTemplate from '@/utils/mail_template';
+import getEmailTemplate from '../../../utils/mail_template';
 
 const zeptoUrl = process.env.NEXT_PUBLIC_ZEPTO_URL || 'https://api.zeptomail.com/';
 const zeptoToken = process.env.NEXT_PUBLIC_ZEPTO_TOKEN;
