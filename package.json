@@ -16,7 +16,7 @@
     "firebase-admin": "^13.4.0",
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.537.0",
-    "next": "15.4.6",
+    "next": "^15.4.6",
     "node-fetch": "^3.3.2",
     "qrcode.react": "^4.2.0",
     "razorpay": "^2.9.6",
