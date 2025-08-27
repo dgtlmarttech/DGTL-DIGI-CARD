@@ -409,7 +409,7 @@ const sendEmail = async (to, subject, html, userName) => {
     
     const response = await client.sendMail({
       from: {
-        address: 'noreply@dgtlmart.com',
+        address: 'support@dgtldigicard.com',
         name: 'DigitalCard Team',
       },
       to: [
