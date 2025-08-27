@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import admin from 'firebase-admin';
 import { SendMailClient } from 'zeptomail';
-import getEmailTemplate from '@/utils/mail_template';
+import getEmailTemplate from '../../../utils/mail_template';
 
 if (!admin.apps.length) {
   admin.initializeApp({
