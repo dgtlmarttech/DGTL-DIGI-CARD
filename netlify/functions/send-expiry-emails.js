@@ -1,11 +1,11 @@
 // netlify/functions/send-expiry-emails.js
 
-const { schedule } = require('@netlify/functions');
-const fetch = require('node-fetch');
+import { schedule } from '@netlify/functions';
+import fetch from 'node-fetch';
 
 const EMAIL_API_URL = 'https://my.dgtldigicard.com/api/mailer';
 
-const handler = async () => {
+const sendEmails = async () => {
   try {
     console.log('⏰ Triggering email send API...');
 
@@ -38,4 +38,5 @@ const handler = async () => {
   }
 };
 
-exports.handler = schedule('0 0 * * *', handler); 
+// ESM export with Netlify schedule wrapper
+export const handler = schedule('0 0 * * *', sendEmails);
