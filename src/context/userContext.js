@@ -31,7 +31,7 @@ export const UserProvider = ({ children }) => {
     if (!effectiveIsPremium && userData.trialStartDate) {
       const now = new Date();
       const trialStart = userData.trialStartDate.toDate ? userData.trialStartDate.toDate() : new Date(userData.trialStartDate);
-      const trialEnd = new Date(trialStart.getTime() + (15 * 24 * 60 * 60 * 1000)); // 15 days
+      const trialEnd = new Date(trialStart.getTime() + (30 * 24 * 60 * 60 * 1000)); //30 days
 
       if (now < trialEnd) {
         effectiveIsPremium = true;

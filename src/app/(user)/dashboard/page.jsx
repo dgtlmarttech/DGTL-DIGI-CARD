@@ -69,7 +69,7 @@ const ProfilePage = () => {
         0,
         Math.ceil(
           (new Date(userInfo.trialStartDate?.toDate?.() || userInfo.trialStartDate).getTime() +
-            15 * 24 * 60 * 60 * 1000 -
+            30 * 24 * 60 * 60 * 1000 -
             new Date().getTime()) /
             (1000 * 60 * 60 * 24)
         )

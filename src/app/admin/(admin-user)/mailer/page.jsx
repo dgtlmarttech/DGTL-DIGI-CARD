@@ -1,280 +1,398 @@
 'use client'
-import React, { useState, useEffect } from "react";
-import { getAllUsers } from "../../../../services/firebaseAuthService";
-import { getEmailTemplates, updateEmailTemplates } from "../../../../services/emailService";
-import { sendTemplateEmail } from "../../../../services/TemlateEmail";
-import "./Mailer.css";
+import React, { useState } from 'react';
+import { 
+  Mail, 
+  Send, 
+  Play, 
+  CheckCircle2, 
+  XCircle, 
+  AlertCircle,
+  Settings,
+  Users,
+  Clock,
+  Activity,
+  Loader2,
+  TestTube,
+  Zap,
+  FileText,
+  User,
+  AtSign,
+  Crown
+} from 'lucide-react';
 
-const MailerPage = () => {
-  const [users, setUsers] = useState([]);
-  const [templates, setTemplates] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [savingTemplates, setSavingTemplates] = useState(false);
-  const [sendingEmails, setSendingEmails] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState({
-    expiringSoon: false,
-    expired: false,
+const MailerControl = () => {
+  const [testMail, setTestMail] = useState({
+    to: '',
+    userName: '',
+    type: 'trial_2_days_before_discount'
   });
+  
+  const [isTestLoading, setIsTestLoading] = useState(false);
+  const [isMailerLoading, setIsMailerLoading] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+  const [mailerResult, setMailerResult] = useState(null);
 
-  // Fetch premium users (those with expireDate)
-  const fetchUsers = async () => {
+  // Email template types
+  const templateTypes = [
+    { value: 'trial_2_days_before_discount', label: 'Trial - 2 Days Before (Discount)', category: 'Trial' },
+    { value: 'trial_2_days_after_discount', label: 'Trial - 2 Days After (Discount)', category: 'Trial' },
+    { value: 'trial_10_days_after_discount', label: 'Trial - 10 Days After (Discount)', category: 'Trial' },
+    { value: 'trial_10_days_before_discount', label: 'Trial - 10 Days Before (Discount)', category: 'Trial' },
+    { value: 'premium_2_days_before_discount', label: 'Premium - 2 Days Before (Discount)', category: 'Premium' },
+    { value: 'premium_2_days_after_discount', label: 'Premium - 2 Days After (Discount)', category: 'Premium' },
+    { value: 'premium_10_days_after_discount', label: 'Premium - 10 Days After (Discount)', category: 'Premium' },
+    { value: 'premium_10_days_before_discount', label: 'Premium - 10 Days Before (Discount)', category: 'Premium' }
+  ];
+
+  const handleTestMailChange = (field, value) => {
+    setTestMail(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSendTestMail = async () => {
+    setIsTestLoading(true);
+    setTestResult(null);
+
     try {
-      const allUsers = await getAllUsers();
-      // Filter premium users with an expireDate
-      const premiumUsers = allUsers.filter((user) => user.isPremium && user.expireDate);
-      setUsers(premiumUsers);
-      setLoading(false);
+      const response = await fetch('/api/test-mailer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(testMail),
+      });
+
+      const result = await response.json();
+      setTestResult({
+        success: result.success,
+        message: result.success ? 'Test email sent successfully!' : result.error,
+        timestamp: new Date().toLocaleString()
+      });
     } catch (error) {
-      console.error("Error fetching users:", error);
-      setLoading(false);
+      setTestResult({
+        success: false,
+        message: 'Failed to send test email: ' + error.message,
+        timestamp: new Date().toLocaleString()
+      });
+    } finally {
+      setIsTestLoading(false);
     }
   };
 
-  // Fetch email templates from Firestore
-  const fetchTemplates = async () => {
+  const handleActivateMailer = async () => {
+    setIsMailerLoading(true);
+    setMailerResult(null);
+
     try {
-      const data = await getEmailTemplates();
-      setTemplates(data);
+      const response = await fetch('/api/mailer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+      setMailerResult({
+        success: result.success,
+        message: result.success 
+          ? `Mailer activated successfully! ${result.emailsSent} emails sent.`
+          : result.error,
+        emailsSent: result.emailsSent || 0,
+        timestamp: new Date().toLocaleString()
+      });
     } catch (error) {
-      console.error("Error fetching templates:", error);
+      setMailerResult({
+        success: false,
+        message: 'Failed to activate mailer: ' + error.message,
+        emailsSent: 0,
+        timestamp: new Date().toLocaleString()
+      });
+    } finally {
+      setIsMailerLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-    fetchTemplates();
-  }, []);
-
-  const today = new Date();
-  const msInDay = 1000 * 60 * 60 * 24;
-
-  // Filter users into two categories
-  const expiringSoonUsers = users.filter((user) => {
-    const expire = new Date(user.expireDate);
-    const diffDays = (expire - today) / msInDay;
-    return diffDays >= 0 && diffDays <= 7;
-  });
-
-  const expiredUsers = users.filter((user) => {
-    const expire = new Date(user.expireDate);
-    const diffDays = (expire - today) / msInDay;
-    return diffDays < 0;
-  });
-
-
-  // Send email to a single user based on template category.
-  const sendEmailToUser = async (templateType, user) => {
-    setSendingEmails(true);
-    try {
-      const subject = templates[templateType].subject;
-      let content = templates[templateType].content;
-      // Replace placeholders with user details.
-      content = content
-        .replace("[name]", `${user.firstName} ${user.lastName}`)
-        .replace("[date]", new Date(user.expireDate).toLocaleDateString());
-      await sendTemplateEmail(
-        user.email,
-        `${user.firstName} ${user.lastName}`,
-        subject,
-        content
-      );
-      alert(`Email sent successfully to ${user.email}.`);
-    } catch (error) {
-      alert(`Error sending email to ${user.email}.`);
-    }
-    setSendingEmails(false);
+  const isValidEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-  // Handle changes to template fields
-  const handleTemplateChange = (templateType, field, value) => {
-    setTemplates((prev) => ({
-      ...prev,
-      [templateType]: {
-        ...prev[templateType],
-        [field]: value,
-      },
-    }));
-  };
+  const ResultCard = ({ result, icon: Icon, title }) => {
+    if (!result) return null;
 
-  // Save updated templates to Firestore
-  const handleSaveTemplates = async () => {
-    setSavingTemplates(true);
-    try {
-      await updateEmailTemplates(templates);
-      alert("Templates updated successfully.");
-    } catch (error) {
-      alert("Error updating templates.");
-    }
-    setSavingTemplates(false);
+    return (
+      <div className={`p-4 rounded-lg border-2 ${
+        result.success 
+          ? 'bg-green-50 border-green-200' 
+          : 'bg-red-50 border-red-200'
+      }`}>
+        <div className="flex items-start space-x-3">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+            result.success ? 'bg-green-100' : 'bg-red-100'
+          }`}>
+            <Icon className={`w-4 h-4 ${
+              result.success ? 'text-green-600' : 'text-red-600'
+            }`} />
+          </div>
+          <div className="flex-1">
+            <h4 className={`font-semibold ${
+              result.success ? 'text-green-900' : 'text-red-900'
+            }`}>
+              {title} {result.success ? 'Success' : 'Error'}
+            </h4>
+            <p className={`mt-1 ${
+              result.success ? 'text-green-800' : 'text-red-800'
+            }`}>
+              {result.message}
+            </p>
+            {result.emailsSent !== undefined && (
+              <p className="text-sm text-gray-600 mt-2">
+                Emails processed: {result.emailsSent}
+              </p>
+            )}
+            <p className="text-xs text-gray-500 mt-2">
+              {result.timestamp}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div className="mailer-page-container">
-      <h1>Mailer Page</h1>
-      {loading ? (
-        <p>Loading user data...</p>
-      ) : (
-        <>
-          <section className="user-section">
-            <h2>Premium Users Expiring This Week</h2>
-            {expiringSoonUsers.length !== 0 ? (
-              <table className="users-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Expiry Date</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {expiringSoonUsers.map((user) => (
-                    <tr key={user.id}>
-                      <td>{user.firstName} {user.lastName}</td>
-                      <td>{user.email}</td>
-                      <td>{new Date(user.expireDate).toLocaleDateString()}</td>
-                      <td>
-                        <button
-                          className="send-email-button"
-                          onClick={() => sendEmailToUser("expiringSoon", user)}
-                          disabled={sendingEmails}
-                        >
-                          Send Email
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p>No premium users expiring this week.</p>
-            )}
-          </section>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-lg p-8">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+              <Mail className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Email Control Center</h1>
+              <p className="text-gray-600">Test email templates and manage automated campaigns</p>
+            </div>
+          </div>
+        </div>
 
-          <section className="user-section">
-            <h2>Premium Users Already Expired</h2>
-            {expiredUsers.length !==  0 ? (
-              <table className="users-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Expiry Date</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {expiredUsers.map((user) => (
-                    <tr key={user.id}>
-                      <td>{user.firstName} {user.lastName}</td>
-                      <td>{user.email}</td>
-                      <td>{new Date(user.expireDate).toLocaleDateString()}</td>
-                      <td>
-                        <button
-                          className="send-email-button"
-                          onClick={() => sendEmailToUser("expired", user)}
-                          disabled={sendingEmails}
-                        >
-                          Send Email
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p>No premium users have expired.</p>
-            )}
-          </section>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Test Mail Section */}
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <TestTube className="w-5 h-5 text-green-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">Send Test Email</h2>
+            </div>
 
-          <section className="template-edit-section">
-            <h2>Email Templates</h2>
-            {templates && (
-              <>
-                <div className="template-block">
-                  <h3>Template for Expiring Soon Users</h3>
-                  <button
-                    onClick={() =>
-                      setEditingTemplate((prev) => ({
-                        ...prev,
-                        expiringSoon: !prev.expiringSoon,
-                      }))
-                    }
-                  >
-                    {editingTemplate.expiringSoon ? "Cancel Edit" : "Edit Template"}
-                  </button>
-                  {editingTemplate.expiringSoon ? (
-                    <div className="template-edit-form">
-                      <label>Subject:</label>
-                      <input
-                        type="text"
-                        value={templates.expiringSoon.subject}
-                        onChange={(e) => handleTemplateChange("expiringSoon", "subject", e.target.value)}
-                      />
-                      <label>Content (HTML allowed):</label>
-                      <textarea
-                        rows="5"
-                        value={templates.expiringSoon.content}
-                        onChange={(e) => handleTemplateChange("expiringSoon", "content", e.target.value)}
-                      />
-                    </div>
-                  ) : (
-                    <div className="template-preview">
-                      <h4>{templates.expiringSoon.subject}</h4>
-                      <div
-                        className="template-content-preview"
-                        dangerouslySetInnerHTML={{ __html: templates.expiringSoon.content }}
-                      />
-                    </div>
-                  )}
+            <div className="space-y-6 text-black">
+              {/* Email Input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Recipient Email *
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    value={testMail.to}
+                    onChange={(e) => handleTestMailChange('to', e.target.value)}
+                    placeholder="test@example.com"
+                    className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  />
+                  <AtSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 </div>
-                <div className="template-block">
-                  <h3>Template for Expired Users</h3>
-                  <button
-                    onClick={() =>
-                      setEditingTemplate((prev) => ({
-                        ...prev,
-                        expired: !prev.expired,
-                      }))
-                    }
-                  >
-                    {editingTemplate.expired ? "Cancel Edit" : "Edit Template"}
-                  </button>
-                  {editingTemplate.expired ? (
-                    <div className="template-edit-form">
-                      <label>Subject:</label>
-                      <input
-                        type="text"
-                        value={templates.expired.subject}
-                        onChange={(e) => handleTemplateChange("expired", "subject", e.target.value)}
-                      />
-                      <label>Content (HTML allowed):</label>
-                      <textarea
-                        rows="5"
-                        value={templates.expired.content}
-                        onChange={(e) => handleTemplateChange("expired", "content", e.target.value)}
-                      />
-                    </div>
-                  ) : (
-                    <div className="template-preview">
-                      <h4>{templates.expired.subject}</h4>
-                      <div
-                        className="template-content-preview"
-                        dangerouslySetInnerHTML={{ __html: templates.expired.content }}
-                      />
-                    </div>
-                  )}
+                {testMail.to && !isValidEmail(testMail.to) && (
+                  <p className="text-sm text-red-600 mt-1">Please enter a valid email address</p>
+                )}
+              </div>
+
+              {/* User Name Input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  User Name (Optional)
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={testMail.userName}
+                    onChange={(e) => handleTestMailChange('userName', e.target.value)}
+                    placeholder="John Doe"
+                    className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  />
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 </div>
-                <button className="save-template-button" onClick={handleSaveTemplates} disabled={savingTemplates}>
-                  {savingTemplates ? "Saving Templates..." : "Save Templates"}
-                </button>
-              </>
-            )}
-          </section>
-        </>
-      )}
+              </div>
+
+              {/* Template Type Select */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Template Type *
+                </label>
+                <div className="relative">
+                  <select
+                    value={testMail.type}
+                    onChange={(e) => handleTestMailChange('type', e.target.value)}
+                    className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none"
+                  >
+                    {templateTypes.map((template) => (
+                      <option key={template.value} value={template.value}>
+                        {template.label}
+                      </option>
+                    ))}
+                  </select>
+                  <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Send Test Button */}
+              <button
+                onClick={handleSendTestMail}
+                disabled={isTestLoading || !testMail.to || !isValidEmail(testMail.to)}
+                className="w-full flex items-center justify-center space-x-3 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105"
+              >
+                {isTestLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Sending...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    <span>Send Test Email</span>
+                  </>
+                )}
+              </button>
+
+              {/* Test Result */}
+              <ResultCard 
+                result={testResult} 
+                icon={testResult?.success ? CheckCircle2 : XCircle}
+                title="Test Email"
+              />
+            </div>
+          </div>
+
+          {/* Mailer Activation Section */}
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Zap className="w-5 h-5 text-purple-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">Activate Mailer</h2>
+            </div>
+
+            <div className="space-y-6">
+              {/* Info Card */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <div className="flex items-start space-x-3">
+                  <AlertCircle className="w-5 h-5 text-blue-600 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-blue-900 mb-2">Automated Email Campaign</h3>
+                    <p className="text-blue-800 mb-4">
+                      This will manually trigger the automated mailer system to send scheduled emails based on user trial and premium statuses.
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 text-blue-800 text-sm">
+                      <li>Trial expiration reminders (2 days before, 2 days after, 10 days after)</li>
+                      <li>Premium renewal reminders (2 days before, 2 days after, 10 days after)</li>
+                      <li>Discount offers for eligible users</li>
+                      <li>Duplicate prevention - won't send the same email twice</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mailer Stats */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center space-x-2">
+                    <Users className="w-4 h-4 text-gray-600" />
+                    <span className="text-sm font-medium text-gray-700">Target Users</span>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">Auto-detected</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4 text-gray-600" />
+                    <span className="text-sm font-medium text-gray-700">Last Run</span>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">Manual trigger only</p>
+                </div>
+              </div>
+
+              {/* Activate Button */}
+              <button
+                onClick={handleActivateMailer}
+                disabled={isMailerLoading}
+                className="w-full flex items-center justify-center space-x-3 px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-semibold hover:from-purple-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105"
+              >
+                {isMailerLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-5 h-5" />
+                    <span>Activate Mailer</span>
+                  </>
+                )}
+              </button>
+
+              {/* Mailer Result */}
+              <ResultCard 
+                result={mailerResult} 
+                icon={mailerResult?.success ? CheckCircle2 : XCircle}
+                title="Mailer Activation"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Email Templates Reference */}
+        <div className="bg-white rounded-2xl shadow-lg p-8">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+              <FileText className="w-5 h-5 text-indigo-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">Available Email Templates</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center space-x-2">
+                <Clock className="w-5 h-5 text-blue-600" />
+                <span>Trial Templates</span>
+              </h3>
+              <div className="space-y-2">
+                {templateTypes.filter(t => t.category === 'Trial').map((template) => (
+                  <div key={template.value} className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm font-medium text-blue-900">{template.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center space-x-2">
+                <Crown className="w-5 h-5 text-purple-600" />
+                <span>Premium Templates</span>
+              </h3>
+              <div className="space-y-2">
+                {templateTypes.filter(t => t.category === 'Premium').map((template) => (
+                  <div key={template.value} className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                    <p className="text-sm font-medium text-purple-900">{template.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default MailerPage;
+export default MailerControl;
