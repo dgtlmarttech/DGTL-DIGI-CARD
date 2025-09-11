@@ -1,7 +1,85 @@
 'use client';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '../context/userContext';
 import { signOutUser } from '../services/firebaseAuthService';
+
+function AddToHomeScreenPrompt() {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showPrompt, setShowPrompt] = useState(false);
+
+  useEffect(() => {
+    function handleBeforeInstallPrompt(e) {
+      e.preventDefault();
+      if (
+        !localStorage.getItem('pwaInstallDismissed') &&
+        !window.matchMedia('(display-mode: standalone)').matches
+      ) {
+        setDeferredPrompt(e);
+        setShowPrompt(true);
+      }
+    }
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Optionally listen for appinstalled event to hide popup
+    function handleAppInstalled() {
+      localStorage.setItem('pwaInstalled', 'true');
+      setShowPrompt(false);
+    }
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const onInstallClick = () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(choiceResult => {
+      if (choiceResult.outcome === 'accepted') {
+        setShowPrompt(false);
+        localStorage.setItem('pwaInstalled', 'true');
+      } else {
+        localStorage.setItem('pwaInstallDismissed', 'true');
+      }
+      setDeferredPrompt(null);
+    });
+  };
+
+  const onDismiss = () => {
+    localStorage.setItem('pwaInstallDismissed', 'true');
+    setShowPrompt(false);
+  };
+
+  if (!showPrompt) return null;
+
+  return (
+    <div className="fixed bottom-6 right-6 z-50 max-w-sm bg-white rounded-xl shadow-lg p-4 border border-gray-300 flex flex-col items-center text-center animate-fade-in">
+      <div className="text-lg font-semibold text-gray-900 mb-2">
+        Add DgtlDigiCard to your Home Screen
+      </div>
+      <p className="text-gray-700 mb-4">
+        For quick access and the best experience, install this app on your device.
+      </p>
+      <div className="flex gap-3">
+        <button
+          onClick={onInstallClick}
+          className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-5 py-2 rounded-lg font-semibold shadow hover:from-blue-700 hover:to-purple-700 transition"
+        >
+          Install
+        </button>
+        <button
+          onClick={onDismiss}
+          className="px-5 py-2 rounded-lg border border-gray-400 text-gray-600 hover:bg-gray-100 transition"
+        >
+          Dismiss
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function HomePage() {
   const router = useRouter();
@@ -23,7 +101,6 @@ export default function HomePage() {
     }
   };
 
-  // Show loading while initializing
   if (initializing || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
@@ -38,87 +115,103 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <div className="h-10 w-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">D</span>
-              </div>
-              <span className="ml-3 text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                DgtlDigiCard
-              </span>
-            </div>
+      <header className="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+  <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+    <div className="flex justify-between items-center py-4">
+      <div className="flex items-center space-x-3">
+        <img
+          src="/dgtlmart-logo.png"
+          alt="DgtlDigiCard Logo"
+          className="h-12 w-auto object-contain"
+          loading="lazy"
+        />
+        <span className="text-2xl font-extrabold text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text">
+          DgtlDigiCard
+        </span>
+      </div>
+      <nav className="flex items-center gap-4">
+        {!isAuthenticated ? (
+          <>
+            <button
+              onClick={() => router.push('/signin')}
+              className="px-4 py-2 rounded-lg text-gray-700 border-2 border-gray-300 hover:bg-gray-50 transition font-semibold"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => router.push('/signup')}
+              className="px-5 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transition font-semibold shadow"
+            >
+              Sign Up
+            </button>
+          </>
+        ) : null}
+      </nav>
+    </div>
+  </div>
+</header>
 
-            {/* <nav className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-gray-900 transition">Features</a>
-              <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition">Pricing</a>
-              <a href="#contact" className="text-gray-600 hover:text-gray-900 transition">Contact</a>
-            </nav> */}
-          </div>
-        </div>
-      </header>
 
-      {/* Hero Section */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center">
-          <h1 className="text-4xl sm:text-6xl font-bold text-gray-900 mb-6">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="text-center max-w-4xl mx-auto">
+          <h1 className="text-4xl sm:text-6xl font-extrabold text-gray-900 mb-5 leading-tight">
             Your Digital Business Card
             <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Made Simple
             </span>
           </h1>
-          
-          <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-            Create stunning, professional digital business cards that make lasting impressions. 
+          <p className="text-xl text-gray-600 mb-16 max-w-3xl mx-auto leading-relaxed">
+            Create stunning, professional digital business cards that make lasting impressions.
             Share your contact info instantly with QR codes, custom URLs, and beautiful designs.
           </p>
 
-          {/* Action Buttons Based on Auth Status */}
+          {/* Auth-based Actions */}
           {isAuthenticated ? (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-              <div className="bg-white rounded-2xl p-8 shadow-xl border border-gray-100 max-w-md">
+            <div className="flex justify-center items-center mb-20 space-x-8 flex-wrap">
+              <div className="bg-white rounded-3xl p-10 shadow-xl border border-gray-100 max-w-md w-full sm:w-auto">
                 <div className="flex items-center mb-6">
                   {userInfo?.imgUrl ? (
-                    <img 
-                      src={userInfo.imgUrl} 
-                      alt="Profile" 
-                      className="h-16 w-16 rounded-full object-cover border-4 border-blue-100"
+                    <img
+                      src={userInfo.imgUrl}
+                      alt="Profile"
+                      className="h-20 w-20 rounded-full object-cover border-4 border-blue-100"
                     />
                   ) : (
-                    <div className="h-16 w-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-xl">
+                    <div className="h-20 w-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-extrabold text-3xl select-none">
                       {userInfo?.firstName?.[0] || user?.email?.[0] || '?'}
                     </div>
                   )}
-                  <div className="ml-4 text-left">
-                    <h3 className="text-lg font-semibold text-gray-900">
+                  <div className="ml-6 text-left">
+                    <h3 className="text-2xl font-semibold text-gray-900">
                       Welcome back, {userInfo?.firstName || 'User'}!
                     </h3>
-                    <p className="text-gray-600 text-sm">
-                      {userInfo?.isPremium ? '👑 Premium Member' : 
-                       userInfo?.effectiveIsPremium ? '🚀 Trial Active' : '💫 Free Plan'}
+                    <p className="text-gray-600 text-sm mt-1">
+                      {userInfo?.isPremium
+                        ? '👑 Premium Member'
+                        : userInfo?.effectiveIsPremium
+                        ? '🚀 Trial Active'
+                        : '💫 Free Plan'}
                     </p>
                   </div>
                 </div>
-                
-                <div className="space-y-3">
+
+                <div className="space-y-4">
                   <button
                     onClick={() => router.push('/dashboard')}
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition duration-200 shadow-lg"
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition duration-200 shadow-lg"
                   >
                     📊 Open Dashboard
                   </button>
-                  
                   <button
                     onClick={handleViewCard}
-                    className="w-full bg-white border-2 border-blue-200 text-blue-700 py-3 px-6 rounded-xl font-semibold hover:bg-blue-50 transition duration-200"
+                    className="w-full bg-white border-2 border-blue-200 text-blue-700 py-3 rounded-xl font-semibold hover:bg-blue-50 transition duration-200"
                   >
                     👁️ View My Card
                   </button>
-                  
                   <button
                     onClick={handleSignOut}
-                    className="w-full text-gray-600 py-2 px-6 rounded-xl font-medium hover:text-gray-800 hover:bg-gray-100 transition duration-200"
+                    className="w-full text-gray-600 py-2 rounded-xl font-medium hover:text-gray-800 hover:bg-gray-100 transition duration-200"
                   >
                     Sign Out
                   </button>
@@ -126,117 +219,77 @@ export default function HomePage() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+            <div className="flex justify-center items-center mb-20 gap-6 flex-wrap">
               <button
                 onClick={() => router.push('/signup')}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-8 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition duration-200 shadow-lg transform hover:scale-105"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-10 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition duration-200 shadow-lg transform hover:scale-105"
               >
                 🚀 Get Started Free
               </button>
-              
               <button
                 onClick={() => router.push('/signin')}
-                className="bg-white border-2 border-gray-200 text-gray-700 py-4 px-8 rounded-xl font-semibold text-lg hover:bg-gray-50 hover:border-gray-300 transition duration-200"
+                className="bg-white border-2 border-gray-300 text-gray-700 py-4 px-10 rounded-xl font-semibold text-lg hover:bg-gray-50 hover:border-gray-400 transition duration-200"
               >
                 Sign In
               </button>
             </div>
           )}
 
-          {/* Feature Grid */}
-          <div className="grid md:grid-cols-3 gap-8 mt-20">
-            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition duration-300">
-              <div className="text-4xl mb-4">🎨</div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-900">Beautiful Designs</h3>
-              <p className="text-gray-600">
-                Choose from stunning templates or customize your own unique design.
-              </p>
-            </div>
-            
-            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition duration-300">
-              <div className="text-4xl mb-4">📱</div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-900">Mobile Optimized</h3>
-              <p className="text-gray-600">
-                Perfect viewing experience on all devices, from phones to desktops.
-              </p>
-            </div>
-            
-            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition duration-300">
-              <div className="text-4xl mb-4">🔗</div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-900">Easy Sharing</h3>
-              <p className="text-gray-600">
-                Share via QR codes, custom URLs, or direct links. No app required.
-              </p>
-            </div>
+          {/* Features Grid */}
+          <div className="grid md:grid-cols-3 gap-10">
+            {[
+              {
+                icon: '🎨',
+                title: 'Beautiful Designs',
+                description:
+                  'Choose from stunning templates or customize your own unique design.',
+              },
+              {
+                icon: '📱',
+                title: 'Mobile Optimized',
+                description:
+                  'Perfect viewing experience on all devices, from phones to desktops.',
+              },
+              {
+                icon: '🔗',
+                title: 'Easy Sharing',
+                description:
+                  'Share via QR codes, custom URLs, or direct links. No app required.',
+              },
+            ].map(({ icon, title, description }) => (
+              <div
+                key={title}
+                className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 hover:shadow-xl transition duration-300 flex flex-col items-center text-center"
+                tabIndex={0}
+                aria-label={title}
+              >
+                <div className="text-5xl mb-5">{icon}</div>
+                <h3 className="text-2xl font-semibold mb-3 text-gray-900">{title}</h3>
+                <p className="text-gray-600">{description}</p>
+              </div>
+            ))}
           </div>
 
-          {/* CTA Section */}
+          {/* CTA Section for Non-authenticated */}
           {!isAuthenticated && (
-            <div className="mt-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-12 text-white">
-              <h2 className="text-3xl font-bold mb-4">Ready to Go Digital?</h2>
-              <p className="text-blue-100 mb-8 text-lg">
+            <section className="mt-28 bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-14 text-white max-w-3xl mx-auto shadow-lg">
+              <h2 className="text-4xl font-bold mb-5">Ready to Go Digital?</h2>
+              <p className="text-blue-100 mb-10 text-lg">
                 Join thousands of professionals who've ditched paper cards forever.
               </p>
               <button
                 onClick={() => router.push('/signup')}
-                className="bg-white text-blue-600 py-4 px-8 rounded-xl font-semibold text-lg hover:bg-blue-50 transition duration-200 shadow-lg"
+                className="bg-white text-blue-600 py-4 px-12 rounded-xl font-semibold text-lg hover:bg-blue-50 transition duration-200 shadow-lg"
               >
                 Create Your Card Now
               </button>
-            </div>
+            </section>
           )}
         </div>
       </main>
 
-      {/* Footer */}
-      {/* <footer className="bg-gray-900 text-white py-12 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center mb-4">
-                <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold">D</span>
-                </div>
-                <span className="ml-2 font-bold">DigitalCard</span>
-              </div>
-              <p className="text-gray-400">
-                The modern way to share your professional information.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition">Features</a></li>
-                <li><a href="#" className="hover:text-white transition">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition">Templates</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition">Help Center</a></li>
-                <li><a href="mailto:contact@dgtlmart.com" className="hover:text-white transition">Contact</a></li>
-                <li><a href="#" className="hover:text-white transition">Privacy</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Connect</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition">Twitter</a></li>
-                <li><a href="#" className="hover:text-white transition">LinkedIn</a></li>
-                <li><a href="#" className="hover:text-white transition">Instagram</a></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 DigitalCard. All rights reserved.</p>
-          </div>
-        </div>
-      </footer> */}
+      {/* PWA Install Prompt */}
+      <AddToHomeScreenPrompt />
     </div>
   );
 }
