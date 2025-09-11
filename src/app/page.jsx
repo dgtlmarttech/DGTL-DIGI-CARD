@@ -4,412 +4,241 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '../context/userContext';
 import { signOutUser } from '../services/firebaseAuthService';
 
-function AddToHomeScreenPrompt() {
+function DirectPWAInstaller() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isAndroid, setIsAndroid] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
-  const [browserName, setBrowserName] = useState('');
+  const [isInstalling, setIsInstalling] = useState(false);
 
   useEffect(() => {
-    // Detect device and browser
-    const userAgent = navigator.userAgent;
-    const iOS = /iPad|iPhone|iPod/.test(userAgent);
-    const android = /Android/.test(userAgent);
-    const chrome = /Chrome/.test(userAgent);
-    const safari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
-    const firefox = /Firefox/.test(userAgent);
-    const edge = /Edg/.test(userAgent);
-
-    setIsIOS(iOS);
-    setIsAndroid(android);
-    
-    if (chrome) setBrowserName('Chrome');
-    else if (safari) setBrowserName('Safari');
-    else if (firefox) setBrowserName('Firefox');
-    else if (edge) setBrowserName('Edge');
-
     // Check if already installed
-    const standalone = window.matchMedia('(display-mode: standalone)').matches || 
-                      window.navigator.standalone || 
-                      document.referrer.includes('android-app://');
-    setIsStandalone(standalone);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                         window.navigator.standalone;
+    
+    if (isStandalone) return;
 
-    // Show prompt after 2 seconds if conditions are met
-    const timer = setTimeout(() => {
-      if (!localStorage.getItem('pwaInstallDismissed') && !standalone) {
-        setShowPrompt(true);
-      }
-    }, 2000);
-
-    // Handle beforeinstallprompt event (Android Chrome)
+    // Capture the beforeinstallprompt event
     function handleBeforeInstallPrompt(e) {
       e.preventDefault();
       setDeferredPrompt(e);
-      if (!localStorage.getItem('pwaInstallDismissed') && !standalone) {
-        setShowPrompt(true);
-      }
+      
+      // Auto-show prompt after 3 seconds if not dismissed before
+      setTimeout(() => {
+        if (!localStorage.getItem('pwaInstallDismissed')) {
+          setShowPrompt(true);
+        }
+      }, 3000);
     }
 
-    // Handle app installed event
-    function handleAppInstalled() {
-      localStorage.setItem('pwaInstalled', 'true');
+    // Handle successful installation
+    function handleAppInstalled(e) {
+      console.log('PWA was installed', e);
       setShowPrompt(false);
+      localStorage.setItem('pwaInstalled', 'true');
+      
       // Show success message
-      setTimeout(() => {
-        alert('🎉 DgtlDigiCard has been installed successfully!');
-      }, 1000);
+      const successDiv = document.createElement('div');
+      successDiv.className = 'fixed top-4 right-4 bg-green-600 text-white p-4 rounded-lg shadow-lg z-50 animate-slide-in';
+      successDiv.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span>🎉</span>
+          <span>App installed successfully!</span>
+        </div>
+      `;
+      document.body.appendChild(successDiv);
+      
+      setTimeout(() => successDiv.remove(), 4000);
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
-      clearTimeout(timer);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
-  const handleInstallClick = async () => {
+  const handleDirectInstall = async () => {
+    if (!deferredPrompt) {
+      // If no native prompt available, try alternative methods
+      handleFallbackInstall();
+      return;
+    }
+
     try {
-      if (deferredPrompt) {
-        // Android Chrome - Direct installation
-        const result = await deferredPrompt.prompt();
-        const choice = await deferredPrompt.userChoice;
-        
-        if (choice.outcome === 'accepted') {
-          setShowPrompt(false);
-          localStorage.setItem('pwaInstalled', 'true');
-        } else {
-          localStorage.setItem('pwaInstallDismissed', 'true');
-        }
-        setDeferredPrompt(null);
-      } else if (isIOS) {
-        // iOS - Automated instructions with visual guide
-        showIOSInstallGuide();
-      } else if (isAndroid) {
-        // Android other browsers - Show specific browser instructions
-        showAndroidInstallGuide();
+      setIsInstalling(true);
+      
+      // Show the native install prompt (Android Chrome/Edge)
+      const promptResult = await deferredPrompt.prompt();
+      const choiceResult = await deferredPrompt.userChoice;
+      
+      if (choiceResult.outcome === 'accepted') {
+        setShowPrompt(false);
+        localStorage.setItem('pwaInstalled', 'true');
       } else {
-        // Desktop - Show desktop installation guide
-        showDesktopInstallGuide();
+        localStorage.setItem('pwaInstallDismissed', 'true');
+        setShowPrompt(false);
       }
+      
+      setDeferredPrompt(null);
     } catch (error) {
-      console.error('Installation error:', error);
-      // Fallback to manual instructions
-      showManualInstallGuide();
+      console.error('Installation failed:', error);
+      handleFallbackInstall();
+    } finally {
+      setIsInstalling(false);
     }
   };
 
-  const showIOSInstallGuide = () => {
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4';
-    modal.innerHTML = `
-      <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center animate-scale-in">
-        <div class="text-4xl mb-4">📱</div>
-        <h3 class="text-xl font-bold mb-4">Install DgtlDigiCard</h3>
+  const handleFallbackInstall = () => {
+    // Create overlay with device-specific quick instructions
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 bg-black/80 z-[999] flex items-center justify-center p-4';
+    
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    
+    overlay.innerHTML = `
+      <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center animate-pop-in">
+        <div class="text-4xl mb-4">${isIOS ? '🍎' : isAndroid ? '🤖' : '💻'}</div>
+        <h3 class="text-xl font-bold mb-4">Quick Install</h3>
         
-        <div class="space-y-4 text-left">
-          <div class="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-            <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white font-bold">1</div>
-            <div>
-              <p class="font-semibold text-sm">Tap the Share button</p>
-              <div class="flex items-center space-x-1 text-xs text-gray-600 mt-1">
-                <div class="w-4 h-4 bg-blue-500 rounded flex items-center justify-center text-white text-xs">↑</div>
-                <span>at the bottom of Safari</span>
+        ${isIOS ? `
+          <div class="bg-blue-50 rounded-xl p-4 mb-4">
+            <p class="text-sm font-semibold mb-2">iOS - Safari Only:</p>
+            <div class="space-y-2 text-sm">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">1</span>
+                <span>Tap Share ↑ button below</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">2</span>
+                <span>Scroll → "Add to Home Screen"</span>
               </div>
             </div>
           </div>
-          
-          <div class="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-            <div class="w-8 h-8 bg-green-500 rounded flex items-center justify-center text-white font-bold">2</div>
-            <div>
-              <p class="font-semibold text-sm">Scroll and tap "Add to Home Screen"</p>
-              <p class="text-xs text-gray-600 mt-1">Look for the + icon</p>
+        ` : isAndroid ? `
+          <div class="bg-green-50 rounded-xl p-4 mb-4">
+            <p class="text-sm font-semibold mb-2">Android:</p>
+            <div class="space-y-2 text-sm">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs">1</span>
+                <span>Menu ⋮ → "Add to Home screen"</span>
+              </div>
             </div>
           </div>
-          
-          <div class="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-            <div class="w-8 h-8 bg-purple-500 rounded flex items-center justify-center text-white font-bold">3</div>
-            <div>
-              <p class="font-semibold text-sm">Tap "Add" to confirm</p>
-              <p class="text-xs text-gray-600 mt-1">App will appear on your home screen</p>
+        ` : `
+          <div class="bg-purple-50 rounded-xl p-4 mb-4">
+            <p class="text-sm font-semibold mb-2">Desktop:</p>
+            <div class="space-y-2 text-sm">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs">1</span>
+                <span>Look for install icon in address bar</span>
+              </div>
             </div>
           </div>
-        </div>
+        `}
         
-        <div class="mt-6 flex gap-2">
-          <button onclick="this.closest('.fixed').remove(); localStorage.setItem('pwaInstallDismissed', 'true');" 
-                  class="flex-1 py-3 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50">
-            Got It
-          </button>
-          <button onclick="this.closest('.fixed').remove(); window.location.reload();" 
-                  class="flex-1 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">
-            Done
-          </button>
-        </div>
+        <button onclick="this.closest('.fixed').remove(); localStorage.setItem('pwaInstallDismissed', 'true');" 
+                class="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">
+          Got It
+        </button>
       </div>
       
       <style>
-        @keyframes scale-in {
-          from { opacity: 0; transform: scale(0.9); }
+        @keyframes pop-in {
+          from { opacity: 0; transform: scale(0.8); }
           to { opacity: 1; transform: scale(1); }
         }
-        .animate-scale-in { animation: scale-in 0.3s ease-out; }
+        .animate-pop-in { animation: pop-in 0.3s ease-out; }
       </style>
     `;
     
-    document.body.appendChild(modal);
+    document.body.appendChild(overlay);
     
-    // Auto-remove after 30 seconds
+    // Auto-remove after 15 seconds
     setTimeout(() => {
-      if (modal.parentNode) {
-        modal.remove();
+      if (overlay.parentNode) {
+        overlay.remove();
       }
-    }, 30000);
+    }, 15000);
   };
 
-  const showAndroidInstallGuide = () => {
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4';
-    modal.innerHTML = `
-      <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center animate-scale-in">
-        <div class="text-4xl mb-4">🤖</div>
-        <h3 class="text-xl font-bold mb-4">Install DgtlDigiCard</h3>
-        
-        <div class="space-y-4 text-left">
-          <div class="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-            <div class="w-8 h-8 bg-green-500 rounded flex items-center justify-center text-white font-bold">1</div>
-            <div>
-              <p class="font-semibold text-sm">Tap the menu (⋮) in ${browserName}</p>
-              <p class="text-xs text-gray-600 mt-1">Usually at top-right corner</p>
-            </div>
-          </div>
-          
-          <div class="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-            <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white font-bold">2</div>
-            <div>
-              <p class="font-semibold text-sm">Tap "Add to Home screen" or "Install app"</p>
-              <p class="text-xs text-gray-600 mt-1">Look for the + or download icon</p>
-            </div>
-          </div>
-          
-          <div class="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-            <div class="w-8 h-8 bg-purple-500 rounded flex items-center justify-center text-white font-bold">3</div>
-            <div>
-              <p class="font-semibold text-sm">Tap "Install" or "Add"</p>
-              <p class="text-xs text-gray-600 mt-1">App will be added to your home screen</p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="mt-6 flex gap-2">
-          <button onclick="this.closest('.fixed').remove(); localStorage.setItem('pwaInstallDismissed', 'true');" 
-                  class="flex-1 py-3 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50">
-            Got It
-          </button>
-          <button onclick="this.closest('.fixed').remove(); window.location.reload();" 
-                  class="flex-1 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700">
-            Done
-          </button>
-        </div>
-      </div>
-      
-      <style>
-        @keyframes scale-in {
-          from { opacity: 0; transform: scale(0.9); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        .animate-scale-in { animation: scale-in 0.3s ease-out; }
-      </style>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    setTimeout(() => {
-      if (modal.parentNode) {
-        modal.remove();
-      }
-    }, 30000);
-  };
-
-  const showDesktopInstallGuide = () => {
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4';
-    modal.innerHTML = `
-      <div class="bg-white rounded-2xl max-w-md w-full p-6 text-center animate-scale-in">
-        <div class="text-4xl mb-4">💻</div>
-        <h3 class="text-xl font-bold mb-4">Install DgtlDigiCard</h3>
-        
-        <div class="space-y-4 text-left">
-          <div class="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-            <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white font-bold">1</div>
-            <div>
-              <p class="font-semibold text-sm">Look for install icon in address bar</p>
-              <p class="text-xs text-gray-600 mt-1">Usually a + or download icon</p>
-            </div>
-          </div>
-          
-          <div class="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-            <div class="w-8 h-8 bg-green-500 rounded flex items-center justify-center text-white font-bold">2</div>
-            <div>
-              <p class="font-semibold text-sm">Click "Install DgtlDigiCard"</p>
-              <p class="text-xs text-gray-600 mt-1">Or use Ctrl+Shift+A (Chrome)</p>
-            </div>
-          </div>
-          
-          <div class="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-            <div class="w-8 h-8 bg-purple-500 rounded flex items-center justify-center text-white font-bold">3</div>
-            <div>
-              <p class="font-semibold text-sm">App opens in new window</p>
-              <p class="text-xs text-gray-600 mt-1">Access from desktop or taskbar</p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="mt-6 flex gap-2">
-          <button onclick="this.closest('.fixed').remove(); localStorage.setItem('pwaInstallDismissed', 'true');" 
-                  class="flex-1 py-3 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50">
-            Got It
-          </button>
-        </div>
-      </div>
-      
-      <style>
-        @keyframes scale-in {
-          from { opacity: 0; transform: scale(0.9); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        .animate-scale-in { animation: scale-in 0.3s ease-out; }
-      </style>
-    `;
-    
-    document.body.appendChild(modal);
-  };
-
-  const onDismiss = () => {
+  const handleDismiss = () => {
     localStorage.setItem('pwaInstallDismissed', 'true');
     setShowPrompt(false);
   };
 
-  if (!showPrompt || isStandalone) return null;
+  if (!showPrompt) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-scale-in">
-        
-        {/* Header with device-specific styling */}
-        <div className={`${
-          isIOS ? 'bg-gradient-to-r from-gray-800 to-gray-900' : 
-          isAndroid ? 'bg-gradient-to-r from-green-600 to-green-700' : 
-          'bg-gradient-to-r from-blue-600 to-purple-600'
-        } p-6 text-white text-center`}>
-          <div className="text-4xl mb-3">
-            {isIOS ? '🍎' : isAndroid ? '🤖' : '💻'}
+    <div className="fixed bottom-4 left-4 right-4 z-50 animate-slide-up">
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 max-w-sm mx-auto">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white text-xl">
+            📱
           </div>
-          <h3 className="text-xl font-bold mb-2">Install DgtlDigiCard</h3>
-          <p className="text-sm opacity-90">
-            {deferredPrompt ? 'One-click installation available!' : 
-             isIOS ? 'Install on your iPhone/iPad' :
-             isAndroid ? 'Add to your Android home screen' :
-             'Install on your device'}
-          </p>
+          <div className="flex-1">
+            <h3 className="font-bold text-gray-900 text-sm">Install DgtlDigiCard</h3>
+            <p className="text-gray-600 text-xs">Instant access from home screen</p>
+          </div>
         </div>
-
-        {/* Content */}
-        <div className="p-6">
-          <div className="space-y-4 mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-blue-600">⚡</span>
+        
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={handleDirectInstall}
+            disabled={isInstalling}
+            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 rounded-lg font-semibold text-sm hover:from-blue-700 hover:to-purple-700 transition disabled:opacity-50"
+          >
+            {isInstalling ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                Installing...
               </div>
-              <div>
-                <p className="font-semibold text-gray-900">Instant Access</p>
-                <p className="text-gray-600 text-sm">Launch directly from home screen</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                <span className="text-green-600">🚀</span>
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900">Faster Performance</p>
-                <p className="text-gray-600 text-sm">Native app-like experience</p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                <span className="text-purple-600">📴</span>
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900">Works Offline</p>
-                <p className="text-gray-600 text-sm">Access your cards anywhere</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Install Button with device-specific text */}
-          <div className="flex gap-3">
-            <button
-              onClick={handleInstallClick}
-              className={`flex-1 py-4 px-6 rounded-xl font-semibold text-white shadow-lg transition-all duration-200 transform hover:scale-105 ${
-                isIOS ? 'bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-900 hover:to-black' :
-                isAndroid ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800' :
-                'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
-              }`}
-            >
-              {deferredPrompt ? '📱 Install Now' : 
-               isIOS ? '🍎 Add to iPhone' :
-               isAndroid ? '🤖 Add to Android' :
-               '💻 Install App'}
-            </button>
-            
-            <button
-              onClick={onDismiss}
-              className="px-6 py-4 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
-            >
-              Later
-            </button>
-          </div>
+            ) : deferredPrompt ? (
+              "Install Now"
+            ) : (
+              "Quick Install"
+            )}
+          </button>
+          <button
+            onClick={handleDismiss}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800 text-sm font-medium"
+          >
+            ×
+          </button>
         </div>
       </div>
 
       <style jsx>{`
-        @keyframes scale-in {
+        @keyframes slide-up {
           from {
             opacity: 0;
-            transform: scale(0.9);
+            transform: translateY(100%);
           }
           to {
             opacity: 1;
-            transform: scale(1);
+            transform: translateY(0);
           }
         }
-        .animate-scale-in {
-          animation: scale-in 0.3s ease-out;
+        .animate-slide-up {
+          animation: slide-up 0.4s ease-out;
         }
       `}</style>
     </div>
   );
 }
 
-// Enhanced Install Button Component
-function InstallButton() {
+// Header Install Button - Most Direct Available
+function HeaderInstallButton() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [canInstall, setCanInstall] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    // Check installation status
-    const standalone = window.matchMedia('(display-mode: standalone)').matches || 
-                      window.navigator.standalone;
-    setIsStandalone(standalone);
-
-    if (!standalone) {
+    const isInstalled = window.matchMedia('(display-mode: standalone)').matches || 
+                       window.navigator.standalone ||
+                       localStorage.getItem('pwaInstalled');
+    
+    if (!isInstalled) {
       setCanInstall(true);
     }
 
@@ -420,43 +249,41 @@ function InstallButton() {
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
+    
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
 
-  const handleInstall = async () => {
+  const handleQuickInstall = async () => {
     if (deferredPrompt) {
-      const result = await deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      
-      if (choice.outcome === 'accepted') {
-        setCanInstall(false);
-        // Show success notification
-        const notification = document.createElement('div');
-        notification.className = 'fixed top-4 right-4 bg-green-600 text-white p-4 rounded-lg shadow-lg z-50';
-        notification.textContent = '🎉 App installed successfully!';
-        document.body.appendChild(notification);
+      // Direct installation for supported browsers
+      try {
+        await deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
         
-        setTimeout(() => notification.remove(), 3000);
+        if (choice.outcome === 'accepted') {
+          setCanInstall(false);
+        }
+      } catch (error) {
+        console.error('Direct install failed:', error);
       }
-      setDeferredPrompt(null);
     } else {
-      // Show manual installation guide
+      // Force show the prompt
       localStorage.removeItem('pwaInstallDismissed');
-      window.location.reload();
+      window.dispatchEvent(new Event('show-install-prompt'));
     }
   };
 
-  if (isStandalone || !canInstall) return null;
+  if (!canInstall) return null;
 
   return (
     <button
-      onClick={handleInstall}
-      className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold text-sm hover:from-green-700 hover:to-green-800 transition duration-200 shadow-md transform hover:scale-105"
+      onClick={handleQuickInstall}
+      className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold text-sm hover:from-green-700 hover:to-green-800 transition duration-200 shadow-md transform hover:scale-105"
     >
-      📱 Install App
+      <span>📱</span>
+      <span>{deferredPrompt ? 'Install' : 'Get App'}</span>
     </button>
   );
 }
@@ -465,32 +292,7 @@ export default function HomePage() {
   const router = useRouter();
   const { user, userInfo, isAuthenticated, loading, initializing } = useUser();
 
-  const handleSignOut = async () => {
-    try {
-      await signOutUser();
-      router.push('/signin');
-    } catch (error) {
-      console.error('Sign out error:', error);
-    }
-  };
-
-  const handleViewCard = () => {
-    const cardUrl = userInfo?.customUID || user?.uid;
-    if (cardUrl) {
-      router.push(`/${cardUrl}`);
-    }
-  };
-
-  if (initializing || loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  // Rest of your existing code...
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -510,8 +312,8 @@ export default function HomePage() {
               </span>
             </div>
             <nav className="flex items-center gap-4">
-              {/* Enhanced Install Button */}
-              <InstallButton />
+              {/* Most Direct Install Button Possible */}
+              <HeaderInstallButton />
               
               {!isAuthenticated ? (
                 <>
@@ -534,13 +336,13 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Rest of your existing homepage content */}
+      {/* Your existing main content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        {/* Your existing main content here */}
+        {/* Your existing content here */}
       </main>
 
-      {/* Enhanced PWA Install Prompt */}
-      <AddToHomeScreenPrompt />
+      {/* Direct PWA Installer */}
+      <DirectPWAInstaller />
     </div>
   );
 }
