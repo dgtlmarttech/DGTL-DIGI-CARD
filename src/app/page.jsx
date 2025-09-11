@@ -60,15 +60,12 @@ function DirectPWAInstaller() {
 
   const handleDirectInstall = async () => {
     if (!deferredPrompt) {
-      // If no native prompt available, try alternative methods
       handleFallbackInstall();
       return;
     }
 
     try {
       setIsInstalling(true);
-      
-      // Show the native install prompt (Android Chrome/Edge)
       const promptResult = await deferredPrompt.prompt();
       const choiceResult = await deferredPrompt.userChoice;
       
@@ -90,7 +87,6 @@ function DirectPWAInstaller() {
   };
 
   const handleFallbackInstall = () => {
-    // Create overlay with device-specific quick instructions
     const overlay = document.createElement('div');
     overlay.className = 'fixed inset-0 bg-black/80 z-[999] flex items-center justify-center p-4';
     
@@ -154,8 +150,6 @@ function DirectPWAInstaller() {
     `;
     
     document.body.appendChild(overlay);
-    
-    // Auto-remove after 15 seconds
     setTimeout(() => {
       if (overlay.parentNode) {
         overlay.remove();
@@ -228,7 +222,6 @@ function DirectPWAInstaller() {
   );
 }
 
-// Header Install Button - Most Direct Available
 function HeaderInstallButton() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [canInstall, setCanInstall] = useState(false);
@@ -257,7 +250,6 @@ function HeaderInstallButton() {
 
   const handleQuickInstall = async () => {
     if (deferredPrompt) {
-      // Direct installation for supported browsers
       try {
         await deferredPrompt.prompt();
         const choice = await deferredPrompt.userChoice;
@@ -269,9 +261,8 @@ function HeaderInstallButton() {
         console.error('Direct install failed:', error);
       }
     } else {
-      // Force show the prompt
       localStorage.removeItem('pwaInstallDismissed');
-      window.dispatchEvent(new Event('show-install-prompt'));
+      window.location.reload();
     }
   };
 
@@ -292,7 +283,32 @@ export default function HomePage() {
   const router = useRouter();
   const { user, userInfo, isAuthenticated, loading, initializing } = useUser();
 
-  // Rest of your existing code...
+  const handleSignOut = async () => {
+    try {
+      await signOutUser();
+      router.push('/signin');
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
+
+  const handleViewCard = () => {
+    const cardUrl = userInfo?.customUID || user?.uid;
+    if (cardUrl) {
+      router.push(`/${cardUrl}`);
+    }
+  };
+
+  if (initializing || loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -312,7 +328,6 @@ export default function HomePage() {
               </span>
             </div>
             <nav className="flex items-center gap-4">
-              {/* Most Direct Install Button Possible */}
               <HeaderInstallButton />
               
               {!isAuthenticated ? (
@@ -336,12 +351,143 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Your existing main content */}
+      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        {/* Your existing content here */}
+        <div className="text-center max-w-4xl mx-auto">
+          <h1 className="text-4xl sm:text-6xl font-extrabold text-gray-900 mb-5 leading-tight">
+            Your Digital Business Card
+            <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Made Simple
+            </span>
+          </h1>
+          <p className="text-xl text-gray-600 mb-16 max-w-3xl mx-auto leading-relaxed">
+            Create stunning, professional digital business cards that make lasting impressions.
+            Share your contact info instantly with QR codes, custom URLs, and beautiful designs.
+          </p>
+
+          {/* Auth-based Actions */}
+          {isAuthenticated ? (
+            <div className="flex justify-center items-center mb-20 space-x-8 flex-wrap">
+              <div className="bg-white rounded-3xl p-10 shadow-xl border border-gray-100 max-w-md w-full sm:w-auto">
+                <div className="flex items-center mb-6">
+                  {userInfo?.imgUrl ? (
+                    <img
+                      src={userInfo.imgUrl}
+                      alt="Profile"
+                      className="h-20 w-20 rounded-full object-cover border-4 border-blue-100"
+                    />
+                  ) : (
+                    <div className="h-20 w-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-extrabold text-3xl select-none">
+                      {userInfo?.firstName?.[0] || user?.email?.[0] || '?'}
+                    </div>
+                  )}
+                  <div className="ml-6 text-left">
+                    <h3 className="text-2xl font-semibold text-gray-900">
+                      Welcome back, {userInfo?.firstName || 'User'}!
+                    </h3>
+                    <p className="text-gray-600 text-sm mt-1">
+                      {userInfo?.isPremium
+                        ? '👑 Premium Member'
+                        : userInfo?.effectiveIsPremium
+                        ? '🚀 Trial Active'
+                        : '💫 Free Plan'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <button
+                    onClick={() => router.push('/dashboard')}
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition duration-200 shadow-lg"
+                  >
+                    📊 Open Dashboard
+                  </button>
+                  <button
+                    onClick={handleViewCard}
+                    className="w-full bg-white border-2 border-blue-200 text-blue-700 py-3 rounded-xl font-semibold hover:bg-blue-50 transition duration-200"
+                  >
+                    👁️ View My Card
+                  </button>
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full text-gray-600 py-2 rounded-xl font-medium hover:text-gray-800 hover:bg-gray-100 transition duration-200"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-center items-center mb-20 gap-6 flex-wrap">
+              <button
+                onClick={() => router.push('/signup')}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-10 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition duration-200 shadow-lg transform hover:scale-105"
+              >
+                🚀 Get Started Free
+              </button>
+              <button
+                onClick={() => router.push('/signin')}
+                className="bg-white border-2 border-gray-300 text-gray-700 py-4 px-10 rounded-xl font-semibold text-lg hover:bg-gray-50 hover:border-gray-400 transition duration-200"
+              >
+                Sign In
+              </button>
+            </div>
+          )}
+
+          {/* Features Grid */}
+          <div className="grid md:grid-cols-3 gap-10">
+            {[
+              {
+                icon: '🎨',
+                title: 'Beautiful Designs',
+                description:
+                  'Choose from stunning templates or customize your own unique design.',
+              },
+              {
+                icon: '📱',
+                title: 'Mobile Optimized',
+                description:
+                  'Perfect viewing experience on all devices, from phones to desktops.',
+              },
+              {
+                icon: '🔗',
+                title: 'Easy Sharing',
+                description:
+                  'Share via QR codes, custom URLs, or direct links. No app required.',
+              },
+            ].map(({ icon, title, description }) => (
+              <div
+                key={title}
+                className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 hover:shadow-xl transition duration-300 flex flex-col items-center text-center"
+                tabIndex={0}
+                aria-label={title}
+              >
+                <div className="text-5xl mb-5">{icon}</div>
+                <h3 className="text-2xl font-semibold mb-3 text-gray-900">{title}</h3>
+                <p className="text-gray-600">{description}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA Section for Non-authenticated */}
+          {!isAuthenticated && (
+            <section className="mt-28 bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-14 text-white max-w-3xl mx-auto shadow-lg">
+              <h2 className="text-4xl font-bold mb-5">Ready to Go Digital?</h2>
+              <p className="text-blue-100 mb-10 text-lg">
+                Join thousands of professionals who've ditched paper cards forever.
+              </p>
+              <button
+                onClick={() => router.push('/signup')}
+                className="bg-white text-blue-600 py-4 px-12 rounded-xl font-semibold text-lg hover:bg-blue-50 transition duration-200 shadow-lg"
+              >
+                Create Your Card Now
+              </button>
+            </section>
+          )}
+        </div>
       </main>
 
-      {/* Direct PWA Installer */}
+      {/* PWA Install Components */}
       <DirectPWAInstaller />
     </div>
   );
