@@ -13,6 +13,85 @@ import ContactCard5 from "../../components/template/card5";
 import ContactCard6 from "../../components/template/card6";
 import { getAdBannerSettings } from "../../services/adService";
 
+function PWAInstallBanner() {
+  const [showBanner, setShowBanner] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Show banner after 3 seconds if not dismissed and not already installed
+    const timer = setTimeout(() => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+      window.navigator.standalone;
+      const dismissed = localStorage.getItem('pwaInstallDismissed');
+      
+      if (!isStandalone && !dismissed) {
+        setShowBanner(true);
+      }
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleInstallClick = () => {
+    router.push('/install-app');
+  };
+
+  const handleDismiss = () => {
+    localStorage.setItem('pwaInstallDismissed', 'true');
+    setShowBanner(false);
+  };
+
+  if (!showBanner) return null;
+
+  return (
+    <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white py-2 px-4 relative animate-slide-down">
+      <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 bg-white/20 rounded flex items-center justify-center text-sm">
+            📱
+          </div>
+          <div>
+            <p className="font-medium text-sm">Install DgtlDigiCard</p>
+            <p className="text-xs text-green-100">Access cards offline</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleInstallClick}
+            className="bg-white text-green-600 px-3 py-1 rounded-md text-xs font-semibold hover:cursor-pointer hover:bg-green-50 transition-colors duration-200"
+          >
+            Install
+          </button>
+          <button
+            onClick={handleDismiss}
+            className="text-white/80 hover:cursor-pointer hover:text-white hover:bg-white/10 rounded-full p-1 transition-colors duration-200 text-sm"
+            aria-label="Dismiss banner"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes slide-down {
+          from {
+            opacity: 0;
+            transform: translateY(-100%);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-slide-down {
+          animation: slide-down 0.3s ease-out;
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export default function LiveCardPage() {
   const { userId } = useParams();
   const router = useRouter();
@@ -80,10 +159,13 @@ export default function LiveCardPage() {
 
   return (
     <div className={`min-h-screen ${pageUserInfo.effectiveIsPremium ? "bg-gradient-to-br from-purple-50 to-blue-50" : "bg-gray-50"}`}>
+      {/* PWA Install Banner - At the top */}
+      <PWAInstallBanner />
+      
       {isCurrentUser(userId) && (
         <div className="fixed top-4 right-4 z-50">
           <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:cursor-pointer hover:bg-blue-700 transition-colors duration-200"
             onClick={() => router.push("/dashboard")}
           >
             Visit Dashboard
