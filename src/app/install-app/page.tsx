@@ -23,16 +23,12 @@ export default function InstallAppPage() {
     if (!installAvailable) setShowToast(false);
   }, [installAvailable]);
 
-  const onInstallClick = async () => {
-    // For Android/PC: trigger the stored prompt (must be a user gesture)
-    const result = await promptInstall();
-    setShowToast(false);
-
-    // navigate on accepted (small delay so OS can finish)
-    if ((result && (result as any).outcome === "accepted") || (result as any).outcome === "accepted") {
-      setTimeout(() => router.push("/"), 800);
-    }
-  };
+const onInstallClick = async (e: React.MouseEvent) => {
+  e.preventDefault();
+  console.debug('[UI] Install button clicked — calling promptInstall');
+  const result = await promptInstall();
+  console.debug('[UI] promptInstall result:', result);
+};
 
   const onIOSAdd = async () => {
     // navigator.share may open the share sheet on some iOS versions

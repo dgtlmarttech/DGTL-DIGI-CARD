@@ -3,10 +3,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-/**
- * Minimal type for the beforeinstallprompt event (not present in some DOM libs).
- * Matches the spec: has prompt() and userChoice promise.
- */
 export type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
@@ -22,44 +18,42 @@ export function usePWAInstall() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Detect device roughly
     const ua = navigator.userAgent || '';
     const isAndroid = /Android/.test(ua);
     const isIOS =
       /iPhone|iPad|iPod/.test(ua) ||
-      (/(Macintosh)/.test(ua) && 'ontouchend' in document); // iPadOS detection fallback
+      (/(Macintosh)/.test(ua) && 'ontouchend' in document);
 
     setDeviceType(isIOS ? 'iOS' : isAndroid ? 'Android' : 'PC');
-
     setCanShare(typeof navigator !== 'undefined' && typeof (navigator as any).share === 'function');
 
     const checkStandalone = () => {
-      const mq = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+      const mq = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
       const navStandalone = (navigator as any).standalone === true;
       setIsStandalone(Boolean(mq || navStandalone));
     };
     checkStandalone();
 
-    // MDN recommended pattern: preventDefault() and store the event
     const onBeforeInstallPrompt = (e: Event) => {
-      // If the event doesn't support prompt(), ignore it
       const possible = e as Partial<BeforeInstallPromptEvent>;
-      if (typeof possible.prompt !== 'function') return;
-
-      // Prevent the mini-infobar from appearing on mobile
-      try {
-        e.preventDefault();
-      } catch {
-        // Some browsers might not allow preventDefault — ignore errors
+      if (typeof possible.prompt !== 'function') {
+        console.debug('[PWA] beforeinstallprompt received but prompt() missing');
+        return;
       }
 
-      // Save the event for later and mark install available
+      try {
+        e.preventDefault(); // prevent automatic mini-infobar
+      } catch (err) {
+        console.warn('[PWA] beforeinstallprompt.preventDefault() failed', err);
+      }
+
+      console.debug('[PWA] beforeinstallprompt fired — storing event');
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setInstallAvailable(true);
     };
 
     const onAppInstalled = () => {
-      // Clear stored prompt; the app is installed
+      console.debug('[PWA] appinstalled event fired — clearing prompt');
       setDeferredPrompt(null);
       setInstallAvailable(false);
     };
@@ -67,11 +61,9 @@ export function usePWAInstall() {
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt as EventListener);
     window.addEventListener('appinstalled', onAppInstalled);
 
-    // visibilitychange: user might install via browser UI -> re-check standalone state
     const onVisibilityChange = () => checkStandalone();
     document.addEventListener('visibilitychange', onVisibilityChange);
 
-    // cleanup
     return () => {
       window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt as EventListener);
       window.removeEventListener('appinstalled', onAppInstalled);
@@ -79,43 +71,34 @@ export function usePWAInstall() {
     };
   }, []);
 
-  /**
-   * Call this to prompt installation when available.
-   * Mirrors MDN: call prompt() on the stored event, await userChoice, then clear.
-   *
-   * Returns:
-   * - { outcome: 'accepted' | 'dismissed' } when prompt run
-   * - { outcome: 'no-prompt' } if there was no stored prompt
-   * - { outcome: 'error', error } on unexpected failures
-   */
   const promptInstall = useCallback(async () => {
+    console.debug('[PWA] promptInstall called — deferredPrompt present?', !!deferredPrompt);
+
     if (!deferredPrompt) {
       return { outcome: 'no-prompt' } as const;
     }
 
-    // Defensive: ensure prompt() exists
     if (typeof deferredPrompt.prompt !== 'function') {
-      // Not a proper beforeinstallprompt event
+      console.warn('[PWA] stored event has no prompt() — clearing and returning');
       setDeferredPrompt(null);
       setInstallAvailable(false);
       return { outcome: 'no-prompt' } as const;
     }
 
     try {
-      // Show the native install prompt (must be called from a user gesture)
+      // IMPORTANT: this must be called from a user gesture (e.g., click handler)
       await deferredPrompt.prompt();
-
-      // Wait for the user's choice
+      console.debug('[PWA] prompt() shown, awaiting userChoice...');
       const choiceResult = await deferredPrompt.userChoice;
+      console.debug('[PWA] userChoice:', choiceResult);
 
-      // Clear stored prompt per spec so it cannot be reused
+      // clear stored prompt after use
       setDeferredPrompt(null);
       setInstallAvailable(false);
 
       return choiceResult;
     } catch (error) {
-      // Some browsers may throw — return error status
-      console.error('promptInstall error', error);
+      console.error('[PWA] promptInstall error', error);
       setDeferredPrompt(null);
       setInstallAvailable(false);
       return { outcome: 'error', error } as any;
