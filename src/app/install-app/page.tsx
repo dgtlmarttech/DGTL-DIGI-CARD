@@ -1,9 +1,9 @@
-"use client"
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { usePWAInstall } from './usePWAInstall';
-import { useRouter } from 'next/navigation';
+"use client";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import usePWAInstall from "./usePWAInstall";
+import { useRouter } from "next/navigation";
 
 export default function InstallAppPage() {
   const router = useRouter();
@@ -12,40 +12,44 @@ export default function InstallAppPage() {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   // show toast when installAvailable toggles to true
-  React.useEffect(() => {
+  useEffect(() => {
     if (installAvailable) {
       setShowToast(true);
       // auto-hide after 6s
       const t = setTimeout(() => setShowToast(false), 6000);
       return () => clearTimeout(t);
     }
+    // hide toast if install becomes unavailable
+    if (!installAvailable) setShowToast(false);
   }, [installAvailable]);
 
   const onInstallClick = async () => {
-    // For Android/PC: trigger the stored prompt
+    // For Android/PC: trigger the stored prompt (must be a user gesture)
     const result = await promptInstall();
-    // result may include outcome; we keep UI simple
     setShowToast(false);
-    // optionally navigate or show success
-    if ((result && (result as any).outcome === 'accepted') || (result as any).outcome === 'accepted') {
-      // small delay so browser can finalize install
-      setTimeout(() => router.push('/'), 800);
+
+    // navigate on accepted (small delay so OS can finish)
+    if ((result && (result as any).outcome === "accepted") || (result as any).outcome === "accepted") {
+      setTimeout(() => router.push("/"), 800);
     }
   };
 
   const onIOSAdd = async () => {
-    if (canShare && typeof (navigator as any).share === 'function') {
+    // navigator.share may open the share sheet on some iOS versions
+    if (typeof window !== "undefined" && canShare && typeof (navigator as any).share === "function") {
       try {
         await (navigator as any).share({
-          title: 'DgtlDigiCard - Digital Business Cards',
-          text: 'Add DgtlDigiCard to your home screen for quick access!',
+          title: "DgtlDigiCard - Digital Business Cards",
+          text: "Add DgtlDigiCard to your home screen for quick access!",
           url: window.location.href,
         });
       } catch (err) {
-        console.log('Share cancelled or failed', err);
+        // user cancelled or error — show onboarding modal
+        console.log("Share cancelled or failed", err);
         setShowOnboarding(true);
       }
     } else {
+      // no share API or not allowed — show onboarding modal with manual steps
       setShowOnboarding(true);
     }
   };
@@ -85,13 +89,12 @@ export default function InstallAppPage() {
         {/* Title */}
         <div className="text-center mb-6">
           <h1 className="text-lg font-semibold text-gray-900 mb-2">Install DGTLDIGICARD Progressive Web App (Android/iOS/PC)</h1>
-          <div className="inline-block bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-600">{deviceType || 'Unknown'}</div>
+          <div className="inline-block bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-600">{deviceType || "Unknown"}</div>
         </div>
 
         {/* Content based on device */}
         <div className="max-w-md mx-auto">
-
-          {deviceType === 'Android' && (
+          {deviceType === "Android" && (
             <div className="bg-gray-50 rounded-lg p-4 mb-4">
               <div className="text-center mb-4">
                 <img src="/icons/android.svg" alt="Android" className="w-12 h-12 mx-auto mb-3" />
@@ -106,7 +109,7 @@ export default function InstallAppPage() {
             </div>
           )}
 
-          {deviceType === 'iOS' && (
+          {deviceType === "iOS" && (
             <div className="space-y-4">
               <div className="text-center mb-4">
                 <img src="/icons/apple.svg" alt="iOS" className="w-12 h-12 mx-auto mb-3" />
@@ -114,7 +117,9 @@ export default function InstallAppPage() {
               </div>
 
               <div className="bg-blue-50 rounded-lg p-4 mb-4">
-                <button onClick={onIOSAdd} className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition">Add to Home Screen</button>
+                <button onClick={onIOSAdd} className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition">
+                  Add to Home Screen
+                </button>
                 <p className="text-xs text-gray-500 mt-2 text-center">This opens the share sheet — then tap "Add to Home Screen" in Safari.</p>
               </div>
 
@@ -123,28 +128,20 @@ export default function InstallAppPage() {
                 <div className="space-y-3">
                   <div>
                     <h4 className="font-medium text-gray-800 text-sm mb-2">Add DgtlDigiCard to Home Screen</h4>
+
                     <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
-  <li>Open this page in Safari</li>
+                      <li>Open this page in Safari</li>
 
-  <li className="flex items-center">
-    <img
-      src="/svgs/share.svg"
-      alt="Share"
-      className="w-10 h-10 mr-3 dark:bg-gray-400 dark:px-1 dark:rounded"
-    />
-    Tap the Share button (the square with an arrow)
-  </li>
+                      <li className="flex items-center">
+                        <img src="/svgs/share.svg" alt="Share" className="w-10 h-10 mr-3 dark:bg-gray-400 dark:px-1 dark:rounded" />
+                        Tap the Share button (the square with an arrow)
+                      </li>
 
-  <li className="flex items-center">
-    <img
-      src="/svgs/add.svg"
-      alt="Add to Home Screen"
-      className="w-10 h-10 mr-3 dark:bg-gray-400 dark:px-1 dark:rounded"
-    />
-    Scroll and tap 'Add to Home Screen'
-  </li>
-</ol>
-
+                      <li className="flex items-center">
+                        <img src="/svgs/add.svg" alt="Add to Home Screen" className="w-10 h-10 mr-3 dark:bg-gray-400 dark:px-1 dark:rounded" />
+                        Scroll and tap 'Add to Home Screen'
+                      </li>
+                    </ol>
                   </div>
 
                   <div className="pt-3 border-t border-blue-200">
@@ -153,7 +150,9 @@ export default function InstallAppPage() {
                     <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
                       <li>Delete the installed shortcut (if present)</li>
                       <li>
-                        <a href="https://support.apple.com/en-vn/HT201265" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Settings → Safari → Clear History and Website Data.</a>
+                        <a href="https://support.apple.com/en-vn/HT201265" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                          Settings → Safari → Clear History and Website Data.
+                        </a>
                       </li>
                       <li>Re-add via Safari's Share → Add to Home Screen</li>
                     </ol>
@@ -163,14 +162,18 @@ export default function InstallAppPage() {
             </div>
           )}
 
-          {deviceType === 'PC' && (
+          {deviceType === "PC" && (
             <div className="bg-gray-50 rounded-lg p-4 mb-4">
               <div className="text-center mb-4">
-                <div className="w-12 h-12 mx-auto mb-3 bg-gray-200 rounded-lg flex items-center justify-center"><span className="text-2xl">💻</span></div>
+                <div className="w-12 h-12 mx-auto mb-3 bg-gray-200 rounded-lg flex items-center justify-center">
+                  <span className="text-2xl">💻</span>
+                </div>
                 <h2 className="font-medium text-gray-900 mb-2">Install on Desktop</h2>
               </div>
 
-              <button onClick={onInstallClick} className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition">Install PWA</button>
+              <button onClick={onInstallClick} className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition">
+                Install PWA
+              </button>
 
               <p className="text-xs text-gray-500 mt-2 text-center">If the button doesn't work: look for an install icon in the address bar or browser menu.</p>
             </div>
@@ -179,10 +182,22 @@ export default function InstallAppPage() {
           <div className="mt-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-4 text-white">
             <h3 className="font-medium mb-3 text-center">Why Install?</h3>
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="text-center"><div className="mb-1">⚡</div><div>Faster loading</div></div>
-              <div className="text-center"><div className="mb-1">📴</div><div>Works offline</div></div>
-              <div className="text-center"><div className="mb-1">🏠</div><div>Home screen access</div></div>
-              <div className="text-center"><div className="mb-1">🔒</div><div>More secure</div></div>
+              <div className="text-center">
+                <div className="mb-1">⚡</div>
+                <div>Faster loading</div>
+              </div>
+              <div className="text-center">
+                <div className="mb-1">📴</div>
+                <div>Works offline</div>
+              </div>
+              <div className="text-center">
+                <div className="mb-1">🏠</div>
+                <div>Home screen access</div>
+              </div>
+              <div className="text-center">
+                <div className="mb-1">🔒</div>
+                <div>More secure</div>
+              </div>
             </div>
           </div>
 
