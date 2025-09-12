@@ -1,3 +1,4 @@
+// File: InstallAppPage.tsx
 "use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -11,27 +12,24 @@ export default function InstallAppPage() {
   const [showToast, setShowToast] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  // show toast when installAvailable toggles to true
   useEffect(() => {
     if (installAvailable) {
       setShowToast(true);
-      // auto-hide after 6s
       const t = setTimeout(() => setShowToast(false), 6000);
       return () => clearTimeout(t);
     }
-    // hide toast if install becomes unavailable
     if (!installAvailable) setShowToast(false);
   }, [installAvailable]);
 
-const onInstallClick = async (e: React.MouseEvent) => {
-  e.preventDefault();
-  console.debug('[UI] Install button clicked — calling promptInstall');
-  const result = await promptInstall();
-  console.debug('[UI] promptInstall result:', result);
-};
+  const onInstallClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (installAvailable) {
+      const result = await promptInstall();
+      console.log('[UI] promptInstall result:', result);
+    }
+  };
 
   const onIOSAdd = async () => {
-    // navigator.share may open the share sheet on some iOS versions
     if (typeof window !== "undefined" && canShare && typeof (navigator as any).share === "function") {
       try {
         await (navigator as any).share({
@@ -40,12 +38,10 @@ const onInstallClick = async (e: React.MouseEvent) => {
           url: window.location.href,
         });
       } catch (err) {
-        // user cancelled or error — show onboarding modal
         console.log("Share cancelled or failed", err);
         setShowOnboarding(true);
       }
     } else {
-      // no share API or not allowed — show onboarding modal with manual steps
       setShowOnboarding(true);
     }
   };
@@ -67,7 +63,6 @@ const onInstallClick = async (e: React.MouseEvent) => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
       <header className="border-b border-gray-200 px-4 py-3">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
@@ -80,15 +75,12 @@ const onInstallClick = async (e: React.MouseEvent) => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="px-4 py-6">
-        {/* Title */}
         <div className="text-center mb-6">
           <h1 className="text-lg font-semibold text-gray-900 mb-2">Install DGTLDIGICARD Progressive Web App (Android/iOS/PC)</h1>
           <div className="inline-block bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-600">{deviceType || "Unknown"}</div>
         </div>
 
-        {/* Content based on device */}
         <div className="max-w-md mx-auto">
           {deviceType === "Android" && (
             <div className="bg-gray-50 rounded-lg p-4 mb-4">
@@ -96,11 +88,17 @@ const onInstallClick = async (e: React.MouseEvent) => {
                 <img src="/icons/android.svg" alt="Android" className="w-12 h-12 mx-auto mb-3" />
                 <h2 className="font-medium text-gray-900 mb-2">Install on Android</h2>
               </div>
+              
+              {installAvailable && (
+  <button 
+    onClick={onInstallClick} 
+    className="w-full bg-green-600 hover:cursor-pointer text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 active:bg-green-800 transition-colors duration-200" 
+  >
+    Install PWA
+  </button>
+)}
 
-              <button onClick={onInstallClick} className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition">
-                Install PWA
-              </button>
-
+              
               <p className="text-xs text-gray-500 mt-2 text-center">If this button doesn't trigger an installer: open browser menu (⋮) → Add to Home screen</p>
             </div>
           )}
@@ -113,7 +111,10 @@ const onInstallClick = async (e: React.MouseEvent) => {
               </div>
 
               <div className="bg-blue-50 rounded-lg p-4 mb-4">
-                <button onClick={onIOSAdd} className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition">
+                <button 
+                  onClick={onIOSAdd} 
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 active:bg-blue-800 transition-colors duration-200" // Added active:bg-blue-800 and transition-colors
+                >
                   Add to Home Screen
                 </button>
                 <p className="text-xs text-gray-500 mt-2 text-center">This opens the share sheet — then tap "Add to Home Screen" in Safari.</p>
@@ -124,22 +125,18 @@ const onInstallClick = async (e: React.MouseEvent) => {
                 <div className="space-y-3">
                   <div>
                     <h4 className="font-medium text-gray-800 text-sm mb-2">Add DgtlDigiCard to Home Screen</h4>
-
                     <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
                       <li>Open this page in Safari</li>
-
                       <li className="flex items-center">
                         <img src="/svgs/share.svg" alt="Share" className="w-10 h-10 mr-3 dark:bg-gray-400 dark:px-1 dark:rounded" />
                         Tap the Share button (the square with an arrow)
                       </li>
-
                       <li className="flex items-center">
                         <img src="/svgs/add.svg" alt="Add to Home Screen" className="w-10 h-10 mr-3 dark:bg-gray-400 dark:px-1 dark:rounded" />
                         Scroll and tap 'Add to Home Screen'
                       </li>
                     </ol>
                   </div>
-
                   <div className="pt-3 border-t border-blue-200">
                     <h4 className="font-medium text-gray-800 text-sm mb-2">Troubleshoot</h4>
                     <p className="text-sm text-gray-600 mb-2">If you run into issues try clearing Safari data or reinstalling:</p>
@@ -166,11 +163,17 @@ const onInstallClick = async (e: React.MouseEvent) => {
                 </div>
                 <h2 className="font-medium text-gray-900 mb-2">Install on Desktop</h2>
               </div>
+              
+              {installAvailable && (
+  <button 
+    onClick={onInstallClick} 
+    className="w-full bg-green-600 hover:cursor-pointer text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 active:bg-green-800 transition-colors duration-200" 
+  >
+    Install PWA
+  </button>
+)}
 
-              <button onClick={onInstallClick} className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition">
-                Install PWA
-              </button>
-
+              
               <p className="text-xs text-gray-500 mt-2 text-center">If the button doesn't work: look for an install icon in the address bar or browser menu.</p>
             </div>
           )}
@@ -209,7 +212,6 @@ const onInstallClick = async (e: React.MouseEvent) => {
         </div>
       </main>
 
-      {/* Toast / Snackbar */}
       <AnimatePresence>
         {showToast && (
           <motion.div
@@ -230,14 +232,13 @@ const onInstallClick = async (e: React.MouseEvent) => {
 
               <div className="flex items-center gap-2">
                 <button onClick={() => setShowToast(false)} className="text-xs px-3 py-1">Dismiss</button>
-                <button onClick={onInstallClick} className="bg-blue-600 text-white text-xs px-3 py-1 rounded-md">Install</button>
+                <button onClick={onInstallClick} className="bg-blue-600 text-white text-xs px-3 py-1 rounded-md active:bg-blue-700 transition-colors duration-200">Install</button>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* iOS Onboarding Modal */}
       <AnimatePresence>
         {showOnboarding && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 flex items-center justify-center p-4">
@@ -255,13 +256,11 @@ const onInstallClick = async (e: React.MouseEvent) => {
                   <li>Swipe the action row until you find "Add to Home Screen" and tap it</li>
                   <li>Tap Add — the shortcut will appear on your home screen</li>
                 </ol>
-
                 <div className="mt-3 p-3 bg-gray-50 rounded">
                   <div className="font-medium text-sm mb-1">Tip</div>
                   <div className="text-xs text-gray-600">If you don't see "Add to Home Screen", ensure you're in Safari and clear website data from Settings → Safari.</div>
                 </div>
               </div>
-
               <div className="mt-5 flex justify-end gap-2">
                 <button onClick={() => setShowOnboarding(false)} className="px-3 py-2 rounded-md text-sm">Close</button>
               </div>
