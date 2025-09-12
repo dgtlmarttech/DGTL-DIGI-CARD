@@ -124,10 +124,27 @@ export default function InstallAppPage() {
                   <div>
                     <h4 className="font-medium text-gray-800 text-sm mb-2">Add DgtlDigiCard to Home Screen</h4>
                     <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
-                      <li>Open this page in Safari</li>
-                      <li>Tap the Share button (the square with an arrow)</li>
-                      <li>Scroll and tap 'Add to Home Screen'</li>
-                    </ol>
+  <li>Open this page in Safari</li>
+
+  <li className="flex items-center">
+    <img
+      src="/svgs/share.svg"
+      alt="Share"
+      className="w-10 h-10 mr-3 dark:bg-gray-400 dark:px-1 dark:rounded"
+    />
+    Tap the Share button (the square with an arrow)
+  </li>
+
+  <li className="flex items-center">
+    <img
+      src="/svgs/add.svg"
+      alt="Add to Home Screen"
+      className="w-10 h-10 mr-3 dark:bg-gray-400 dark:px-1 dark:rounded"
+    />
+    Scroll and tap 'Add to Home Screen'
+  </li>
+</ol>
+
                   </div>
 
                   <div className="pt-3 border-t border-blue-200">
