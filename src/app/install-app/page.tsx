@@ -1,372 +1,246 @@
-'use client';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+"use client"
+import React, { useState } from 'react';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { usePWAInstall } from './usePWAInstall';
+import { useRouter } from 'next/navigation';
 
 export default function InstallAppPage() {
-  const [deviceType, setDeviceType] = useState('');
-  const [browserName, setBrowserName] = useState('');
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isStandalone, setIsStandalone] = useState(false);
-  const [canShare, setCanShare] = useState(false);
   const router = useRouter();
+  const { deviceType, installAvailable, promptInstall, isStandalone, canShare } = usePWAInstall();
+  const [showToast, setShowToast] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
-  useEffect(() => {
-    // Device and browser detection
-    const userAgent = navigator.userAgent;
-    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
-    const isAndroid = /Android/.test(userAgent);
-    
-    if (isIOS) setDeviceType('iOS');
-    else if (isAndroid) setDeviceType('Android');
-    else setDeviceType('Desktop');
-
-    // Browser detection
-    if (/Chrome/.test(userAgent) && !/Edg/.test(userAgent)) setBrowserName('Chrome');
-    else if (/Safari/.test(userAgent) && !/Chrome/.test(userAgent)) setBrowserName('Safari');
-    else if (/Edg/.test(userAgent)) setBrowserName('Edge');
-    else if (/Firefox/.test(userAgent)) setBrowserName('Firefox');
-    else setBrowserName('Browser');
-
-    // Check if Web Share API is available (for iOS native share)
-    setCanShare('share' in navigator);
-
-    // Check if already running as PWA
-    const standalone = window.matchMedia('(display-mode: standalone)').matches || 
-                      (window.navigator as any).standalone === true;
-    setIsStandalone(standalone);
-
-    // Handle PWA install prompt - This is the key for direct browser popup
-    function handleBeforeInstallPrompt(e: Event) {
-      e.preventDefault(); // Prevent automatic browser prompt
-      setDeferredPrompt(e); // Store the event for later use
+  // show toast when installAvailable toggles to true
+  React.useEffect(() => {
+    if (installAvailable) {
+      setShowToast(true);
+      // auto-hide after 6s
+      const t = setTimeout(() => setShowToast(false), 6000);
+      return () => clearTimeout(t);
     }
+  }, [installAvailable]);
 
-    function handleAppInstalled() {
-      setIsStandalone(true);
-      // Show success message
-      const success = document.createElement('div');
-      success.className = 'fixed top-4 right-4 bg-green-600 text-white p-4 rounded-lg shadow-lg z-50';
-      success.innerHTML = '🎉 DgtlDigiCard installed successfully!';
-      document.body.appendChild(success);
-      setTimeout(() => success.remove(), 4000);
-    }
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
-  }, []);
-
-  // Direct PWA Installation - This triggers the native browser popup
-  const handleDirectInstall = async () => {
-    if (deferredPrompt) {
-      try {
-        // This shows the NATIVE BROWSER INSTALL POPUP directly
-        const promptResult = await (deferredPrompt as any).prompt();
-        const choiceResult = await (deferredPrompt as any).userChoice;
-        
-        console.log('Install prompt result:', choiceResult.outcome);
-        
-        if (choiceResult.outcome === 'accepted') {
-          setIsStandalone(true);
-        }
-        
-        setDeferredPrompt(null); // Clear the deferred prompt
-      } catch (error) {
-        console.error('Installation failed:', error);
-        // Fallback to manual instructions
-        showManualInstructions();
-      }
-    } else {
-      // No native prompt available, show manual instructions
-      showManualInstructions();
+  const onInstallClick = async () => {
+    // For Android/PC: trigger the stored prompt
+    const result = await promptInstall();
+    // result may include outcome; we keep UI simple
+    setShowToast(false);
+    // optionally navigate or show success
+    if ((result && (result as any).outcome === 'accepted') || (result as any).outcome === 'accepted') {
+      // small delay so browser can finalize install
+      setTimeout(() => router.push('/'), 800);
     }
   };
 
-  // iOS Native Share Menu - This opens the iOS share dialog
-  const handleIOSShare = async () => {
-    if (canShare && 'share' in navigator) {
+  const onIOSAdd = async () => {
+    if (canShare && typeof (navigator as any).share === 'function') {
       try {
-        // This opens the NATIVE iOS SHARE MENU
-        await navigator.share({
+        await (navigator as any).share({
           title: 'DgtlDigiCard - Digital Business Cards',
-          text: 'Install DgtlDigiCard as an app for the best experience!',
-          url: window.location.origin
+          text: 'Add DgtlDigiCard to your home screen for quick access!',
+          url: window.location.href,
         });
-        
-        // Show instructions after sharing
-        setTimeout(() => {
-          const modal = document.createElement('div');
-          modal.className = 'fixed inset-0 bg-black/80 z-[999] flex items-center justify-center p-4';
-          modal.innerHTML = `
-            <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center animate-pop-in">
-              <div class="text-4xl mb-4">📱</div>
-              <h3 class="text-xl font-bold mb-4">Add to Home Screen</h3>
-              <p class="text-gray-600 mb-4">
-                In the share menu that just opened, scroll down and tap "Add to Home Screen" to install the app.
-              </p>
-              <button onclick="this.closest('.fixed').remove();" 
-                      class="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">
-                Got It
-              </button>
-            </div>
-            <style>
-              @keyframes pop-in {
-                from { opacity: 0; transform: scale(0.8); }
-                to { opacity: 1; transform: scale(1); }
-              }
-              .animate-pop-in { animation: pop-in 0.3s ease-out; }
-            </style>
-          `;
-          document.body.appendChild(modal);
-          setTimeout(() => modal.remove(), 10000);
-        }, 1000);
-        
-      } catch (error) {
-        console.log('Share was cancelled or failed:', error);
-        // Fallback to manual instructions
-        showManualInstructions();
+      } catch (err) {
+        console.log('Share cancelled or failed', err);
+        setShowOnboarding(true);
       }
     } else {
-      // Web Share API not available, show manual instructions
-      showManualInstructions();
+      setShowOnboarding(true);
     }
-  };
-
-  const showManualInstructions = () => {
-    const isIOS = deviceType === 'iOS';
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black/80 z-[999] flex items-center justify-center p-4';
-    modal.innerHTML = `
-      <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center animate-pop-in">
-        <div class="text-4xl mb-4">${isIOS ? '🍎' : '🤖'}</div>
-        <h3 class="text-xl font-bold mb-4">Manual Installation</h3>
-        <div class="text-left space-y-3">
-          ${isIOS ? `
-            <div class="flex items-center space-x-2 text-sm">
-              <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">1</span>
-              <span>Tap Share (↑) button in Safari</span>
-            </div>
-            <div class="flex items-center space-x-2 text-sm">
-              <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">2</span>
-              <span>Scroll down → "Add to Home Screen"</span>
-            </div>
-            <div class="flex items-center space-x-2 text-sm">
-              <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">3</span>
-              <span>Tap "Add" to install</span>
-            </div>
-          ` : `
-            <div class="flex items-center space-x-2 text-sm">
-              <span class="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs">1</span>
-              <span>Tap menu (⋮) in ${browserName}</span>
-            </div>
-            <div class="flex items-center space-x-2 text-sm">
-              <span class="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs">2</span>
-              <span>Tap "Add to Home screen"</span>
-            </div>
-            <div class="flex items-center space-x-2 text-sm">
-              <span class="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs">3</span>
-              <span>Tap "Install" or "Add"</span>
-            </div>
-          `}
-        </div>
-        <button onclick="this.closest('.fixed').remove();" 
-                class="w-full mt-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">
-          Got It
-        </button>
-      </div>
-      <style>
-        @keyframes pop-in {
-          from { opacity: 0; transform: scale(0.8); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        .animate-pop-in { animation: pop-in 0.3s ease-out; }
-      </style>
-    `;
-    document.body.appendChild(modal);
-    setTimeout(() => modal.remove(), 15000);
   };
 
   if (isStandalone) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center">
-          <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
-            <div className="text-6xl mb-6">🎉</div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              App Already Installed!
-            </h1>
-            <p className="text-gray-600 mb-6">
-              DgtlDigiCard is running as an installed app on your device.
-            </p>
-            <Link 
-              href="/"
-              className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition duration-200 shadow-lg"
-            >
-              Go to Homepage
-            </Link>
-          </div>
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+        <div className="text-center max-w-sm">
+          <div className="text-4xl mb-4">✅</div>
+          <h1 className="text-xl font-semibold text-gray-900 mb-3">App Already Installed!</h1>
+          <p className="text-gray-600 text-sm mb-6">DgtlDigiCard is running as an installed app.</p>
+          <Link href="/" className="inline-block bg-blue-600 text-white py-2 px-6 rounded-lg font-medium hover:bg-blue-700 transition">
+            Go to Homepage
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white/90 backdrop-blur-md border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-3">
-              <img
-                src="/dgtlmart-logo.png"
-                alt="DgtlDigiCard Logo"
-                className="h-10 w-auto object-contain"
-              />
-              <span className="text-xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text">
-                DgtlDigiCard
-              </span>
-            </Link>
-            <Link 
-              href="/"
-              className="text-gray-600 hover:text-gray-900 font-medium"
-            >
-              ← Back to Home
-            </Link>
-          </div>
+      <header className="border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="flex items-center space-x-2">
+            <img src="/dgtlmart-logo.png" alt="DgtlDigiCard" className="h-8 w-auto" />
+            <span className="font-semibold text-gray-900">DgtlDigiCard</span>
+          </Link>
+          <Link href="/" className="text-blue-600 text-sm font-medium">
+            ← Back
+          </Link>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Install DgtlDigiCard Progressive Web App
-          </h1>
-          <p className="text-xl text-gray-600 mb-2">
-            {deviceType} / {browserName}
-          </p>
-          <p className="text-gray-500">
-            Get native app experience with offline access and home screen installation
-          </p>
+      <main className="px-4 py-6">
+        {/* Title */}
+        <div className="text-center mb-6">
+          <h1 className="text-lg font-semibold text-gray-900 mb-2">Install DGTLDIGICARD Progressive Web App (Android/iOS/PC)</h1>
+          <div className="inline-block bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-600">{deviceType || 'Unknown'}</div>
         </div>
 
-        {/* Installation Options */}
-        <div className="grid gap-8 max-w-2xl mx-auto">
-          
-          {/* Direct Install Button (Android Chrome/Edge) - Native Browser Popup */}
-          {deferredPrompt && (
-            <div className="bg-white rounded-2xl p-8 shadow-xl border border-gray-100">
-              <div className="text-center">
-                <div className="text-5xl mb-4">🚀</div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  One-Click Installation Available
-                </h2>
-                <p className="text-gray-600 mb-6">
-                  Click below to open the native browser install dialog.
-                </p>
-                <button
-                  onClick={handleDirectInstall}
-                  className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 px-8 rounded-xl font-bold text-lg hover:from-green-700 hover:to-green-800 transition duration-200 shadow-lg transform hover:scale-105"
-                >
-                  🚀 Install PWA (Native Popup)
-                </button>
-                <p className="text-xs text-gray-500 mt-2">
-                  This will show your browser's native installation dialog
-                </p>
+        {/* Content based on device */}
+        <div className="max-w-md mx-auto">
+
+          {deviceType === 'Android' && (
+            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+              <div className="text-center mb-4">
+                <img src="/icons/android.svg" alt="Android" className="w-12 h-12 mx-auto mb-3" />
+                <h2 className="font-medium text-gray-900 mb-2">Install on Android</h2>
+              </div>
+
+              <button onClick={onInstallClick} className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition">
+                Install PWA
+              </button>
+
+              <p className="text-xs text-gray-500 mt-2 text-center">If this button doesn't trigger an installer: open browser menu (⋮) → Add to Home screen</p>
+            </div>
+          )}
+
+          {deviceType === 'iOS' && (
+            <div className="space-y-4">
+              <div className="text-center mb-4">
+                <img src="/icons/apple.svg" alt="iOS" className="w-12 h-12 mx-auto mb-3" />
+                <h2 className="font-medium text-gray-900 mb-2">Install on iOS</h2>
+              </div>
+
+              <div className="bg-blue-50 rounded-lg p-4 mb-4">
+                <button onClick={onIOSAdd} className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition">Add to Home Screen</button>
+                <p className="text-xs text-gray-500 mt-2 text-center">This opens the share sheet — then tap "Add to Home Screen" in Safari.</p>
+              </div>
+
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h3 className="font-medium text-gray-900 mb-3">Follow the guide on how to install PWA on iOS:</h3>
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-medium text-gray-800 text-sm mb-2">Add DgtlDigiCard to Home Screen</h4>
+                    <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+                      <li>Open this page in Safari</li>
+                      <li>Tap the Share button (the square with an arrow)</li>
+                      <li>Scroll and tap 'Add to Home Screen'</li>
+                    </ol>
+                  </div>
+
+                  <div className="pt-3 border-t border-blue-200">
+                    <h4 className="font-medium text-gray-800 text-sm mb-2">Troubleshoot</h4>
+                    <p className="text-sm text-gray-600 mb-2">If you run into issues try clearing Safari data or reinstalling:</p>
+                    <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+                      <li>Delete the installed shortcut (if present)</li>
+                      <li>
+                        <a href="https://support.apple.com/en-vn/HT201265" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Settings → Safari → Clear History and Website Data.</a>
+                      </li>
+                      <li>Re-add via Safari's Share → Add to Home Screen</li>
+                    </ol>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
-          {/* iOS Native Share Button */}
-          {deviceType === 'iOS' && canShare && (
-            <div className="bg-white rounded-2xl p-8 shadow-xl border border-gray-100">
-              <div className="text-center">
-                <div className="text-5xl mb-4">🍎</div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  iOS Installation
-                </h2>
-                <p className="text-gray-600 mb-6">
-                  Click below to open the native iOS share menu, then select "Add to Home Screen".
-                </p>
-                <button
-                  onClick={handleIOSShare}
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-8 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-blue-800 transition duration-200 shadow-lg transform hover:scale-105"
-                >
-                  📱 Open Share Menu (Native)
-                </button>
-                <p className="text-xs text-gray-500 mt-2">
-                  This will open iOS native share dialog
-                </p>
+          {deviceType === 'PC' && (
+            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+              <div className="text-center mb-4">
+                <div className="w-12 h-12 mx-auto mb-3 bg-gray-200 rounded-lg flex items-center justify-center"><span className="text-2xl">💻</span></div>
+                <h2 className="font-medium text-gray-900 mb-2">Install on Desktop</h2>
               </div>
+
+              <button onClick={onInstallClick} className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition">Install PWA</button>
+
+              <p className="text-xs text-gray-500 mt-2 text-center">If the button doesn't work: look for an install icon in the address bar or browser menu.</p>
             </div>
           )}
 
-          {/* Manual Installation Fallback */}
-          <div className="bg-white rounded-2xl p-8 shadow-xl border border-gray-100">
-            <div className="flex items-center mb-6">
-              <div className={`w-16 h-16 ${
-                deviceType === 'iOS' ? 'bg-gray-100' : 
-                deviceType === 'Android' ? 'bg-green-100' : 'bg-purple-100'
-              } rounded-full flex items-center justify-center mr-4`}>
-                <span className="text-3xl">
-                  {deviceType === 'iOS' ? '🍎' : deviceType === 'Android' ? '🤖' : '💻'}
-                </span>
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Manual Installation</h2>
-                <p className="text-gray-600">If automatic installation doesn't work</p>
-              </div>
+          <div className="mt-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-4 text-white">
+            <h3 className="font-medium mb-3 text-center">Why Install?</h3>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="text-center"><div className="mb-1">⚡</div><div>Faster loading</div></div>
+              <div className="text-center"><div className="mb-1">📴</div><div>Works offline</div></div>
+              <div className="text-center"><div className="mb-1">🏠</div><div>Home screen access</div></div>
+              <div className="text-center"><div className="mb-1">🔒</div><div>More secure</div></div>
             </div>
-
-            <button
-              onClick={showManualInstructions}
-              className="w-full bg-gradient-to-r from-gray-600 to-gray-700 text-white py-4 px-8 rounded-xl font-bold text-lg hover:from-gray-700 hover:to-gray-800 transition duration-200 shadow-lg"
-            >
-              📋 Show Manual Instructions
-            </button>
           </div>
 
-          {/* Benefits Section */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
-            <h2 className="text-2xl font-bold mb-6 text-center">Why Install DgtlDigiCard?</h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="flex items-start space-x-3">
-                <span className="text-2xl">⚡</span>
-                <div>
-                  <h3 className="font-semibold mb-1">Lightning Fast</h3>
-                  <p className="text-blue-100 text-sm">Instant loading and smooth performance</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <span className="text-2xl">📴</span>
-                <div>
-                  <h3 className="font-semibold mb-1">Works Offline</h3>
-                  <p className="text-blue-100 text-sm">Access your cards without internet</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <span className="text-2xl">🏠</span>
-                <div>
-                  <h3 className="font-semibold mb-1">Home Screen Access</h3>
-                  <p className="text-blue-100 text-sm">One tap to open from your device</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <span className="text-2xl">🔒</span>
-                <div>
-                  <h3 className="font-semibold mb-1">Secure & Private</h3>
-                  <p className="text-blue-100 text-sm">No app store tracking or permissions</p>
-                </div>
-              </div>
-            </div>
+          <div className="mt-4 bg-gray-50 rounded-lg p-3">
+            <h4 className="text-sm font-medium text-gray-900 mb-2">How PWA Installation Works:</h4>
+            <ul className="text-xs text-gray-600 space-y-1">
+              <li>• Browser detects installable PWA (manifest.json + service worker)</li>
+              <li>• Clicking button triggers native browser installation UI (if available)</li>
+              <li>• App installs directly to home screen like native app</li>
+              <li>• Works offline with faster loading and app-like experience</li>
+            </ul>
           </div>
         </div>
       </main>
+
+      {/* Toast / Snackbar */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            transition={{ duration: 0.35 }}
+            className="fixed left-1/2 transform -translate-x-1/2 bottom-6 z-50 w-[92%] max-w-lg"
+          >
+            <div className="bg-white border shadow-lg rounded-xl p-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-500 rounded-md flex items-center justify-center text-white">⬇️</div>
+                <div>
+                  <div className="font-medium text-sm">App install available</div>
+                  <div className="text-xs text-gray-500">Tap to install DgtlDigiCard</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowToast(false)} className="text-xs px-3 py-1">Dismiss</button>
+                <button onClick={onInstallClick} className="bg-blue-600 text-white text-xs px-3 py-1 rounded-md">Install</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* iOS Onboarding Modal */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} transition={{ duration: 0.2 }} className="bg-white rounded-2xl shadow-xl max-w-md w-full p-5">
+              <div className="flex justify-between items-start">
+                <h3 className="text-lg font-medium">Add to Home Screen</h3>
+                <button onClick={() => setShowOnboarding(false)} className="text-sm text-gray-500">Close</button>
+              </div>
+
+              <div className="mt-4 text-sm text-gray-700 space-y-3">
+                <p>Follow these steps to add DgtlDigiCard to your home screen:</p>
+                <ol className="list-decimal list-inside space-y-2">
+                  <li>Open this page in Safari (required on iOS)</li>
+                  <li>Tap the Share button (the square with an arrow)</li>
+                  <li>Swipe the action row until you find "Add to Home Screen" and tap it</li>
+                  <li>Tap Add — the shortcut will appear on your home screen</li>
+                </ol>
+
+                <div className="mt-3 p-3 bg-gray-50 rounded">
+                  <div className="font-medium text-sm mb-1">Tip</div>
+                  <div className="text-xs text-gray-600">If you don't see "Add to Home Screen", ensure you're in Safari and clear website data from Settings → Safari.</div>
+                </div>
+              </div>
+
+              <div className="mt-5 flex justify-end gap-2">
+                <button onClick={() => setShowOnboarding(false)} className="px-3 py-2 rounded-md text-sm">Close</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
