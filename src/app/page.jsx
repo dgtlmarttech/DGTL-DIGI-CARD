@@ -4,21 +4,21 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '../context/userContext';
 import { signOutUser } from '../services/firebaseAuthService';
 
-function PWAInstallPrompt() {
-  const [showPrompt, setShowPrompt] = useState(false);
+function PWAInstallBanner() {
+  const [showBanner, setShowBanner] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    // Show install prompt after 5 seconds if not dismissed and not already installed
+    // Show banner after 5 seconds if not dismissed and not already installed
     const timer = setTimeout(() => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                           window.navigator.standalone;
+      window.navigator.standalone;
       const dismissed = localStorage.getItem('pwaInstallDismissed');
       
       if (!isStandalone && !dismissed) {
-        setShowPrompt(true);
+        setShowBanner(true);
       }
-    }, 5000);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -29,53 +29,54 @@ function PWAInstallPrompt() {
 
   const handleDismiss = () => {
     localStorage.setItem('pwaInstallDismissed', 'true');
-    setShowPrompt(false);
+    setShowBanner(false);
   };
 
-  if (!showPrompt) return null;
+  if (!showBanner) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 animate-slide-up">
-      <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 max-w-sm mx-auto">
+    <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 relative animate-slide-down">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white text-xl">
+          <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center text-lg">
             📱
           </div>
-          <div className="flex-1">
-            <h3 className="font-bold text-gray-900 text-sm">Install DgtlDigiCard</h3>
-            <p className="text-gray-600 text-xs">Get the app experience</p>
+          <div>
+            <p className="font-semibold text-sm">Install DgtlDigiCard App</p>
+            <p className="text-xs text-blue-100">Get quick access and offline features</p>
           </div>
         </div>
         
-        <div className="flex gap-2 mt-4">
+        <div className="flex items-center gap-3">
           <button
             onClick={handleInstallClick}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 rounded-lg font-semibold text-sm hover:from-blue-700 hover:to-purple-700 transition"
+            className="bg-white text-blue-600 px-4 py-2 rounded-lg text-sm font-semibold hover:cursor-pointer hover:bg-blue-50 transition-colors duration-200"
           >
             Install Now
           </button>
           <button
             onClick={handleDismiss}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800 text-sm font-medium"
+            className="text-white/80 hover:cursor-pointer hover:text-white hover:bg-white/10 rounded-full p-2 transition-colors duration-200"
+            aria-label="Dismiss banner"
           >
-            ×
+            ✕
           </button>
         </div>
       </div>
 
       <style jsx>{`
-        @keyframes slide-up {
+        @keyframes slide-down {
           from {
             opacity: 0;
-            transform: translateY(100%);
+            transform: translateY(-100%);
           }
           to {
             opacity: 1;
             transform: translateY(0);
           }
         }
-        .animate-slide-up {
-          animation: slide-up 0.4s ease-out;
+        .animate-slide-down {
+          animation: slide-down 0.3s ease-out;
         }
       `}</style>
     </div>
@@ -100,7 +101,7 @@ function HeaderInstallButton() {
   return (
     <button
       onClick={() => router.push('/install-app')}
-      className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold text-sm hover:from-green-700 hover:to-green-800 transition duration-200 shadow-md transform hover:scale-105"
+      className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold text-sm hover:cursor-pointer hover:from-green-700 hover:to-green-800 transition duration-200 shadow-md transform hover:scale-105"
     >
       <span>📱</span>
       <span>Install App</span>
@@ -160,13 +161,13 @@ export default function HomePage() {
                 <>
                   <button
                     onClick={() => router.push('/signin')}
-                    className="px-3 sm:px-4 py-2 rounded-lg text-gray-700 border-2 border-gray-300 hover:bg-gray-50 transition font-semibold text-sm sm:text-base"
+                    className="px-3 sm:px-4 py-2 rounded-lg text-gray-700 border-2 border-gray-300 hover:cursor-pointer hover:bg-gray-50 transition font-semibold text-sm sm:text-base"
                   >
                     Sign In
                   </button>
                   <button
                     onClick={() => router.push('/signup')}
-                    className="px-3 sm:px-5 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transition font-semibold shadow text-sm sm:text-base"
+                    className="px-3 sm:px-5 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:cursor-pointer hover:from-blue-700 hover:to-purple-700 transition font-semibold shadow text-sm sm:text-base"
                   >
                     Sign Up
                   </button>
@@ -176,6 +177,9 @@ export default function HomePage() {
           </div>
         </div>
       </header>
+
+      {/* PWA Install Banner - Under Navbar */}
+      <PWAInstallBanner />
 
       {/* Main Content - Mobile and Desktop Compatible */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
@@ -224,19 +228,19 @@ export default function HomePage() {
                 <div className="space-y-3 sm:space-y-4">
                   <button
                     onClick={() => router.push('/dashboard')}
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 sm:py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition duration-200 shadow-lg"
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 sm:py-4 rounded-xl font-semibold hover:cursor-pointer hover:from-blue-700 hover:to-purple-700 transition duration-200 shadow-lg"
                   >
                     📊 Open Dashboard
                   </button>
                   <button
                     onClick={handleViewCard}
-                    className="w-full bg-white border-2 border-blue-200 text-blue-700 py-3 rounded-xl font-semibold hover:bg-blue-50 transition duration-200"
+                    className="w-full bg-white border-2 border-blue-200 text-blue-700 py-3 rounded-xl font-semibold hover:cursor-pointer hover:bg-blue-50 transition duration-200"
                   >
                     👁️ View My Card
                   </button>
                   <button
                     onClick={handleSignOut}
-                    className="w-full text-gray-600 py-2 rounded-xl font-medium hover:text-gray-800 hover:bg-gray-100 transition duration-200"
+                    className="w-full text-gray-600 py-2 rounded-xl font-medium hover:cursor-pointer hover:text-gray-800 hover:bg-gray-100 transition duration-200"
                   >
                     Sign Out
                   </button>
@@ -247,13 +251,13 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row justify-center items-center mb-16 sm:mb-20 gap-4 sm:gap-6 px-4">
               <button
                 onClick={() => router.push('/signup')}
-                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-8 sm:px-10 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition duration-200 shadow-lg transform hover:scale-105"
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-8 sm:px-10 rounded-xl font-semibold text-lg hover:cursor-pointer hover:from-blue-700 hover:to-purple-700 transition duration-200 shadow-lg transform hover:scale-105"
               >
                 🚀 Get Started Free
               </button>
               <button
                 onClick={() => router.push('/signin')}
-                className="w-full sm:w-auto bg-white border-2 border-gray-300 text-gray-700 py-4 px-8 sm:px-10 rounded-xl font-semibold text-lg hover:bg-gray-50 hover:border-gray-400 transition duration-200"
+                className="w-full sm:w-auto bg-white border-2 border-gray-300 text-gray-700 py-4 px-8 sm:px-10 rounded-xl font-semibold text-lg hover:cursor-pointer hover:bg-gray-50 hover:border-gray-400 transition duration-200"
               >
                 Sign In
               </button>
@@ -302,7 +306,7 @@ export default function HomePage() {
               </p>
               <button
                 onClick={() => router.push('/signup')}
-                className="bg-white text-blue-600 py-4 px-8 sm:px-12 rounded-xl font-semibold text-lg hover:bg-blue-50 transition duration-200 shadow-lg w-full sm:w-auto"
+                className="bg-white text-blue-600 py-4 px-8 sm:px-12 rounded-xl font-semibold text-lg hover:cursor-pointer hover:bg-blue-50 transition duration-200 shadow-lg w-full sm:w-auto"
               >
                 Create Your Card Now
               </button>
@@ -310,9 +314,6 @@ export default function HomePage() {
           )}
         </div>
       </main>
-
-      {/* PWA Install Prompt */}
-      <PWAInstallPrompt />
     </div>
   );
 }

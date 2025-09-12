@@ -26,6 +26,13 @@ export default function InstallAppPage() {
     if (installAvailable) {
       const result = await promptInstall();
       console.log('[UI] promptInstall result:', result);
+      // The prompt is now consumed, so we should clear the toast.
+      setShowToast(false);
+    } else {
+      // Prompt not available, so show manual instructions.
+      // You can add a toast or modal here to guide the user.
+      console.log('[UI] No prompt available. Guiding user to manual install.');
+      // For this example, we'll just log to the console.
     }
   };
 
@@ -89,17 +96,17 @@ export default function InstallAppPage() {
                 <h2 className="font-medium text-gray-900 mb-2">Install on Android</h2>
               </div>
               
-
-  <button 
-    onClick={onInstallClick} 
-    className="w-full bg-green-600 hover:cursor-pointer text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 active:bg-green-800 transition-colors duration-200" 
-  >
-    Install PWA
-  </button>
-
-
+              <button 
+                onClick={onInstallClick} 
+                className={`w-full text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200 ${
+                  installAvailable ? 'bg-green-600 hover:bg-green-700 active:bg-green-800' : 'bg-gray-400 cursor-not-allowed'
+                }`}
+                disabled={!installAvailable}
+              >
+                {installAvailable ? 'Install PWA' : 'Installer Not Available'}
+              </button>
               
-              <p className="text-xs text-gray-500 mt-2 text-center">If this button doesn't trigger an installer: open browser menu (⋮) → Add to Home screen</p>
+              <p className="text-xs text-gray-500 mt-2 text-center">If the button is disabled: open your browser menu (⋮) and tap 'Add to Home screen'.</p>
             </div>
           )}
 
@@ -113,7 +120,7 @@ export default function InstallAppPage() {
               <div className="bg-blue-50 rounded-lg p-4 mb-4">
                 <button 
                   onClick={onIOSAdd} 
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 active:bg-blue-800 transition-colors duration-200" // Added active:bg-blue-800 and transition-colors
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 active:bg-blue-800 transition-colors duration-200"
                 >
                   Add to Home Screen
                 </button>
@@ -164,17 +171,17 @@ export default function InstallAppPage() {
                 <h2 className="font-medium text-gray-900 mb-2">Install on Desktop</h2>
               </div>
               
-             
-  <button 
-    onClick={onInstallClick} 
-    className="w-full bg-green-600 hover:cursor-pointer text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 active:bg-green-800 transition-colors duration-200" 
-  >
-    Install PWA
-  </button>
-
-
+              <button 
+                onClick={onInstallClick} 
+                className={`w-full text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200 ${
+                  installAvailable ? 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800' : 'bg-gray-400 cursor-not-allowed'
+                }`}
+                disabled={!installAvailable}
+              >
+                {installAvailable ? 'Install PWA' : 'Installer Not Available'}
+              </button>
               
-              <p className="text-xs text-gray-500 mt-2 text-center">If the button doesn't work: look for an install icon in the address bar or browser menu.</p>
+              <p className="text-xs text-gray-500 mt-2 text-center">If the button is disabled: look for an install icon in the address bar or browser menu.</p>
             </div>
           )}
 

@@ -207,7 +207,7 @@ const SignUp = () => {
               
               {/* Step 1: Personal Information */}
               {currentStep === 1 && (
-                <div className="space-y-4 animate-fadeIn">
+                <div className="space-y-4 animate-fadeIn text-gray-600">
                   
                   {/* Name Fields */}
                   <div className="grid grid-cols-2 gap-3">
@@ -328,7 +328,7 @@ const SignUp = () => {
 
               {/* Step 2: Security */}
               {currentStep === 2 && (
-                <div className="space-y-4 animate-fadeIn">
+                <div className="space-y-4 animate-fadeIn text-gray-600">
                   
                   {/* Password */}
                   <div>
