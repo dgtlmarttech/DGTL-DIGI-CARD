@@ -89,14 +89,14 @@ export default function InstallAppPage() {
                 <h2 className="font-medium text-gray-900 mb-2">Install on Android</h2>
               </div>
               
-              {installAvailable && (
+
   <button 
     onClick={onInstallClick} 
     className="w-full bg-green-600 hover:cursor-pointer text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 active:bg-green-800 transition-colors duration-200" 
   >
     Install PWA
   </button>
-)}
+
 
               
               <p className="text-xs text-gray-500 mt-2 text-center">If this button doesn't trigger an installer: open browser menu (⋮) → Add to Home screen</p>
@@ -164,14 +164,14 @@ export default function InstallAppPage() {
                 <h2 className="font-medium text-gray-900 mb-2">Install on Desktop</h2>
               </div>
               
-              {installAvailable && (
+             
   <button 
     onClick={onInstallClick} 
     className="w-full bg-green-600 hover:cursor-pointer text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 active:bg-green-800 transition-colors duration-200" 
   >
     Install PWA
   </button>
-)}
+
 
               
               <p className="text-xs text-gray-500 mt-2 text-center">If the button doesn't work: look for an install icon in the address bar or browser menu.</p>
