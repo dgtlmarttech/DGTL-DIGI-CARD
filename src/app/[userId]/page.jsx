@@ -14,18 +14,6 @@ import ContactCard6 from "../../components/template/card6";
 import { getAdBannerSettings } from "../../services/adService";
 import Head from "next/head";
 
-// Add robots meta tag to prevent indexing
-export const metadata = {
-  robots: {
-    index: false,
-    follow: false,
-    noarchive: true,
-    nosnippet: true,
-    noimageindex: true,
-    nocache: true,
-  },
-};
-
 function PWAInstallBanner() {
   const [showBanner, setShowBanner] = useState(false);
   const router = useRouter();
@@ -172,14 +160,16 @@ export default function LiveCardPage() {
 
   return (
     <>
-      {/* Add robots meta tag using Head component */}
+      {/* Add robots meta tag to prevent search engine indexing */}
       <Head>
         <meta name="robots" content="noindex, nofollow" />
         <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
-        <title>{pageUserInfo.firstName && pageUserInfo.lastName ? 
-          `${pageUserInfo.firstName} ${pageUserInfo.lastName} - Digital Business Card` : 
-          'Digital Business Card'
-        }</title>
+        <title>
+          {pageUserInfo.firstName && pageUserInfo.lastName 
+            ? `${pageUserInfo.firstName} ${pageUserInfo.lastName} - Digital Business Card` 
+            : 'Digital Business Card'
+          }
+        </title>
       </Head>
 
       <div className={`min-h-screen ${pageUserInfo.effectiveIsPremium ? "bg-gradient-to-br from-purple-50 to-blue-50" : "bg-gray-50"}`}>
@@ -194,6 +184,7 @@ export default function LiveCardPage() {
             >
               Visit Dashboard
             </button>
+            
           </div>
         )}
         <div className="container mx-auto">{renderCard()}</div>
