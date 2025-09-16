@@ -6,6 +6,13 @@ import {
     sendEmailVerification ,
     fetchSignInMethodsForEmail,
   } from "firebase/auth";
+  // for gooogle login
+  import { 
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult
+} from "firebase/auth";
   import { 
     collection, doc, getDoc, getDocs, query, setDoc, where, updateDoc 
   } from "firebase/firestore";
@@ -29,15 +36,86 @@ const getActionCodeSettings = () => {
 };
   
   const signInUsingEmailPassword = async (email, password) => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      console.log("Signed in successfully");
-    } catch (e) {
-      console.log("signInUsingEmailPassword error ", e);
-      alert(emailAuthException(e.code));
-    }
-  };
+  try {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    console.log("Signed in successfully");
+    return result;
+  } catch (error) {
+    console.error("signInUsingEmailPassword error:", error);
+    throw new Error(emailAuthException(error.code));
+  }
+};
   
+  // Enhanced Google Sign-In Implementation
+const signInWithGoogle = async () => {
+  try {
+    const provider = new GoogleAuthProvider();
+    
+    // Add custom parameters for better UX
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
+
+    // Use popup for desktop, redirect for mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    let result;
+    if (isMobile) {
+      await signInWithRedirect(auth, provider);
+      result = await getRedirectResult(auth);
+    } else {
+      result = await signInWithPopup(auth, provider);
+    }
+
+    if (!result || !result.user) {
+      throw new Error('Google sign in failed');
+    }
+
+    const user = result.user;
+    
+    // Check if user exists in Firestore
+    const userDocRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userDocRef);
+    
+    if (!userDoc.exists()) {
+      // Create new user document for Google sign-in
+      const [firstName, lastName] = (user.displayName || 'User Name').split(' ');
+      const customUID = `${firstName || 'User'}_${lastName || 'Name'}_${Math.floor(1000 + Math.random() * 9000)}`;
+      
+      await setDoc(userDocRef, {
+        uid: user.uid,
+        customUID: customUID,
+        firstName: firstName || 'User',
+        lastName: lastName || 'Name',
+        email: user.email,
+        mobile: user.phoneNumber || "",
+        profilePicture: user.photoURL || "",
+        authProvider: 'google',
+        emailVerified: user.emailVerified,
+        // Business fields with default empty values
+        businessName: "",
+        website: "",
+        address: "",
+        about: "",
+        // Profile completion status
+        profileCompleted: false,
+        businessInfoCompleted: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+
+      await sendWelcomeEmail(user.email, `${firstName} ${lastName}`, customUID);
+    }
+
+    console.log("Google sign-in successful:", user.uid);
+    return user;
+  } catch (error) {
+    console.error("Google sign-in error:", error);
+    throw new Error(emailAuthException(error.code));
+  }
+};
+
+
   const signUpUsingEmailPassword = async (data) => {
   try {
     const { firstName, lastName, password, confirmPassword, ...userData } = data;
@@ -280,17 +358,18 @@ const checkEmailExists = async (email) => {
      Exports
   ---------------------------------------------------------------------*/
   export {
-    blockUser,
-    getAllUsers,
-    unblockUser,
-    signInUsingEmailPassword, 
-    signUpUsingEmailPassword, 
-    resetPasswordUsingEmail,
-    sendEmailVerificationLink,
-    signOutUser,
-    getUserData,
-    updateUserData,
-    updateUserPaymentStatus,
-    checkEmailExists
-  };
+  signInWithGoogle,
+  signInUsingEmailPassword,
+  signUpUsingEmailPassword,
+  resetPasswordUsingEmail,
+  sendEmailVerificationLink,
+  signOutUser,
+  getUserData,
+  updateUserData,
+  updateUserPaymentStatus,
+  checkEmailExists,
+  blockUser,
+  getAllUsers,
+  unblockUser
+};
   

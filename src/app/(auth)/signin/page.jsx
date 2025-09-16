@@ -1,55 +1,70 @@
+// app/signin/page.jsx
 'use client';
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { auth } from "../../../firebase/firebase";
-import { useRouter } from "next/navigation"; // Use Next.js router for navigation
-import { signInUsingEmailPassword } from "../../../services/firebaseAuthService";
-import Link from "next/link"; // Use Next.js Link component
+import { useRouter } from "next/navigation";
+import { signInUsingEmailPassword, signInWithGoogle } from "../../../services/firebaseAuthService";
+import Link from "next/link";
 import { sendEmailVerification } from "firebase/auth";
-import { FaEye, FaEyeSlash, FaCheckCircle } from "react-icons/fa";
-// Assuming these components are correctly implemented with Tailwind
+import { FaEye, FaEyeSlash, FaCheckCircle, FaGoogle } from "react-icons/fa";
 import ProgressIndicator from "../../../components/ProgressIndicator";
 import BubbleBackground from "../../../components/BubbleBackground";
 
 const SignIn = () => {
   const router = useRouter();
-
-  // react-hook-form setup
+  
   const {
     register,
     handleSubmit,
-    watch, // We need watch to know the current value of "password"
+    watch,
     formState: { errors },
   } = useForm();
 
-  // Get the current password value to conditionally show the eye icon
   const passwordValue = watch("password", "");
   const [isLoading, setLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  document.title = "Sign In – Digital Visiting Card";
-
 
   const togglePassword = () => setPasswordVisible((v) => !v);
 
   const onSubmit = async (data) => {
     setLoading(true);
-    setErrorMessage(""); // Clear previous errors
+    setErrorMessage("");
+    
     try {
       await signInUsingEmailPassword(data.email, data.password);
+      
       const currentUser = auth.currentUser;
+      
       if (currentUser && !currentUser.emailVerified) {
         await sendEmailVerification(currentUser);
-        // Using state to display the message instead of a blocking alert()
         setErrorMessage("Email not verified. A new verification link has been sent. Please verify your email before logging in.");
         await auth.signOut();
-        setLoading(false);
         return;
       }
+      
+      router.push('/dashboard'); // Redirect to dashboard after successful login
     } catch (err) {
       setErrorMessage(err.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setErrorMessage("");
+    
+    try {
+      await signInWithGoogle();
+      
+      router.push('/dashboard');
+    } catch (err) {
+      setErrorMessage(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -57,59 +72,76 @@ const SignIn = () => {
   }
 
   return (
-    // Main page container with Tailwind styles replacing #SignInPage
-    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-blue-500 font-sans text-gray-800">
+    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 font-sans text-gray-800">
       <BubbleBackground />
 
-      {/* Wrapper grid replacing .signin-container */}
-      <div className="relative z-10 mx-4 grid w-full max-w-5xl overflow-hidden rounded-xl bg-white shadow-xl md:grid-cols-2">
-        {/* Left Promo Panel replacing .signin-left */}
-        <aside className="hidden flex-col items-center p-8 text-center text-white md:flex" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%)' }}>
+      <div className="relative z-10 mx-4 grid w-full max-w-5xl overflow-hidden rounded-xl bg-white/95 backdrop-blur-sm shadow-2xl md:grid-cols-2">
+        {/* Left Promo Panel */}
+        <aside className="hidden flex-col items-center justify-center p-8 text-center text-white md:flex bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700">
           <img
             src="/form.jpg"
             alt="Digital Card Preview"
-            // Replaced .signin-preview-img with Tailwind classes
             className="mb-8 w-48 rounded-lg shadow-lg"
           />
-          {/* Replaced .signin-left h1 with Tailwind classes */}
           <h1 className="mb-6 text-3xl font-extrabold leading-tight">Welcome Back!</h1>
-          {/* Replaced .signin-features with Tailwind classes */}
-          <ul className="mb-4 list-none p-0">
-            <li className="my-3 flex items-center text-lg font-medium">
-              {/* Replaced .signin-features svg with Tailwind classes */}
-              <FaCheckCircle className="mr-3 text-2xl text-green-400" /> Access Your Digital Card Instantly
+          <ul className="mb-4 space-y-3">
+            <li className="flex items-center text-lg font-medium">
+              <FaCheckCircle className="mr-3 text-2xl text-green-400" />
+              Access Your Digital Card Instantly
             </li>
-            <li className="my-3 flex items-center text-lg font-medium">
-              <FaCheckCircle className="mr-3 text-2xl text-green-400" /> Share with Anyone, Anywhere
+            <li className="flex items-center text-lg font-medium">
+              <FaCheckCircle className="mr-3 text-2xl text-green-400" />
+              Share with Anyone, Anywhere
             </li>
-            <li className="my-3 flex items-center text-lg font-medium">
-              <FaCheckCircle className="mr-3 text-2xl text-green-400" /> Update Your Info in Real-Time
+            <li className="flex items-center text-lg font-medium">
+              <FaCheckCircle className="mr-3 text-2xl text-green-400" />
+              Update Your Info in Real-Time
             </li>
-            <li className="my-3 flex items-center text-lg font-medium">
-              <FaCheckCircle className="mr-3 text-2xl text-green-400" /> Track Engagement & Analytics
+            <li className="flex items-center text-lg font-medium">
+              <FaCheckCircle className="mr-3 text-2xl text-green-400" />
+              Track Engagement & Analytics
             </li>
           </ul>
         </aside>
 
-        {/* Right Form Panel replacing .signin-right */}
-        <main className="flex flex-col items-center justify-center flex-direction-column bg-white p-8">
-          {/* Replaced .signin-title with Tailwind classes */}
+        {/* Right Form Panel */}
+        <main className="flex flex-col items-center justify-center p-8 bg-white">
           <h2 className="mb-7 text-3xl font-bold text-gray-900">Sign In</h2>
-          {/* Replaced .signin-form with Tailwind classes */}
+          
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="mb-4 w-full max-w-md rounded-lg bg-red-50 border-l-4 border-red-400 p-3">
+              <p className="text-sm text-red-700">{errorMessage}</p>
+            </div>
+          )}
+
+          {/* Google Sign-In Button */}
+          <button
+            onClick={handleGoogleSignIn}
+            disabled={isLoading}
+            className="mb-6 w-full max-w-md flex items-center justify-center gap-3 px-6 py-3 bg-white border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaGoogle className="text-red-500" size={20} />
+            Continue with Google
+          </button>
+
+          {/* Divider */}
+          <div className="w-full max-w-md flex items-center mb-6">
+            <div className="flex-1 border-t border-gray-300"></div>
+            <span className="px-4 text-sm text-gray-500">or</span>
+            <div className="flex-1 border-t border-gray-300"></div>
+          </div>
+
+          {/* Email/Password Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-md" noValidate>
-            {/* Display error message here instead of a popup */}
-            {errorMessage && (
-              <div className="mb-4 rounded-lg bg-red-100 p-3 text-sm text-red-700">
-                {errorMessage}
-              </div>
-            )}
-            
-            {/* Replaced .field with Tailwind classes */}
+            {/* Email Field */}
             <div className="mb-5">
               <input
                 type="email"
                 placeholder="Email Address"
-                className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 transition duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50"
+                className={`w-full rounded-lg border-2 bg-gray-50/50 p-3 text-gray-900 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${
+                  errors.email ? 'border-red-400' : 'border-gray-300'
+                }`}
                 {...register("email", {
                   required: "Email is required",
                   pattern: {
@@ -119,25 +151,27 @@ const SignIn = () => {
                 })}
               />
               {errors.email && (
-                // Replaced .field small with Tailwind classes
                 <small className="mt-1 block text-red-500">{errors.email.message}</small>
               )}
             </div>
 
-            {/* Replaced .field .password-field with Tailwind classes */}
+            {/* Password Field */}
             <div className="relative mb-5">
               <input
                 type={passwordVisible ? "text" : "password"}
                 placeholder="Password"
-                className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 pr-10 text-gray-900 transition duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50"
+                className={`w-full rounded-lg border-2 bg-gray-50/50 p-3 pr-10 text-gray-900 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${
+                  errors.password ? 'border-red-400' : 'border-gray-300'
+                }`}
                 {...register("password", {
                   required: "Password is required",
                 })}
               />
-              {/* Render toggle icon only if user has typed at least one character */}
               {passwordValue && (
-                // Replaced .toggle-password with Tailwind classes
-                <span className="absolute inset-y-0 right-3 flex cursor-pointer items-center text-gray-500" onClick={togglePassword}>
+                <span 
+                  className="absolute inset-y-0 right-3 flex cursor-pointer items-center text-gray-500 hover:text-gray-700 transition-colors" 
+                  onClick={togglePassword}
+                >
                   {passwordVisible ? <FaEyeSlash /> : <FaEye />}
                 </span>
               )}
@@ -146,26 +180,33 @@ const SignIn = () => {
               )}
             </div>
 
-            {/* Replaced .forgot-password with Next.js Link component and Tailwind classes */}
-            <Link href="/forgot-password" className="text-right text-sm text-blue-600 hover:underline">
-              Forgot Password?
-            </Link>
-
-            {/* Replaced .login with Tailwind classes */}
-            <div className="mt-7 flex">
-              <button
-                type="submit"
-                className="w-full rounded-lg bg-blue-600 px-6 py-3 text-lg font-semibold text-white transition duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                Log In
-              </button>
+            {/* Forgot Password Link */}
+            <div className="text-right mb-5">
+              <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors">
+                Forgot Password?
+              </Link>
             </div>
 
-            {/* Replaced .signup-link with Tailwind classes */}
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-6 py-3 text-lg font-semibold text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl"
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Signing In...
+                </div>
+              ) : (
+                "Sign In"
+              )}
+            </button>
+
+            {/* Sign Up Link */}
             <p className="mt-6 text-center text-sm text-gray-600">
               Don't have an account?{" "}
-              {/* Replaced .signup-link a with Next.js Link component and Tailwind classes */}
-              <Link href="/signup" className="font-semibold text-blue-600 hover:underline">
+              <Link href="/signup" className="font-semibold text-blue-600 hover:text-blue-700 hover:underline transition-colors">
                 Sign Up
               </Link>
             </p>

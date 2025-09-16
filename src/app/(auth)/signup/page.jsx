@@ -1,11 +1,12 @@
+// app/signup/page.jsx
 'use client';
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signUpUsingEmailPassword } from "../../../services/firebaseAuthService";
+import { signUpUsingEmailPassword, signInWithGoogle } from "../../../services/firebaseAuthService";
 import { getAuth, sendEmailVerification } from "firebase/auth";
-import { FaEye, FaEyeSlash, FaUser, FaEnvelope, FaPhone, FaLock, FaArrowRight, FaArrowLeft, FaCheck } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaUser, FaEnvelope, FaPhone, FaLock, FaArrowRight, FaArrowLeft, FaCheck, FaGoogle } from "react-icons/fa";
 import ProgressIndicator from "../../../components/ProgressIndicator.jsx";
 import BubbleBackground from "../../../components/BubbleBackground.jsx";
 
@@ -71,6 +72,21 @@ const SignUp = () => {
   const handlePrevStep = () => {
     setCurrentStep(1);
     setErrorMessage("");
+  };
+
+  const handleGoogleSignUp = async () => {
+    setLoading(true);
+    setErrorMessage("");
+    
+    try {
+      await signInWithGoogle();
+      
+      router.push('/dashboard');
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const onSubmit = async (data) => {
@@ -200,6 +216,27 @@ const SignUp = () => {
               <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-400 rounded">
                 <p className="text-red-700 text-sm">{errorMessage}</p>
               </div>
+            )}
+
+            {/* Google Sign-Up Button - Only show on step 1 */}
+            {currentStep === 1 && (
+              <>
+                <button
+                  onClick={handleGoogleSignUp}
+                  disabled={isLoading}
+                  className="w-full mb-4 flex items-center justify-center gap-3 px-6 py-3 bg-white border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FaGoogle className="text-red-500" size={18} />
+                  Continue with Google
+                </button>
+
+                {/* Divider */}
+                <div className="flex items-center mb-4">
+                  <div className="flex-1 border-t border-gray-300"></div>
+                  <span className="px-3 text-sm text-gray-500">or</span>
+                  <div className="flex-1 border-t border-gray-300"></div>
+                </div>
+              </>
             )}
 
             {/* Form */}

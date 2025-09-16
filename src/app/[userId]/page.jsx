@@ -12,6 +12,19 @@ import ContactCard4 from "../../components/template/card4";
 import ContactCard5 from "../../components/template/card5";
 import ContactCard6 from "../../components/template/card6";
 import { getAdBannerSettings } from "../../services/adService";
+import Head from "next/head";
+
+// Add robots meta tag to prevent indexing
+export const metadata = {
+  robots: {
+    index: false,
+    follow: false,
+    noarchive: true,
+    nosnippet: true,
+    noimageindex: true,
+    nocache: true,
+  },
+};
 
 function PWAInstallBanner() {
   const [showBanner, setShowBanner] = useState(false);
@@ -158,21 +171,33 @@ export default function LiveCardPage() {
   if (!pageUserInfo) return null;
 
   return (
-    <div className={`min-h-screen ${pageUserInfo.effectiveIsPremium ? "bg-gradient-to-br from-purple-50 to-blue-50" : "bg-gray-50"}`}>
-      {/* PWA Install Banner - At the top */}
-      <PWAInstallBanner />
-      
-      {isCurrentUser(userId) && (
-        <div className="fixed top-4 right-4 z-50">
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:cursor-pointer hover:bg-blue-700 transition-colors duration-200"
-            onClick={() => router.push("/dashboard")}
-          >
-            Visit Dashboard
-          </button>
-        </div>
-      )}
-      <div className="container mx-auto">{renderCard()}</div>
-    </div>
+    <>
+      {/* Add robots meta tag using Head component */}
+      <Head>
+        <meta name="robots" content="noindex, nofollow" />
+        <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+        <title>{pageUserInfo.firstName && pageUserInfo.lastName ? 
+          `${pageUserInfo.firstName} ${pageUserInfo.lastName} - Digital Business Card` : 
+          'Digital Business Card'
+        }</title>
+      </Head>
+
+      <div className={`min-h-screen ${pageUserInfo.effectiveIsPremium ? "bg-gradient-to-br from-purple-50 to-blue-50" : "bg-gray-50"}`}>
+        {/* PWA Install Banner - At the top */}
+        <PWAInstallBanner />
+        
+        {isCurrentUser(userId) && (
+          <div className="fixed top-4 right-4 z-50">
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:cursor-pointer hover:bg-blue-700 transition-colors duration-200"
+              onClick={() => router.push("/dashboard")}
+            >
+              Visit Dashboard
+            </button>
+          </div>
+        )}
+        <div className="container mx-auto">{renderCard()}</div>
+      </div>
+    </>
   );
 }
