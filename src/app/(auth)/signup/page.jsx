@@ -300,7 +300,7 @@ const SignUp = () => {
                       className={`w-full px-4 py-3 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${
                         errors.email ? 'border-red-400' : 'border-gray-200'
                       }`}
-                      placeholder="john@example.com"
+                      placeholder="contact@dgtlmart.com"
                       {...register("email", {
                         required: "Email is required",
                         pattern: {
@@ -325,7 +325,7 @@ const SignUp = () => {
                       className={`w-full px-4 py-3 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${
                         errors.mobile ? 'border-red-400' : 'border-gray-200'
                       }`}
-                      placeholder="+91 8787886876"
+                      placeholder="9810559439"
                       {...register("mobile", {
                         pattern: {
                           value: /^[0-9]{6,14}$/,
