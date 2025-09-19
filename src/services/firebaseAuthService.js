@@ -92,14 +92,17 @@ const signInWithGoogle = async () => {
         profilePicture: user.photoURL || "",
         authProvider: 'google',
         emailVerified: user.emailVerified,
+        affiliateRef: userData.affiliateRef || "",
         // Business fields with default empty values
         businessName: "",
         website: "",
         address: "",
         about: "",
+        //default values
+        isPremium: false,
+        isTrialActive: true,
+        trialStartDate: new Date().toISOString(),
         // Profile completion status
-        profileCompleted: false,
-        businessInfoCompleted: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });
@@ -138,9 +141,11 @@ const signInWithGoogle = async () => {
       website: userData.website || "",
       address: userData.address || "",
       about: userData.about || "",
+      //default values
+      isPremium: false,
+      isTrialActive: true,
+      trialStartDate: new Date().toISOString(),
       // Profile completion status
-      profileCompleted: false,
-      businessInfoCompleted: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
