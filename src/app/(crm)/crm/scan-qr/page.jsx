@@ -1,33 +1,102 @@
 'use client';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRouter } from 'next/navigation';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../../../../firebase/firebase';
 import { toast, ToastContainer } from 'react-toastify';
-import Scanner from '../../../../components/Scanner'; // Make sure this path is correct
+import Scanner from '../../../../components/Scanner';
 
 const ScanQRPage = () => {
   const [user, loadingAuth] = useAuthState(auth);
   const router = useRouter();
   const [isScanning, setIsScanning] = useState(false);
   const [scannedContact, setScannedContact] = useState(null);
+  const [scannerError, setScannerError] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Refs to prevent multiple scans and errors
+  const lastScanTime = useRef(0);
+  const errorCount = useRef(0);
+  const maxErrors = useRef(5);
 
   const handleScanSuccess = useCallback(async (parsedContact) => {
-    console.log('Scanned contact:', parsedContact);
-    setScannedContact(parsedContact);
-    setIsScanning(false);
-    toast.success('QR code scanned successfully!');
-  }, []);
+    const now = Date.now();
+    
+    // Debounce: Prevent multiple scans within 2 seconds
+    if (now - lastScanTime.current < 2000) {
+      return;
+    }
+    
+    // Prevent processing if already processing
+    if (isProcessing) {
+      return;
+    }
+
+    lastScanTime.current = now;
+    setIsProcessing(true);
+
+    try {
+      // Normalize the contact data to prevent rendering errors
+      const normalizedContact = {
+        name: typeof parsedContact.name === 'string' ? parsedContact.name : '',
+        company: typeof parsedContact.company === 'string' ? parsedContact.company : '',
+        title: typeof parsedContact.title === 'string' ? parsedContact.title : '',
+        email: typeof parsedContact.email === 'string' ? parsedContact.email : '',
+        phone: typeof parsedContact.phone === 'string' ? parsedContact.phone : (parsedContact.phone ? String(parsedContact.phone) : ''),
+        notes: typeof parsedContact.notes === 'string' ? parsedContact.notes : '',
+        vcardString: typeof parsedContact.vcardString === 'string' ? parsedContact.vcardString : '',
+      };
+
+      console.log('Scanned contact:', normalizedContact);
+      setScannedContact(normalizedContact);
+      setIsScanning(false);
+      setScannerError('');
+      errorCount.current = 0; // Reset error count on success
+      toast.success('QR code scanned successfully!');
+    } catch (error) {
+      console.error('Error processing scanned contact:', error);
+      toast.error('Failed to process scanned contact');
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [isProcessing]);
 
   const handleScanError = useCallback((errorMessage) => {
-    console.error('Scanner Error:', errorMessage);
-    toast.error('Failed to scan QR code');
-    setIsScanning(false);
+    errorCount.current += 1;
+    
+    // Only show error after multiple failed attempts to avoid infinite loop
+    if (errorCount.current >= maxErrors.current) {
+      console.error('Scanner Error:', errorMessage);
+      setScannerError('Scanner having trouble finding QR codes. Please ensure good lighting and QR code is visible.');
+      setIsScanning(false);
+      errorCount.current = 0; // Reset error count
+      toast.error('Scanner stopped due to multiple errors');
+    }
+    
+    // Don't immediately stop scanning on first few errors - let it continue
   }, []);
 
   const handleScannerStopped = useCallback(() => {
     setIsScanning(false);
+    setIsProcessing(false);
+    setScannerError('');
+    errorCount.current = 0;
+  }, []);
+
+  const startScanning = useCallback(() => {
+    setScannerError('');
+    errorCount.current = 0;
+    lastScanTime.current = 0;
+    setIsProcessing(false);
+    setIsScanning(true);
+  }, []);
+
+  const stopScanning = useCallback(() => {
+    setIsScanning(false);
+    setIsProcessing(false);
+    setScannerError('');
+    errorCount.current = 0;
   }, []);
 
   const saveScannedContact = async () => {
@@ -63,6 +132,15 @@ const ScanQRPage = () => {
     }
   };
 
+  const resetScanner = useCallback(() => {
+    setScannedContact(null);
+    setScannerError('');
+    errorCount.current = 0;
+    lastScanTime.current = 0;
+    setIsProcessing(false);
+    setIsScanning(false);
+  }, []);
+
   if (loadingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -92,16 +170,24 @@ const ScanQRPage = () => {
             <h2 className="text-xl font-semibold mb-2">QR Code Scanner</h2>
             <p className="text-gray-600 mb-6">Position a vCard QR code in front of your camera</p>
             
+            {/* Scanner Error Display */}
+            {scannerError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {scannerError}
+              </div>
+            )}
+            
             {!isScanning ? (
               <button
-                onClick={() => setIsScanning(true)}
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 text-lg font-semibold"
+                onClick={startScanning}
+                disabled={isProcessing}
+                className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Start Scanning
+                {isProcessing ? 'Processing...' : 'Start Scanning'}
               </button>
             ) : (
               <button
-                onClick={() => setIsScanning(false)}
+                onClick={stopScanning}
                 className="bg-red-600 text-white px-8 py-3 rounded-lg hover:bg-red-700 text-lg font-semibold"
               >
                 Stop Scanning
@@ -112,7 +198,7 @@ const ScanQRPage = () => {
           {isScanning && (
             <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
               <Scanner
-                isActive={isScanning}
+                isActive={isScanning && !isProcessing}
                 onScanSuccess={handleScanSuccess}
                 onScanError={handleScanError}
                 onScannerStopped={handleScannerStopped}
@@ -129,6 +215,7 @@ const ScanQRPage = () => {
               <li>• Keep the QR code centered in the camera view</li>
               <li>• Make sure the QR code is not damaged or blurry</li>
               <li>• Allow camera permissions when prompted</li>
+              <li>• Wait 2-3 seconds after camera opens before scanning</li>
             </ul>
           </div>
         </div>
@@ -141,27 +228,37 @@ const ScanQRPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-              <div className="p-3 bg-gray-50 rounded-lg">{scannedContact.name || 'N/A'}</div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                {(typeof scannedContact.name === 'string' && scannedContact.name.trim()) || 'N/A'}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
-              <div className="p-3 bg-gray-50 rounded-lg">{scannedContact.company || 'N/A'}</div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                {(typeof scannedContact.company === 'string' && scannedContact.company.trim()) || 'N/A'}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-              <div className="p-3 bg-gray-50 rounded-lg">{scannedContact.title || 'N/A'}</div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                {(typeof scannedContact.title === 'string' && scannedContact.title.trim()) || 'N/A'}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <div className="p-3 bg-gray-50 rounded-lg">{scannedContact.email || 'N/A'}</div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                {(typeof scannedContact.email === 'string' && scannedContact.email.trim()) || 'N/A'}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-              <div className="p-3 bg-gray-50 rounded-lg">{scannedContact.phone || 'N/A'}</div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                {(typeof scannedContact.phone === 'string' && scannedContact.phone.trim()) || 'N/A'}
+              </div>
             </div>
           </div>
           
-          {scannedContact.notes && (
+          {scannedContact.notes && typeof scannedContact.notes === 'string' && scannedContact.notes.trim() && (
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
               <div className="p-3 bg-gray-50 rounded-lg">{scannedContact.notes}</div>
@@ -176,10 +273,7 @@ const ScanQRPage = () => {
               Save Contact
             </button>
             <button
-              onClick={() => {
-                setScannedContact(null);
-                setIsScanning(false);
-              }}
+              onClick={resetScanner}
               className="bg-gray-600 text-white px-8 py-3 rounded-lg hover:bg-gray-700 font-semibold"
             >
               Scan Another
