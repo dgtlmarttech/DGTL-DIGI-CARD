@@ -384,6 +384,7 @@ const checkEmailExists = async (email) => {
   ---------------------------------------------------------------------*/
   export {
   signInWithGoogle,
+  handleRedirectResult,
   signInUsingEmailPassword,
   signUpUsingEmailPassword,
   resetPasswordUsingEmail,

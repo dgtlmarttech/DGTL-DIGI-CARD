@@ -1,10 +1,13 @@
-// app/signin/page.jsx
 'use client';
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { auth } from "../../../firebase/firebase";
 import { useRouter } from "next/navigation";
-import { signInUsingEmailPassword, signInWithGoogle } from "../../../services/firebaseAuthService";
+import { 
+  signInUsingEmailPassword, 
+  signInWithGoogle, 
+  handleRedirectResult 
+} from "../../../services/firebaseAuthService";
 import Link from "next/link";
 import { sendEmailVerification } from "firebase/auth";
 import { FaEye, FaEyeSlash, FaCheckCircle, FaGoogle } from "react-icons/fa";
@@ -13,21 +16,39 @@ import BubbleBackground from "../../../components/BubbleBackground";
 
 const SignIn = () => {
   const router = useRouter();
-  
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors },
   } = useForm();
-
+  
   const passwordValue = watch("password", "");
   const [isLoading, setLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const togglePassword = () => setPasswordVisible((v) => !v);
+  // Handle redirect result on page load
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      try {
+        setLoading(true);
+        const user = await handleRedirectResult();
+        if (user) {
+          router.push('/dashboard');
+        }
+      } catch (err) {
+        setErrorMessage(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    checkRedirectResult();
+  }, [router]);
+
+  const togglePassword = () => setPasswordVisible((v) => !v);
+  
   const onSubmit = async (data) => {
     setLoading(true);
     setErrorMessage("");
@@ -44,25 +65,28 @@ const SignIn = () => {
         return;
       }
       
-      router.push('/dashboard'); // Redirect to dashboard after successful login
+      router.push('/dashboard');
     } catch (err) {
       setErrorMessage(err.message);
     } finally {
       setLoading(false);
     }
   };
-
+  
   const handleGoogleSignIn = async () => {
     setLoading(true);
     setErrorMessage("");
     
     try {
-      await signInWithGoogle();
+      const result = await signInWithGoogle();
       
-      router.push('/dashboard');
+      // If it's desktop (popup), we get result immediately
+      if (result) {
+        router.push('/dashboard');
+      }
+      // If it's mobile (redirect), the page will redirect and useEffect will handle the result
     } catch (err) {
       setErrorMessage(err.message);
-    } finally {
       setLoading(false);
     }
   };
@@ -74,7 +98,6 @@ const SignIn = () => {
   return (
     <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 font-sans text-gray-800">
       <BubbleBackground />
-
       <div className="relative z-10 mx-4 grid w-full max-w-5xl overflow-hidden rounded-xl bg-white/95 backdrop-blur-sm shadow-2xl md:grid-cols-2">
         {/* Left Promo Panel */}
         <aside className="hidden flex-col items-center justify-center p-8 text-center text-white md:flex bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700">
@@ -103,7 +126,7 @@ const SignIn = () => {
             </li>
           </ul>
         </aside>
-
+        
         {/* Right Form Panel */}
         <main className="flex flex-col items-center justify-center p-8 bg-white">
           <h2 className="mb-7 text-3xl font-bold text-gray-900">Sign In</h2>
@@ -114,7 +137,7 @@ const SignIn = () => {
               <p className="text-sm text-red-700">{errorMessage}</p>
             </div>
           )}
-
+          
           {/* Google Sign-In Button */}
           <button
             onClick={handleGoogleSignIn}
@@ -124,7 +147,8 @@ const SignIn = () => {
             <FaGoogle className="text-red-500" size={20} />
             Continue with Google
           </button>
-
+          
+          {/* Rest of the component remains the same */}
           {/* Divider */}
           <div className="w-full max-w-md flex items-center mb-6">
             <div className="flex-1 border-t border-gray-300"></div>
