@@ -28,7 +28,7 @@ const SignIn = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Handle redirect result on page load
+  // Handle redirect result on page load (for fallback cases)
   useEffect(() => {
     const checkRedirectResult = async () => {
       try {
@@ -80,11 +80,12 @@ const SignIn = () => {
     try {
       const result = await signInWithGoogle();
       
-      // If it's desktop (popup), we get result immediately
+      // If we get a result (popup worked), redirect to dashboard
       if (result) {
         router.push('/dashboard');
       }
-      // If it's mobile (redirect), the page will redirect and useEffect will handle the result
+      // If no result, it means redirect was triggered, so don't set loading to false
+      // The useEffect will handle the redirect result
     } catch (err) {
       setErrorMessage(err.message);
       setLoading(false);

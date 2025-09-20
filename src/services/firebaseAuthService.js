@@ -46,7 +46,7 @@ const getActionCodeSettings = () => {
   }
 };
   
-// Enhanced Google Sign-In Implementation
+// Enhanced Google Sign-In Implementation with proper fallback
 const signInWithGoogle = async () => {
   try {
     const provider = new GoogleAuthProvider();
@@ -56,31 +56,41 @@ const signInWithGoogle = async () => {
       prompt: 'select_account'
     });
 
-    // Use popup for desktop, redirect for mobile
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // Always try popup first - it works on mobile browsers too
+    try {
+      const result = await signInWithPopup(auth, provider);
+      
+      if (!result || !result.user) {
+        throw new Error('Google sign in failed');
+      }
+
+      console.log("Popup sign-in successful:", result.user.uid);
+      return await processGoogleUser(result.user);
+      
+    } catch (popupError) {
+      // If popup fails with specific errors, fallback to redirect
+      if (popupError.code === 'auth/popup-blocked' || 
+          popupError.code === 'auth/popup-closed-by-user' ||
+          popupError.code === 'auth/cancelled-popup-request') {
+        
+        console.log("Popup blocked, falling back to redirect:", popupError.code);
+        
+        // Fallback to redirect
+        await signInWithRedirect(auth, provider);
+        return; // Don't continue processing here for redirect
+      }
+      
+      // Re-throw other errors
+      throw popupError;
+    }
     
-    let result;
-    if (isMobile) {
-      // For mobile: just trigger redirect - result will be handled on page load
-      await signInWithRedirect(auth, provider);
-      return; // Don't continue processing here
-    } else {
-      // For desktop: use popup
-      result = await signInWithPopup(auth, provider);
-    }
-
-    if (!result || !result.user) {
-      throw new Error('Google sign in failed');
-    }
-
-    return await processGoogleUser(result.user);
   } catch (error) {
     console.error("Google sign-in error:", error);
     throw new Error(emailAuthException(error.code));
   }
 };
 
-// Separate function to handle redirect result
+// Keep the redirect result handler
 const handleRedirectResult = async () => {
   try {
     const result = await getRedirectResult(auth);
@@ -136,7 +146,6 @@ const processGoogleUser = async (user) => {
 
   return user;
 };
-
 
 
   const signUpUsingEmailPassword = async (data) => {
@@ -269,24 +278,33 @@ const processGoogleUser = async (user) => {
     }
   };
   
-  const emailAuthException = (code) => {
-    switch (code) {
-      case 'auth/user-not-found':
-        return 'User does not exist with this email';
-      case 'auth/wrong-password':
-        return 'Invalid e-mail/password';
-      case 'auth/invalid-email':
-        return 'Enter a valid e-mail';
-      case 'auth/email-already-in-use':
-        return 'User already exist with this email';
-      case 'auth/weak-password':
-        return 'Password entered is too weak.';
-      case 'auth/too-many-requests':
-        return 'Requests are blocked from this device due to unusual activity. Try again after some time';
-      default:
-        return 'Something went wrong';
-    }
-  };
+  // Enhanced error handling for auth exceptions
+const emailAuthException = (code) => {
+  switch (code) {
+    case 'auth/user-not-found':
+      return 'User does not exist with this email';
+    case 'auth/wrong-password':
+      return 'Invalid e-mail/password';
+    case 'auth/invalid-email':
+      return 'Enter a valid e-mail';
+    case 'auth/email-already-in-use':
+      return 'User already exist with this email';
+    case 'auth/weak-password':
+      return 'Password entered is too weak.';
+    case 'auth/too-many-requests':
+      return 'Requests are blocked from this device due to unusual activity. Try again after some time';
+    case 'auth/popup-blocked':
+      return 'Sign-in popup was blocked. Please allow popups for this site.';
+    case 'auth/popup-closed-by-user':
+      return 'Sign-in was cancelled. Please try again.';
+    case 'auth/cancelled-popup-request':
+      return 'Another sign-in popup is already open.';
+    case 'auth/operation-not-supported-in-this-environment':
+      return 'This operation is not supported in the current environment.';
+    default:
+      return 'Something went wrong during authentication';
+  }
+};
   
   const updateUserPaymentStatus = async (userId, paymentData) => {
     try {
