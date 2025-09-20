@@ -7,8 +7,6 @@ export async function POST(req) {
   const key = process.env.RAZORPAY_KEY.trim();
   const secret = process.env.RAZORPAY_SECRET.trim();
 
-  console.log(key,secret);
-
   try {
     const amount = Number(body.amount * 100); // Convert to paise
     const data = {

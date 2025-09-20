@@ -46,7 +46,7 @@ const getActionCodeSettings = () => {
   }
 };
   
-  // Enhanced Google Sign-In Implementation
+// Enhanced Google Sign-In Implementation
 const signInWithGoogle = async () => {
   try {
     const provider = new GoogleAuthProvider();
@@ -61,9 +61,11 @@ const signInWithGoogle = async () => {
     
     let result;
     if (isMobile) {
+      // For mobile: just trigger redirect - result will be handled on page load
       await signInWithRedirect(auth, provider);
-      result = await getRedirectResult(auth);
+      return; // Don't continue processing here
     } else {
+      // For desktop: use popup
       result = await signInWithPopup(auth, provider);
     }
 
@@ -71,52 +73,70 @@ const signInWithGoogle = async () => {
       throw new Error('Google sign in failed');
     }
 
-    const user = result.user;
-    
-    // Check if user exists in Firestore
-    const userDocRef = doc(db, "users", user.uid);
-    const userDoc = await getDoc(userDocRef);
-    
-    if (!userDoc.exists()) {
-      // Create new user document for Google sign-in
-      const [firstName, lastName] = (user.displayName || 'User Name').split(' ');
-      const customUID = `${firstName || 'User'}_${lastName || 'Name'}_${Math.floor(1000 + Math.random() * 9000)}`;
-      
-      await setDoc(userDocRef, {
-        uid: user.uid,
-        customUID: customUID,
-        firstName: firstName || 'User',
-        lastName: lastName || 'Name',
-        email: user.email,
-        mobile: user.phoneNumber || "",
-        profilePicture: user.photoURL || "",
-        authProvider: 'google',
-        emailVerified: user.emailVerified,
-        affiliateRef: userData.affiliateRef || "",
-        // Business fields with default empty values
-        businessName: "",
-        website: "",
-        address: "",
-        about: "",
-        //default values
-        isPremium: false,
-        isTrialActive: true,
-        trialStartDate: new Date().toISOString(),
-        // Profile completion status
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
-
-      await sendWelcomeEmail(user.email, `${firstName} ${lastName}`, customUID);
-    }
-
-    console.log("Google sign-in successful:", user.uid);
-    return user;
+    return await processGoogleUser(result.user);
   } catch (error) {
     console.error("Google sign-in error:", error);
     throw new Error(emailAuthException(error.code));
   }
 };
+
+// Separate function to handle redirect result
+const handleRedirectResult = async () => {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result && result.user) {
+      console.log("Redirect sign-in successful:", result.user.uid);
+      return await processGoogleUser(result.user);
+    }
+    return null;
+  } catch (error) {
+    console.error("Error handling redirect result:", error);
+    throw new Error(emailAuthException(error.code));
+  }
+};
+
+// Extract common user processing logic
+const processGoogleUser = async (user) => {
+  // Check if user exists in Firestore
+  const userDocRef = doc(db, "users", user.uid);
+  const userDoc = await getDoc(userDocRef);
+  
+  if (!userDoc.exists()) {
+    // Create new user document for Google sign-in
+    const [firstName, lastName] = (user.displayName || 'User Name').split(' ');
+    const customUID = `${firstName || 'User'}_${lastName || 'Name'}_${Math.floor(1000 + Math.random() * 9000)}`;
+    
+    await setDoc(userDocRef, {
+      uid: user.uid,
+      customUID: customUID,
+      firstName: firstName || 'User',
+      lastName: lastName || 'Name',
+      email: user.email,
+      mobile: user.phoneNumber || "",
+      profilePicture: user.photoURL || "",
+      authProvider: 'google',
+      emailVerified: user.emailVerified,
+      affiliateRef: "",
+      // Business fields with default empty values
+      businessName: "",
+      website: "",
+      address: "",
+      about: "",
+      //default values
+      isPremium: false,
+      isTrialActive: true,
+      trialStartDate: new Date().toISOString(),
+      // Profile completion status
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+
+    await sendWelcomeEmail(user.email, `${firstName} ${lastName}`, customUID);
+  }
+
+  return user;
+};
+
 
 
   const signUpUsingEmailPassword = async (data) => {

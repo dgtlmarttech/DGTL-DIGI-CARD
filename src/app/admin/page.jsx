@@ -19,7 +19,7 @@ const checkAdminPrivileges = async (user) => {
   }
   try {
     const idTokenResult = await user.getIdTokenResult();
-    console.log("Admin Claim:", idTokenResult.claims.admin);
+    // console.log("Admin Claim:", idTokenResult.claims.admin);
     return idTokenResult.claims.admin === true;
   } catch (error) {
     console.error("Error getting ID token result:", error);
