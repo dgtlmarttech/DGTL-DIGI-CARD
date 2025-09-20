@@ -135,7 +135,7 @@ export default function LiveCardPage() {
       setAdSettings(settings);
     })();
   }, []);
-
+ 
   const renderCard = () => {
     const data = pageUserInfo;
     if (!data) return null;
@@ -145,9 +145,9 @@ export default function LiveCardPage() {
       case "style1": return <ContactCard {...props} />;
       case "style2": return <ContactCard2 {...props} />;
       case "style3": return <ContactCard3 {...props} />;
-      case "style4": return <ContactCard4 {...props} />;
-      case "style5": return <ContactCard5 {...props} />;
-      case "style6": return <ContactCard6 {...props} />;
+      // case "style4": return <ContactCard4 {...props} />;
+      // case "style5": return <ContactCard5 {...props} />;
+      // case "style6": return <ContactCard6 {...props} />;
       default: return <DigitalCard {...props} />;
     }
   };

@@ -181,7 +181,7 @@ const processGoogleUser = async (user) => {
 
     await sendWelcomeEmail(data.email, `${firstName} ${lastName}`, customUID);
 
-    console.log("User registered with Firebase UID:", user.uid, " and Custom UID:", customUID);
+
   } catch (e) {
     console.error("signUpUsingEmailPassword error:", e.message);
     throw new Error(emailAuthException(e.code));
@@ -221,7 +221,6 @@ const processGoogleUser = async (user) => {
   
   const getUserData = async (userId) => {
     try {
-      console.log('test',userId);
       let userDocRef = doc(db, "users", userId);
       let docSnapshot = await getDoc(userDocRef);
   
