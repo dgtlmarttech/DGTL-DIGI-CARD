@@ -1,4 +1,4 @@
-// app/dashboard/appearance/page.js
+// app/dashboard/appearance/page.js 
 'use client';
 
 import React, { useState, useEffect } from 'react';

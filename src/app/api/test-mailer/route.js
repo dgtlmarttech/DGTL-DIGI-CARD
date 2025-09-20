@@ -1,4 +1,4 @@
-// /app/api/test-mailer/route.js
+// /app/api/test-mailer/route.js 
 import { NextResponse } from 'next/server';
 import { SendMailClient } from 'zeptomail';
 import getEmailTemplate from '../../../utils/mail_template';
