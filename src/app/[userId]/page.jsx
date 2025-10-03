@@ -187,6 +187,17 @@ export default function LiveCardPage() {
             
           </div>
         )}
+        {!isCurrentUser(userId) && (
+  <div className="fixed top-4 right-4 z-50">
+    <button
+      className="bg-gray-200 text-gray-800 p-2 rounded-full hover:bg-gray-300 transition-colors duration-200"
+      onClick={() => router.push("/signin")} // or /signup if you prefer
+      aria-label="Login or Signup"
+    >
+      ⚙️
+    </button>
+  </div>
+)}
         <div className="container mx-auto">{renderCard()}</div>
       </div>
     </>
