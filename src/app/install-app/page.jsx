@@ -1,4 +1,3 @@
-// File: InstallAppPage.tsx
 "use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -21,7 +20,7 @@ export default function InstallAppPage() {
     if (!installAvailable) setShowToast(false);
   }, [installAvailable]);
 
-  const onInstallClick = async (e: React.MouseEvent) => {
+  const onInstallClick = async (e) => {
     e.preventDefault();
     if (installAvailable) {
       const result = await promptInstall();
@@ -30,16 +29,14 @@ export default function InstallAppPage() {
       setShowToast(false);
     } else {
       // Prompt not available, so show manual instructions.
-      // You can add a toast or modal here to guide the user.
       console.log('[UI] No prompt available. Guiding user to manual install.');
-      // For this example, we'll just log to the console.
     }
   };
 
   const onIOSAdd = async () => {
-    if (typeof window !== "undefined" && canShare && typeof (navigator as any).share === "function") {
+    if (typeof window !== "undefined" && canShare && typeof navigator.share === "function") {
       try {
-        await (navigator as any).share({
+        await navigator.share({
           title: "DgtlDigiCard - Digital Business Cards",
           text: "Add DgtlDigiCard to your home screen for quick access!",
           url: window.location.href,

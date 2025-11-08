@@ -86,15 +86,21 @@ function PWAInstallBanner() {
 function HeaderInstallButton() {
   const [canInstall, setCanInstall] = useState(false);
   const router = useRouter();
+  const { isAuthenticated } = useUser(); // Add this line
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setCanInstall(false);
+      return;
+    }
+
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
                        window.navigator.standalone;
     
     if (!isStandalone) {
       setCanInstall(true);
     }
-  }, []);
+  }, [isAuthenticated]); // Add to dependency array
 
   if (!canInstall) return null;
 
@@ -108,6 +114,7 @@ function HeaderInstallButton() {
     </button>
   );
 }
+
 
 export default function HomePage() {
   const router = useRouter();
