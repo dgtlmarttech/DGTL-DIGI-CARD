@@ -63,7 +63,11 @@ const SignUp = () => {
     setErrorMessage("");
     const step1Fields = ["firstName", "lastName", "email", "mobile"];
     const isStep1Valid = await trigger(step1Fields);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
     if (isStep1Valid) {
       setCurrentStep(2);
     }
@@ -77,10 +81,17 @@ const SignUp = () => {
   const handleGoogleSignUp = async () => {
     setLoading(true);
     setErrorMessage("");
+<<<<<<< HEAD
 
     try {
       await signInWithGoogle();
 
+=======
+    
+    try {
+      await signInWithGoogle();
+      
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
       router.push('/dashboard');
     } catch (error) {
       setErrorMessage(error.message);
@@ -113,8 +124,12 @@ const SignUp = () => {
       if (currentUser) {
         await sendEmailVerification(currentUser);
         await auth.signOut();
+<<<<<<< HEAD
         alert("Account created successfully! Please check your email inbox (and spam folder) to verify your account before logging in.");
         router.push("/signin");
+=======
+        router.push("/successful-signup");
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
       }
     } catch (error) {
       setErrorMessage(error.message);
@@ -129,12 +144,21 @@ const SignUp = () => {
   }
 
   return (
+<<<<<<< HEAD
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-4 lg:p-8">
       <BubbleBackground />
 
       {/* Main Container */}
       <div className="relative z-10 w-full max-w-6xl min-h-[90vh] grid lg:grid-cols-2 bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-visible">
 
+=======
+    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-2 overflow-hidden">
+      <BubbleBackground />
+      
+      {/* Main Container */}
+      <div className="relative z-10 w-full max-w-6xl h-[95vh] grid lg:grid-cols-2 bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
+        
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
         {/* Left Panel - Brand Side */}
         <div className="hidden lg:flex flex-col justify-center items-center p-8 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white relative">
           <div className="text-center max-w-sm">
@@ -143,7 +167,11 @@ const SignUp = () => {
               alt="Digital Card Preview"
               className="w-40 h-28 object-cover rounded-xl shadow-xl mx-auto mb-6"
             />
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
             <h1 className="text-3xl font-bold mb-4 leading-tight">
               Create Your Digital
               <span className="block text-yellow-300">Business Card</span>
@@ -151,6 +179,7 @@ const SignUp = () => {
 
             {/* Step Indicator */}
             <div className="flex justify-center items-center mb-6 space-x-4">
+<<<<<<< HEAD
               <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${currentStep >= 1 ? 'bg-white text-blue-600 border-white' : 'border-white/50 text-white/50'
                 }`}>
                 {currentStep > 1 ? <FaCheck size={16} /> : '1'}
@@ -159,6 +188,19 @@ const SignUp = () => {
                 }`}></div>
               <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${currentStep >= 2 ? 'bg-white text-blue-600 border-white' : 'border-white/50 text-white/50'
                 }`}>
+=======
+              <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${
+                currentStep >= 1 ? 'bg-white text-blue-600 border-white' : 'border-white/50 text-white/50'
+              }`}>
+                {currentStep > 1 ? <FaCheck size={16} /> : '1'}
+              </div>
+              <div className={`w-8 h-1 rounded transition-all duration-300 ${
+                currentStep >= 2 ? 'bg-white' : 'bg-white/30'
+              }`}></div>
+              <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${
+                currentStep >= 2 ? 'bg-white text-blue-600 border-white' : 'border-white/50 text-white/50'
+              }`}>
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                 2
               </div>
             </div>
@@ -171,7 +213,11 @@ const SignUp = () => {
                 🔐 Secure Your Account
               </div>
             </div>
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
             <div className="mt-6 space-y-2 text-xs text-white/70">
               <div className="flex items-center justify-center space-x-2">
                 <span>🚀</span>
@@ -188,7 +234,11 @@ const SignUp = () => {
         {/* Right Panel - Form Side */}
         <div className="flex flex-col justify-center p-4 lg:p-8">
           <div className="w-full max-w-sm mx-auto">
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
             {/* Header */}
             <div className="text-center mb-6">
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
@@ -197,6 +247,7 @@ const SignUp = () => {
               <p className="text-gray-600">
                 {currentStep === 1 ? "Tell us about yourself" : "Create a secure password"}
               </p>
+<<<<<<< HEAD
 
               {/* Mobile Step Indicator */}
               <div className="flex justify-center items-center mt-4 lg:hidden space-x-2">
@@ -204,6 +255,17 @@ const SignUp = () => {
                   }`}></div>
                 <div className={`w-8 h-2 rounded transition-all duration-300 ${currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-200'
                   }`}></div>
+=======
+              
+              {/* Mobile Step Indicator */}
+              <div className="flex justify-center items-center mt-4 lg:hidden space-x-2">
+                <div className={`w-8 h-2 rounded transition-all duration-300 ${
+                  currentStep >= 1 ? 'bg-blue-600' : 'bg-gray-200'
+                }`}></div>
+                <div className={`w-8 h-2 rounded transition-all duration-300 ${
+                  currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-200'
+                }`}></div>
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
               </div>
             </div>
 
@@ -237,11 +299,19 @@ const SignUp = () => {
 
             {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
+<<<<<<< HEAD
 
               {/* Step 1: Personal Information */}
               {currentStep === 1 && (
                 <div className="space-y-4 animate-fadeIn text-gray-600">
 
+=======
+              
+              {/* Step 1: Personal Information */}
+              {currentStep === 1 && (
+                <div className="space-y-4 animate-fadeIn text-gray-600">
+                  
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                   {/* Name Fields */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -250,8 +320,14 @@ const SignUp = () => {
                         First Name*
                       </label>
                       <input
+<<<<<<< HEAD
                         className={`w-full px-4 py-3 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${errors.firstName ? 'border-red-400' : 'border-gray-200'
                           }`}
+=======
+                        className={`w-full px-4 py-3 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${
+                          errors.firstName ? 'border-red-400' : 'border-gray-200'
+                        }`}
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                         placeholder="John"
                         {...register("firstName", {
                           required: "First name is required",
@@ -269,8 +345,14 @@ const SignUp = () => {
                         Last Name*
                       </label>
                       <input
+<<<<<<< HEAD
                         className={`w-full px-4 py-3 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${errors.lastName ? 'border-red-400' : 'border-gray-200'
                           }`}
+=======
+                        className={`w-full px-4 py-3 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${
+                          errors.lastName ? 'border-red-400' : 'border-gray-200'
+                        }`}
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                         placeholder="Doe"
                         {...register("lastName", {
                           required: "Last name is required",
@@ -291,8 +373,14 @@ const SignUp = () => {
                     </label>
                     <input
                       type="email"
+<<<<<<< HEAD
                       className={`w-full px-4 py-3 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${errors.email ? 'border-red-400' : 'border-gray-200'
                         }`}
+=======
+                      className={`w-full px-4 py-3 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${
+                        errors.email ? 'border-red-400' : 'border-gray-200'
+                      }`}
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                       placeholder="contact@dgtlmart.com"
                       {...register("email", {
                         required: "Email is required",
@@ -315,8 +403,14 @@ const SignUp = () => {
                     </label>
                     <input
                       type="tel"
+<<<<<<< HEAD
                       className={`w-full px-4 py-3 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${errors.mobile ? 'border-red-400' : 'border-gray-200'
                         }`}
+=======
+                      className={`w-full px-4 py-3 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${
+                        errors.mobile ? 'border-red-400' : 'border-gray-200'
+                      }`}
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                       placeholder="9810559439"
                       {...register("mobile", {
                         pattern: {
@@ -344,8 +438,13 @@ const SignUp = () => {
                   <div className="text-center pt-4 border-t border-gray-100">
                     <p className="text-gray-600 text-sm">
                       Already have an account?{" "}
+<<<<<<< HEAD
                       <Link
                         href="/signin"
+=======
+                      <Link 
+                        href="/signin" 
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                         className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
                       >
                         Sign In
@@ -358,7 +457,11 @@ const SignUp = () => {
               {/* Step 2: Security */}
               {currentStep === 2 && (
                 <div className="space-y-4 animate-fadeIn text-gray-600">
+<<<<<<< HEAD
 
+=======
+                  
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                   {/* Password */}
                   <div>
                     <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
@@ -368,8 +471,14 @@ const SignUp = () => {
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"}
+<<<<<<< HEAD
                         className={`w-full px-4 py-3 pr-12 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${errors.password ? 'border-red-400' : 'border-gray-200'
                           }`}
+=======
+                        className={`w-full px-4 py-3 pr-12 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${
+                          errors.password ? 'border-red-400' : 'border-gray-200'
+                        }`}
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                         placeholder="Create a strong password"
                         {...register("password", {
                           required: "Password is required",
@@ -393,6 +502,7 @@ const SignUp = () => {
                     {errors.password && (
                       <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
                     )}
+<<<<<<< HEAD
 
                     {/* Password Requirements */}
                     {pwdValue && (
@@ -419,6 +529,42 @@ const SignUp = () => {
                           }`}>
                           <div className={`w-2 h-2 rounded-full ${/\d/.test(pwdValue) ? 'bg-green-500' : 'bg-gray-300'
                             }`}></div>
+=======
+                    
+                    {/* Password Requirements */}
+                    {pwdValue && (
+                      <div className="mt-2 space-y-1">
+                        <div className={`text-xs flex items-center gap-2 ${
+                          pwdValue.length >= 8 ? 'text-green-600' : 'text-gray-500'
+                        }`}>
+                          <div className={`w-2 h-2 rounded-full ${
+                            pwdValue.length >= 8 ? 'bg-green-500' : 'bg-gray-300'
+                          }`}></div>
+                          At least 8 characters
+                        </div>
+                        <div className={`text-xs flex items-center gap-2 ${
+                          /[A-Z]/.test(pwdValue) ? 'text-green-600' : 'text-gray-500'
+                        }`}>
+                          <div className={`w-2 h-2 rounded-full ${
+                            /[A-Z]/.test(pwdValue) ? 'bg-green-500' : 'bg-gray-300'
+                          }`}></div>
+                          One uppercase letter
+                        </div>
+                        <div className={`text-xs flex items-center gap-2 ${
+                          /[a-z]/.test(pwdValue) ? 'text-green-600' : 'text-gray-500'
+                        }`}>
+                          <div className={`w-2 h-2 rounded-full ${
+                            /[a-z]/.test(pwdValue) ? 'bg-green-500' : 'bg-gray-300'
+                          }`}></div>
+                          One lowercase letter
+                        </div>
+                        <div className={`text-xs flex items-center gap-2 ${
+                          /\d/.test(pwdValue) ? 'text-green-600' : 'text-gray-500'
+                        }`}>
+                          <div className={`w-2 h-2 rounded-full ${
+                            /\d/.test(pwdValue) ? 'bg-green-500' : 'bg-gray-300'
+                          }`}></div>
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                           One number
                         </div>
                       </div>
@@ -434,8 +580,14 @@ const SignUp = () => {
                     <div className="relative">
                       <input
                         type={showConfirm ? "text" : "password"}
+<<<<<<< HEAD
                         className={`w-full px-4 py-3 pr-12 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${errors.confirmPassword ? 'border-red-400' : 'border-gray-200'
                           }`}
+=======
+                        className={`w-full px-4 py-3 pr-12 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${
+                          errors.confirmPassword ? 'border-red-400' : 'border-gray-200'
+                        }`}
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                         placeholder="Confirm your password"
                         {...register("confirmPassword", {
                           required: "Please confirm your password",
@@ -484,6 +636,7 @@ const SignUp = () => {
                     </button>
                   </div>
 
+<<<<<<< HEAD
                   {/* Sign In Link - Added to Step 2 as well */}
                   <div className="text-center pt-4 border-t border-gray-100">
                     <p className="text-gray-600 text-sm">
@@ -497,6 +650,8 @@ const SignUp = () => {
                     </p>
                   </div>
 
+=======
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                   {/* Helper Text */}
                   <p className="text-xs text-gray-500 text-center">
                     Complete your business profile after account creation

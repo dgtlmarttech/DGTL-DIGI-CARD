@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect } from "react";
 import { getAllAffiliates, getReferredUsers, updateAffiliate } from "../../../../services/affiliateService";
+<<<<<<< HEAD
 import {
   Users,
   Eye,
@@ -10,6 +11,17 @@ import {
   Phone,
   Mail,
   MapPin,
+=======
+import { 
+  Users, 
+  Eye, 
+  Edit3, 
+  Save, 
+  X, 
+  Phone, 
+  Mail, 
+  MapPin, 
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
   CreditCard,
   Building,
   Hash,
@@ -40,7 +52,11 @@ const AffiliateListPage = () => {
     try {
       const data = await getAllAffiliates();
       const verifiedAffiliates = data.filter((affiliate) => affiliate.isVerified);
+<<<<<<< HEAD
 
+=======
+      
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
       const affiliatesWithCounts = await Promise.all(
         verifiedAffiliates.map(async (affiliate) => {
           const users = await getReferredUsers(affiliate.referralCode);
@@ -63,7 +79,11 @@ const AffiliateListPage = () => {
     setIsEditing(false);
     setEditFormData(affiliate);
     setLoadingUsers(true);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
     try {
       const users = await getReferredUsers(affiliate.referralCode);
       setReferredUsers(users);
@@ -236,7 +256,11 @@ const AffiliateListPage = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Avg. per Affiliate</p>
                 <p className="text-2xl font-bold text-purple-600 mt-1">
+<<<<<<< HEAD
                   {affiliates.length > 0
+=======
+                  {affiliates.length > 0 
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                     ? Math.round(affiliates.reduce((sum, aff) => sum + (aff.referredUserCount || 0), 0) / affiliates.length)
                     : 0
                   }
@@ -288,8 +312,13 @@ const AffiliateListPage = () => {
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No affiliates found</h3>
               <p className="text-gray-600">
+<<<<<<< HEAD
                 {searchTerm
                   ? `No affiliates match your search "${searchTerm}"`
+=======
+                {searchTerm 
+                  ? `No affiliates match your search "${searchTerm}"` 
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                   : "No verified affiliates available."
                 }
               </p>
@@ -408,10 +437,17 @@ const AffiliateListPage = () => {
                         <FormField label="Email" name="email" value={editFormData.email} type="email" />
                         <FormField label="Phone" name="phone" value={editFormData.phone} type="tel" />
                         <div className="md:col-span-2">
+<<<<<<< HEAD
                           <FormField
                             label="Address"
                             name="address"
                             value={editFormData.address}
+=======
+                          <FormField 
+                            label="Address" 
+                            name="address" 
+                            value={editFormData.address} 
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                             type="textarea"
                             rows={2}
                           />
@@ -485,10 +521,17 @@ const AffiliateListPage = () => {
                       <div className="flex items-center space-x-2 bg-white rounded-lg p-3 border">
                         <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <code className="flex-1 text-sm text-gray-700 break-all">
+<<<<<<< HEAD
                           {`${typeof window !== 'undefined' ? window.location.origin : 'https://my.dgtldigicard.com'}/signup?ref=${selectedAffiliate.referralCode}`}
                         </code>
                         <button
                           onClick={() => copyToClipboard(`${typeof window !== 'undefined' ? window.location.origin : 'https://my.dgtldigicard.com'}/signup?ref=${selectedAffiliate.referralCode}`)}
+=======
+                          {`https://my.dgtldigicard.com/signup?ref=${selectedAffiliate.referralCode}`}
+                        </code>
+                        <button
+                          onClick={() => copyToClipboard(`https://my.dgtldigicard.com/signup?ref=${selectedAffiliate.referralCode}`)}
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                           className="flex items-center space-x-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors duration-200"
                         >
                           <Copy className="w-3 h-3" />
@@ -530,7 +573,11 @@ const AffiliateListPage = () => {
                           {referredUsers.length} users
                         </span>
                       </div>
+<<<<<<< HEAD
 
+=======
+                      
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                       {loadingUsers ? (
                         <div className="text-center py-8">
                           <Loader2 className="w-6 h-6 text-blue-600 animate-spin mx-auto mb-2" />
@@ -554,10 +601,18 @@ const AffiliateListPage = () => {
                                   </td>
                                   <td className="px-4 py-3 text-sm text-gray-600">{user.email}</td>
                                   <td className="px-4 py-3">
+<<<<<<< HEAD
                                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${user.isPremium
                                         ? 'bg-green-100 text-green-800'
                                         : 'bg-gray-100 text-gray-800'
                                       }`}>
+=======
+                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                      user.isPremium 
+                                        ? 'bg-green-100 text-green-800' 
+                                        : 'bg-gray-100 text-gray-800'
+                                    }`}>
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                                       {user.isPremium ? (
                                         <>
                                           <Crown className="w-3 h-3 mr-1" />

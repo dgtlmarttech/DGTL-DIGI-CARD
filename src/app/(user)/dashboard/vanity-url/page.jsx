@@ -58,6 +58,7 @@ const VanityURLPage = () => {
       setIsValid(false);
       return false;
     }
+<<<<<<< HEAD
     // ✅ Allow letters, numbers, hyphen, underscore
     if (!/^[a-z0-9-_]+$/.test(value)) {
       setValidationMessage('Only lowercase letters, numbers, hyphens and underscores allowed');
@@ -74,6 +75,24 @@ const VanityURLPage = () => {
       setIsValid(false);
       return false;
     }
+=======
+     // ✅ Allow letters, numbers, hyphen, underscore
+  if (!/^[a-z0-9-_]+$/.test(value)) {
+    setValidationMessage('Only lowercase letters, numbers, hyphens and underscores allowed');
+    setIsValid(false);
+    return false;
+  }
+  if (value.startsWith('-') || value.endsWith('-') || value.startsWith('_') || value.endsWith('_')) {
+    setValidationMessage('URL cannot start or end with a hyphen or underscore');
+    setIsValid(false);
+    return false;
+  }
+  if (value.includes('--') || value.includes('__') || value.includes('_-') || value.includes('-_')) {
+    setValidationMessage('URL cannot contain consecutive symbols (like --, __, _-, -_)');
+    setIsValid(false);
+    return false;
+  }
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
     // ✅ Check duplicate in Firestore
     const exists = await checkCustomUIDExists(value);
     if (exists) {
@@ -112,10 +131,16 @@ const VanityURLPage = () => {
     }
   };
 
+<<<<<<< HEAD
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://my.dgtldigicard.com';
   const currentURL = customUID
     ? `${baseUrl}/${customUID}`
     : `${baseUrl}/${user?.uid}`;
+=======
+  const currentURL = customUID
+    ? `https://my.dgtldigicard.com/${customUID}`
+    : `https://my.dgtldigicard.com/${user?.uid}`;
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
 
   const copyToClipboard = async () => {
     try {
@@ -177,7 +202,11 @@ const VanityURLPage = () => {
               <label className="mb-2 block text-sm font-medium">Your Custom Path</label>
               <div className="flex rounded-lg border overflow-hidden">
                 <span className="inline-flex items-center bg-gray-50 px-4 py-3 text-sm border-r text-gray-600">
+<<<<<<< HEAD
                   {typeof window !== 'undefined' ? window.location.host : 'my.dgtldigicard.com'}/
+=======
+                  my.dgtldigicard.com/
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                 </span>
                 <input
                   value={customUID}

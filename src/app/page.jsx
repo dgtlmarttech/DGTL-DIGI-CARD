@@ -11,10 +11,17 @@ function PWAInstallBanner() {
   useEffect(() => {
     // Show banner after 5 seconds if not dismissed and not already installed
     const timer = setTimeout(() => {
+<<<<<<< HEAD
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
         window.navigator.standalone;
       const dismissed = localStorage.getItem('pwaInstallDismissed');
 
+=======
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+      window.navigator.standalone;
+      const dismissed = localStorage.getItem('pwaInstallDismissed');
+      
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
       if (!isStandalone && !dismissed) {
         setShowBanner(true);
       }
@@ -46,7 +53,11 @@ function PWAInstallBanner() {
             <p className="text-xs text-blue-100">Get quick access and offline features</p>
           </div>
         </div>
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
         <div className="flex items-center gap-3">
           <button
             onClick={handleInstallClick}
@@ -94,9 +105,15 @@ function HeaderInstallButton() {
       return;
     }
 
+<<<<<<< HEAD
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
       window.navigator.standalone;
 
+=======
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                       window.navigator.standalone;
+    
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
     if (!isStandalone) {
       setCanInstall(true);
     }
@@ -118,6 +135,7 @@ function HeaderInstallButton() {
 
 export default function HomePage() {
   const router = useRouter();
+<<<<<<< HEAD
   const { user, userInfo, isAuthenticated, loading, initializing, isStandalone } = useUser();
 
   useEffect(() => {
@@ -130,6 +148,9 @@ export default function HomePage() {
       }
     }
   }, [isStandalone, isAuthenticated, initializing, loading, userInfo, user, router]);
+=======
+  const { user, userInfo, isAuthenticated, loading, initializing } = useUser();
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
 
   const handleSignOut = async () => {
     try {
@@ -174,7 +195,11 @@ export default function HomePage() {
             </div>
             <nav className="flex items-center gap-2 sm:gap-4">
               <HeaderInstallButton />
+<<<<<<< HEAD
 
+=======
+              
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
               {!isAuthenticated ? (
                 <>
                   <button
@@ -237,8 +262,13 @@ export default function HomePage() {
                       {userInfo?.isPremium
                         ? '👑 Premium Member'
                         : userInfo?.effectiveIsPremium
+<<<<<<< HEAD
                           ? '🚀 Trial Active'
                           : '💫 Free Plan'}
+=======
+                        ? '🚀 Trial Active'
+                        : '💫 Free Plan'}
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                     </p>
                   </div>
                 </div>

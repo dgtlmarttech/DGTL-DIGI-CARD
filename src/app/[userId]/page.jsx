@@ -200,10 +200,17 @@ function PWAInstallBanner({ onVisibilityChange }) {
     }
 
     const timer = setTimeout(() => {
+<<<<<<< HEAD
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
         window.navigator.standalone;
       const dismissed = localStorage.getItem('pwaInstallDismissed');
 
+=======
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+      window.navigator.standalone;
+      const dismissed = localStorage.getItem('pwaInstallDismissed');
+      
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
       if (!isStandalone && !dismissed) {
         setShowBanner(true);
         onVisibilityChange(true);
@@ -242,7 +249,11 @@ function PWAInstallBanner({ onVisibilityChange }) {
               <p className="text-xs text-blue-100">Get quick access and offline features</p>
             </div>
           </div>
+<<<<<<< HEAD
 
+=======
+          
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
           <div className="flex items-center gap-3">
             <button
               onClick={handleInstallClick}
@@ -285,7 +296,11 @@ function PWAInstallBanner({ onVisibilityChange }) {
 export default function LiveCardPage() {
   const { userId } = useParams();
   const router = useRouter();
+<<<<<<< HEAD
   const { user, userInfo, isCurrentUser, loading: userLoading, isStandalone } = useUser();
+=======
+  const { user, userInfo, isCurrentUser, loading: userLoading } = useUser();
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
 
   const [pageUserInfo, setPageUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -293,6 +308,7 @@ export default function LiveCardPage() {
 
   useEffect(() => {
     const fetchData = async () => {
+<<<<<<< HEAD
       // Try to load from cache first for immediate display/offline
       const cacheKey = `dgtl_card_cache_${userId}`;
       if (typeof window !== 'undefined') {
@@ -333,6 +349,21 @@ export default function LiveCardPage() {
         console.error("Fetch error:", err);
         // If fetch fails (maybe offline), we keep the cached info if we have it
       }
+=======
+      if (isCurrentUser(userId)) {
+        setPageUserInfo(userInfo);
+        setLoading(false);
+        return;
+      }
+
+      const data = await getUserData(userId);
+      if (!data) {
+        router.push("/404");
+        return;
+      }
+      setPageUserInfo(data);
+      setLoading(false);
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
     };
 
     if (!userLoading && userId) {
@@ -367,8 +398,13 @@ export default function LiveCardPage() {
         <meta name="robots" content="noindex, nofollow" />
         <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
         <title>
+<<<<<<< HEAD
           {pageUserInfo.firstName && pageUserInfo.lastName
             ? `${pageUserInfo.firstName} ${pageUserInfo.lastName} - Digital Business Card`
+=======
+          {pageUserInfo.firstName && pageUserInfo.lastName 
+            ? `${pageUserInfo.firstName} ${pageUserInfo.lastName} - Digital Business Card` 
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
             : 'Digital Business Card'
           }
         </title>
@@ -376,8 +412,13 @@ export default function LiveCardPage() {
 
       <div className={`min-h-screen ${pageUserInfo.effectiveIsPremium ? "bg-gradient-to-br from-purple-50 to-blue-50" : "bg-gray-50"}`}>
         <PWAInstallBanner onVisibilityChange={setBannerVisible} />
+<<<<<<< HEAD
 
         {isCurrentUser(userId) && !isStandalone && (
+=======
+        
+        {isCurrentUser(userId) && (
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
           <div className={`fixed ${buttonTopClass} right-4 z-[60] transition-all duration-300`}>
             <button
               className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:cursor-pointer hover:bg-blue-700 transition-colors duration-200 shadow-lg"
@@ -388,7 +429,11 @@ export default function LiveCardPage() {
           </div>
         )}
 
+<<<<<<< HEAD
         {!isCurrentUser(userId) && !isStandalone && (
+=======
+        {!isCurrentUser(userId) && (
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
           <div className={`fixed ${buttonTopClass} right-4 z-[60] transition-all duration-300`}>
             <button
               className="bg-gray-200 text-gray-800 p-2 rounded-full hover:bg-gray-300 transition-colors duration-200 shadow-lg"

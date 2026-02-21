@@ -8,7 +8,11 @@ import { auth } from '../../firebase/firebase';
 const CrmNavbar = ({ children, pageTitle }) => {
   const router = useRouter();
   const pathname = usePathname();
+<<<<<<< HEAD
   const { user, userInfo, isAuthenticated, loading, isStandalone } = useUser();
+=======
+  const { user, userInfo, isAuthenticated, loading } = useUser();
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -88,7 +92,11 @@ const CrmNavbar = ({ children, pageTitle }) => {
     <>
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
+<<<<<<< HEAD
         <div
+=======
+        <div 
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
           className="fixed inset-0 bg-black bg-opacity-50 z-[9998] md:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
@@ -96,10 +104,18 @@ const CrmNavbar = ({ children, pageTitle }) => {
 
       <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30">
         {/* Enhanced Navbar */}
+<<<<<<< HEAD
         <nav className={`sticky top-0 z-[9999] transition-all duration-300 ${scrolled
           ? 'bg-white shadow-xl shadow-slate-200/40 border-b border-slate-200/60'
           : 'bg-white shadow-lg shadow-slate-200/20 border-b border-slate-200/40'
           }`}>
+=======
+        <nav className={`sticky top-0 z-[9999] transition-all duration-300 ${
+          scrolled 
+            ? 'bg-white shadow-xl shadow-slate-200/40 border-b border-slate-200/60' 
+            : 'bg-white shadow-lg shadow-slate-200/20 border-b border-slate-200/40'
+        }`}>
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
           <div className="mx-auto max-w-7xl px-4 lg:px-6">
             <div className="flex justify-between h-16">
               {/* Left: Enhanced Brand */}
@@ -118,7 +134,11 @@ const CrmNavbar = ({ children, pageTitle }) => {
                     <p className="text-xs text-slate-500 -mt-1">Manage & Connect</p>
                   </div>
                 </div>
+<<<<<<< HEAD
 
+=======
+                
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                 {/* Desktop Navigation */}
                 <div className="hidden lg:ml-8 lg:flex lg:space-x-1">
                   {navItems.map((item) => {
@@ -127,6 +147,7 @@ const CrmNavbar = ({ children, pageTitle }) => {
                       <button
                         key={item.name}
                         onClick={() => handleNavigation(item.href)}
+<<<<<<< HEAD
                         className={`relative px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center transition-all duration-300 group ${active
                           ? `bg-gradient-to-r ${item.color} text-white shadow-lg transform scale-105`
                           : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800 hover:shadow-md hover:scale-105'
@@ -135,6 +156,17 @@ const CrmNavbar = ({ children, pageTitle }) => {
                         <span className="mr-2.5 text-base group-hover:scale-110 transition-transform duration-200">
                           {item.icon}
                         </span>
+=======
+                        className={`relative px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center transition-all duration-300 group ${
+                          active
+                            ? `bg-gradient-to-r ${item.color} text-white shadow-lg transform scale-105`
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800 hover:shadow-md hover:scale-105'
+                        }`}
+                      >
+                        <span className="mr-2.5 text-base group-hover:scale-110 transition-transform duration-200">
+                          {item.icon}
+                        </span> 
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                         <span className="hidden xl:inline">{item.name}</span>
                         <span className="xl:hidden">{item.name.split(' ')[0]}</span>
                         {active && (
@@ -171,6 +203,7 @@ const CrmNavbar = ({ children, pageTitle }) => {
                       </span>
                     </div>
                   </div>
+<<<<<<< HEAD
 
                   {!isStandalone && (
                     <button
@@ -182,6 +215,9 @@ const CrmNavbar = ({ children, pageTitle }) => {
                     </button>
                   )}
 
+=======
+                  
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                   <button
                     onClick={handleLogout}
                     className="px-4 py-2 text-sm font-semibold text-red-600 hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-red-600 rounded-xl transition-all duration-200 hover:shadow-lg border border-red-200 hover:border-transparent"
@@ -211,8 +247,14 @@ const CrmNavbar = ({ children, pageTitle }) => {
         </nav>
 
         {/* Enhanced Mobile Menu */}
+<<<<<<< HEAD
         <div className={`fixed top-16 left-0 right-0 bg-white shadow-2xl border-b border-slate-200 z-[9999] md:hidden transition-all duration-300 ease-in-out ${mobileMenuOpen ? 'translate-y-0 opacity-100 visible' : '-translate-y-full opacity-0 invisible'
           }`}>
+=======
+        <div className={`fixed top-16 left-0 right-0 bg-white shadow-2xl border-b border-slate-200 z-[9999] md:hidden transition-all duration-300 ease-in-out ${
+          mobileMenuOpen ? 'translate-y-0 opacity-100 visible' : '-translate-y-full opacity-0 invisible'
+        }`}>
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
           <div className="max-h-[calc(100vh-4rem)] overflow-y-auto">
             <div className="py-4 space-y-2 px-4">
               {navItems.map((item) => {
@@ -221,16 +263,25 @@ const CrmNavbar = ({ children, pageTitle }) => {
                   <button
                     key={item.name}
                     onClick={() => handleNavigation(item.href)}
+<<<<<<< HEAD
                     className={`flex items-center w-full text-left px-4 py-4 text-sm font-semibold rounded-xl transition-all duration-300 touch-manipulation ${active
                       ? `bg-gradient-to-r ${item.color} text-white shadow-lg`
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800 hover:shadow-md'
                       }`}
+=======
+                    className={`flex items-center w-full text-left px-4 py-4 text-sm font-semibold rounded-xl transition-all duration-300 touch-manipulation ${
+                      active
+                        ? `bg-gradient-to-r ${item.color} text-white shadow-lg`
+                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800 hover:shadow-md'
+                    }`}
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                   >
                     <span className="mr-4 text-lg">{item.icon}</span>
                     <span className="font-medium">{item.name}</span>
                   </button>
                 );
               })}
+<<<<<<< HEAD
 
               {!isStandalone && (
                 <button
@@ -245,6 +296,9 @@ const CrmNavbar = ({ children, pageTitle }) => {
                 </button>
               )}
 
+=======
+              
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
               <div className="border-t border-slate-200 mt-4 pt-4">
                 <div className="flex items-center px-4 space-x-3 mb-4 py-2">
                   {userInfo?.imgUrl ? (
@@ -270,7 +324,11 @@ const CrmNavbar = ({ children, pageTitle }) => {
                     </span>
                   </div>
                 </div>
+<<<<<<< HEAD
 
+=======
+                
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);

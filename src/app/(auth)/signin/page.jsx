@@ -3,10 +3,17 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { auth } from "../../../firebase/firebase";
 import { useRouter } from "next/navigation";
+<<<<<<< HEAD
 import {
   signInUsingEmailPassword,
   signInWithGoogle,
   handleRedirectResult
+=======
+import { 
+  signInUsingEmailPassword, 
+  signInWithGoogle, 
+  handleRedirectResult 
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
 } from "../../../services/firebaseAuthService";
 import Link from "next/link";
 import { sendEmailVerification } from "firebase/auth";
@@ -22,7 +29,11 @@ const SignIn = () => {
     watch,
     formState: { errors },
   } = useForm();
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
   const passwordValue = watch("password", "");
   const [isLoading, setLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -48,6 +59,7 @@ const SignIn = () => {
   }, [router]);
 
   const togglePassword = () => setPasswordVisible((v) => !v);
+<<<<<<< HEAD
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -58,13 +70,29 @@ const SignIn = () => {
 
       const currentUser = auth.currentUser;
 
+=======
+  
+  const onSubmit = async (data) => {
+    setLoading(true);
+    setErrorMessage("");
+    
+    try {
+      await signInUsingEmailPassword(data.email, data.password);
+      
+      const currentUser = auth.currentUser;
+      
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
       if (currentUser && !currentUser.emailVerified) {
         await sendEmailVerification(currentUser);
         setErrorMessage("Email not verified. A new verification link has been sent. Please verify your email before logging in.");
         await auth.signOut();
         return;
       }
+<<<<<<< HEAD
 
+=======
+      
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
       router.push('/dashboard');
     } catch (err) {
       setErrorMessage(err.message);
@@ -72,6 +100,7 @@ const SignIn = () => {
       setLoading(false);
     }
   };
+<<<<<<< HEAD
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -80,6 +109,16 @@ const SignIn = () => {
     try {
       const result = await signInWithGoogle();
 
+=======
+  
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setErrorMessage("");
+    
+    try {
+      const result = await signInWithGoogle();
+      
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
       // If we get a result (popup worked), redirect to dashboard
       if (result) {
         router.push('/dashboard');
@@ -99,7 +138,11 @@ const SignIn = () => {
   return (
     <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 font-sans text-gray-800">
       <BubbleBackground />
+<<<<<<< HEAD
       <div className="relative z-10 mx-4 my-8 grid w-full max-w-5xl overflow-visible rounded-xl bg-white/95 backdrop-blur-sm shadow-2xl md:grid-cols-2">
+=======
+      <div className="relative z-10 mx-4 grid w-full max-w-5xl overflow-hidden rounded-xl bg-white/95 backdrop-blur-sm shadow-2xl md:grid-cols-2">
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
         {/* Left Promo Panel */}
         <aside className="hidden flex-col items-center justify-center p-8 text-center text-white md:flex bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700">
           <img
@@ -127,18 +170,30 @@ const SignIn = () => {
             </li>
           </ul>
         </aside>
+<<<<<<< HEAD
 
         {/* Right Form Panel */}
         <main className="flex flex-col items-center justify-center p-8 bg-white">
           <h2 className="mb-7 text-3xl font-bold text-gray-900">Sign In</h2>
 
+=======
+        
+        {/* Right Form Panel */}
+        <main className="flex flex-col items-center justify-center p-8 bg-white">
+          <h2 className="mb-7 text-3xl font-bold text-gray-900">Sign In</h2>
+          
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
           {/* Error Message */}
           {errorMessage && (
             <div className="mb-4 w-full max-w-md rounded-lg bg-red-50 border-l-4 border-red-400 p-3">
               <p className="text-sm text-red-700">{errorMessage}</p>
             </div>
           )}
+<<<<<<< HEAD
 
+=======
+          
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
           {/* Google Sign-In Button */}
           <button
             onClick={handleGoogleSignIn}
@@ -148,7 +203,11 @@ const SignIn = () => {
             <FaGoogle className="text-red-500" size={20} />
             Continue with Google
           </button>
+<<<<<<< HEAD
 
+=======
+          
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
           {/* Rest of the component remains the same */}
           {/* Divider */}
           <div className="w-full max-w-md flex items-center mb-6">
@@ -164,8 +223,14 @@ const SignIn = () => {
               <input
                 type="email"
                 placeholder="Email Address"
+<<<<<<< HEAD
                 className={`w-full rounded-lg border-2 bg-gray-50/50 p-3 text-gray-900 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${errors.email ? 'border-red-400' : 'border-gray-300'
                   }`}
+=======
+                className={`w-full rounded-lg border-2 bg-gray-50/50 p-3 text-gray-900 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${
+                  errors.email ? 'border-red-400' : 'border-gray-300'
+                }`}
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                 {...register("email", {
                   required: "Email is required",
                   pattern: {
@@ -184,15 +249,26 @@ const SignIn = () => {
               <input
                 type={passwordVisible ? "text" : "password"}
                 placeholder="Password"
+<<<<<<< HEAD
                 className={`w-full rounded-lg border-2 bg-gray-50/50 p-3 pr-10 text-gray-900 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${errors.password ? 'border-red-400' : 'border-gray-300'
                   }`}
+=======
+                className={`w-full rounded-lg border-2 bg-gray-50/50 p-3 pr-10 text-gray-900 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${
+                  errors.password ? 'border-red-400' : 'border-gray-300'
+                }`}
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                 {...register("password", {
                   required: "Password is required",
                 })}
               />
               {passwordValue && (
+<<<<<<< HEAD
                 <span
                   className="absolute inset-y-0 right-3 flex cursor-pointer items-center text-gray-500 hover:text-gray-700 transition-colors"
+=======
+                <span 
+                  className="absolute inset-y-0 right-3 flex cursor-pointer items-center text-gray-500 hover:text-gray-700 transition-colors" 
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
                   onClick={togglePassword}
                 >
                   {passwordVisible ? <FaEyeSlash /> : <FaEye />}

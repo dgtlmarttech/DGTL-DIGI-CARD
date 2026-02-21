@@ -18,6 +18,7 @@ function isCacheableRequest(req) {
     if (req.method !== 'GET') return false;
     const url = new URL(req.url);
     if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+<<<<<<< HEAD
 
     // allow same-origin
     if (url.origin === self.location.origin) return true;
@@ -26,6 +27,10 @@ function isCacheableRequest(req) {
     if (req.destination === 'image' && url.hostname === 'firebasestorage.googleapis.com') return true;
 
     return false;
+=======
+    if (url.origin !== self.location.origin) return false; // only same-origin
+    return true;
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
   } catch (err) {
     return false;
   }

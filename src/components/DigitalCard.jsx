@@ -162,8 +162,12 @@ const App = ({ userInfo = sampleUserInfo }) => {
 
   const shareContact = async () => {
     // This is a placeholder share URL. In a real app, this would point to the user's card.
+<<<<<<< HEAD
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://my.dgtldigicard.com';
     const shareUrl = `${baseUrl}/${userInfo.customUID || userInfo.uid || ''}`;
+=======
+    const shareUrl = `https://my.dgtldigicard.com/${userInfo.customUID || userInfo.uid || ''}`;
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
     const shareData = {
       title: document.title,
       text: `Contact: ${document.title}`,
