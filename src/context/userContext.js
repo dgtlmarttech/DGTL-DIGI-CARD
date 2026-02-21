@@ -100,7 +100,7 @@ export const UserProvider = ({ children }) => {
     } catch (err) {
       console.error('Error loading user data:', err);
       setError(err.message);
-      setUserInfo(null);
+      // Don't clear userInfo on error to allow offline access with cached data
     } finally {
       setLoading(false);
     }

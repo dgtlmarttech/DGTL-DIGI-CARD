@@ -232,7 +232,6 @@ const getUserData = async (userId) => {
 
   } catch (e) {
     console.error("getUserData error:", e);
-    alert(e.message);
   }
 };
 
@@ -265,7 +264,6 @@ const updateUserData = async (userId, updatedData) => {
     return true;
   } catch (e) {
     console.error("updateUserData error:", e);
-    alert(e.message);
   }
 };
 
