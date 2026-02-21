@@ -1,5 +1,6 @@
 // firebaseEmailService.js
 import { SendMailClient } from 'zeptomail';
+
 /**
  * Sends a welcome email to a new user.
  * @param {string} toEmail - Recipient's email.
@@ -7,14 +8,12 @@ import { SendMailClient } from 'zeptomail';
  * @param {string} uid - User ID to generate a unique link.
  */
 
-
 const zeptoUrl = process.env.NEXT_PUBLIC_ZEPTO_URL || 'https://api.zeptomail.com/';
 const zeptoToken = process.env.NEXT_PUBLIC_ZEPTO_TOKEN;
 
 const client = new SendMailClient({ url: zeptoUrl, token: zeptoToken });
 
 export async function sendWelcomeEmail(toEmail, toName, uid) {
-<<<<<<< HEAD
   const apiKey = process.env.NEXT_PUBLIC_BREVO_API_KEY;
   if (!apiKey) {
     console.error("Error: BREVO_API_KEY is missing in environment variables.");
@@ -24,17 +23,6 @@ export async function sendWelcomeEmail(toEmail, toName, uid) {
   const link = `https://my.dgtldigicard.com/${uid}`;
 
   const emailTemplate = `
-=======
-    const apiKey = process.env.NEXT_PUBLIC_BREVO_API_KEY;
-    if (!apiKey) {
-      console.error("Error: BREVO_API_KEY is missing in environment variables.");
-      return;
-    }
-    const senderEmail = process.env.NEXT_PUBLIC_BREVO_SENDER_EMAIL;
-    const link = `https://my.dgtldigicard.com/${uid}`;
-  
-    const emailTemplate = `
->>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
       <div style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #e0e0e0; background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%); min-height: 100vh; padding: 40px 20px;">
   
   <!-- Main Container -->
@@ -161,11 +149,7 @@ export async function sendWelcomeEmail(toEmail, toName, uid) {
           </div>
         </div>
         
-<<<<<<< HEAD
-        <a href="${typeof window !== 'undefined' ? window.location.origin : 'https://my.dgtldigicard.com'}/payment" 
-=======
         <a href="https://my.dgtldigicard.com/payment" 
->>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
            style="display: inline-block; padding: 14px 28px; font-size: 16px; font-weight: 600; color: #000000; background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%); text-decoration: none; border-radius: 12px; box-shadow: 0 8px 20px rgba(255, 215, 0, 0.4); transition: all 0.3s ease; border: none; cursor: pointer;">
           👑 Upgrade to Premium
         </a>
@@ -205,12 +189,11 @@ export async function sendWelcomeEmail(toEmail, toName, uid) {
   </div>
 </div>
 `;
-<<<<<<< HEAD
 
   try {
     const response = await client.sendMail({
       from: { address: 'support@dgtldigicard.com', name: 'DigitalCard Team' },
-      to: [{ email_address: { address: toEmail, name: toName || to.split('@')[0] } }],
+      to: [{ email_address: { address: toEmail, name: toName || toEmail.split('@')[0] } }],
       subject: "Welcome to DGTLDigicard - Your Digital Business Card",
       htmlbody: emailTemplate,
     });
@@ -240,42 +223,6 @@ export async function sendPremiumEmail(toEmail, toName, uid) {
   const link = `https://my.dgtldigicard.com/${uid}`;
 
   const emailTemplate = `
-=======
-  
-    try {
-      const response = await client.sendMail({
-        from: { address: 'support@dgtldigicard.com', name: 'DigitalCard Team' },
-        to: [{ email_address: { address: toEmail, name: toName || to.split('@')[0] } }],
-        subject: "Welcome to DGTLDigicard - Your Digital Business Card",
-        htmlbody: emailTemplate,
-      });
-      if (response.message !== 'OK') {
-        const errorResponse = await response.json();
-        throw new Error(`Error: ${errorResponse.message}`);
-      }
-      console.log(`✅ Welcome email sent successfully to ${toEmail}.`);
-    } catch (error) {
-      console.error("❌ Failed to send welcome email:", error.message);
-    }
-  }
-  
-  /**
-   * Sends a premium membership confirmation email.
-   * @param {string} toEmail - Recipient's email.
-   * @param {string} toName - Recipient's name.
-   * @param {string} uid - User ID to generate a unique link.
-   */
-  export async function sendPremiumEmail(toEmail, toName, uid) {
-    const apiKey = process.env.NEXT_PUBLIC_BREVO_API_KEY;
-    if (!apiKey) {
-      console.error("Error: BREVO_API_KEY is missing in environment variables.");
-      return;
-    }
-    const senderEmail = process.env.NEXT_PUBLIC_BREVO_SENDER_EMAIL;
-    const link = `https://my.dgtldigicard.com/${uid}`;
-  
-    const emailTemplate = `
->>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
       <div style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #333333; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 40px 20px;">
   
   <!-- Main Container -->
@@ -407,14 +354,12 @@ export async function sendPremiumEmail(toEmail, toName, uid) {
     </p>
   </div>
 </div>
-
 `;
-<<<<<<< HEAD
 
   try {
     const response = await client.sendMail({
       from: { address: 'support@dgtldigicard.com', name: 'DigitalCard Team' },
-      to: [{ email_address: { address: toEmail, name: toName || to.split('@')[0] } }],
+      to: [{ email_address: { address: toEmail, name: toName || toEmail.split('@')[0] } }],
       subject: "Welcome to Premium Membership!",
       htmlbody: emailTemplate,
     });
@@ -427,27 +372,3 @@ export async function sendPremiumEmail(toEmail, toName, uid) {
     console.error("❌ Failed to send premium email:", error.message);
   }
 }
-
-
-=======
-  
-    try {
-       const response = await client.sendMail({
-        from: { address: 'support@dgtldigicard.com', name: 'DigitalCard Team' },
-        to: [{ email_address: { address: toEmail, name: toName || to.split('@')[0] } }],
-        subject: "Welcome to Premium Membership!",
-        htmlbody: emailTemplate,
-      });
-      if (response.message !== 'OK') {
-        const errorResponse = await response.json();
-        throw new Error(`Error: ${errorResponse.message}`);
-      }
-      console.log(`✅ Premium email sent successfully to ${toEmail}.`);
-    } catch (error) {
-      console.error("❌ Failed to send premium email:", error.message);
-    }
-  }
-  
- 
-  
->>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d

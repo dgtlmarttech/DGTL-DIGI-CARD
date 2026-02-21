@@ -162,8 +162,12 @@ const App = ({ userInfo = sampleUserInfo }) => {
 
   const shareContact = async () => {
     // This is a placeholder share URL. In a real app, this would point to the user's card.
+<<<<<<< HEAD
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://my.dgtldigicard.com';
     const shareUrl = `${baseUrl}/${userInfo.customUID || userInfo.uid || ''}`;
+=======
+    const shareUrl = `https://my.dgtldigicard.com/${userInfo.customUID || userInfo.uid || ''}`;
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
     const shareData = {
       title: document.title,
       text: `Contact: ${document.title}`,
@@ -425,7 +429,7 @@ const App = ({ userInfo = sampleUserInfo }) => {
         {/* QR Modal */}
         {isQrModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm p-4">
-            <div className="relative w-full max-sm p-6 bg-gray-900 rounded-3xl shadow-2xl text-center text-white">
+            <div className="relative w-full max-w-sm p-6 bg-gray-900 rounded-3xl shadow-2xl text-center text-white">
               <button
                 onClick={toggleQrModal}
                 className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors"

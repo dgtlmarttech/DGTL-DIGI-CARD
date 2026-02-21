@@ -16,6 +16,7 @@ export const useUser = () => {
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+<<<<<<< HEAD
   const [userInfo, setUserInfo] = useState(() => {
     // Initial load from localStorage for offline support
     if (typeof window !== 'undefined') {
@@ -39,11 +40,21 @@ export const UserProvider = ({ children }) => {
     };
     checkStandalone();
   }, []);
+=======
+  const [userInfo, setUserInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [initializing, setInitializing] = useState(true); // Added for auth initialization
+  const [error, setError] = useState(null);
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
 
   // Helper function to calculate effective premium status with trial logic
   const calculateEffectivePremium = (userData) => {
     if (!userData) return false;
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
     let effectiveIsPremium = userData.isPremium || false;
 
     // If not truly premium, check trial status
@@ -64,7 +75,7 @@ export const UserProvider = ({ children }) => {
   const loadUserData = async (authUser) => {
     try {
       setError(null);
-      setLoading(true);
+<<<<<<< HEAD
 
       if (!authUser) {
         setUserInfo(null);
@@ -72,7 +83,19 @@ export const UserProvider = ({ children }) => {
         return;
       }
 
+      setLoading(true);
+
       // Only proceed if user is verified
+=======
+      setLoading(true);
+      
+      if (!authUser) {
+        setUserInfo(null);
+        return;
+      }
+
+      // Only proceed if user is verified (if you require email verification)
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
       if (!authUser.emailVerified) {
         console.log('User email not verified');
         setUserInfo(null);
@@ -80,6 +103,7 @@ export const UserProvider = ({ children }) => {
       }
 
       const userData = await getUserData(authUser.uid);
+<<<<<<< HEAD
 
       if (userData) {
         const effectiveIsPremium = calculateEffectivePremium(userData);
@@ -96,11 +120,26 @@ export const UserProvider = ({ children }) => {
         console.log('No user data found in Firestore');
         setUserInfo(null);
         if (typeof window !== 'undefined') localStorage.removeItem('dgtl_user_info');
+=======
+      
+      if (userData) {
+        const effectiveIsPremium = calculateEffectivePremium(userData);
+        setUserInfo({
+          ...userData,
+          effectiveIsPremium
+        });
+      } else {
+        console.log('No user data found in Firestore');
+        setUserInfo(null);
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
       }
     } catch (err) {
       console.error('Error loading user data:', err);
       setError(err.message);
+<<<<<<< HEAD
+=======
       setUserInfo(null);
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
     } finally {
       setLoading(false);
     }
@@ -108,6 +147,7 @@ export const UserProvider = ({ children }) => {
 
   // Listen to auth state changes
   useEffect(() => {
+<<<<<<< HEAD
     // Safety timeout: force initialize to false after 6 seconds
     const timeout = setTimeout(() => {
       setInitializing(state => {
@@ -140,6 +180,23 @@ export const UserProvider = ({ children }) => {
       clearTimeout(timeout);
     };
   }, []);
+=======
+    const unsubscribe = onAuthStateChanged(auth, (authUser) => {
+      
+      setUser(authUser);
+      
+      // Only set initializing to false after first auth state change
+      if (initializing) {
+        setInitializing(false);
+      }
+
+      // Load user data
+      loadUserData(authUser);
+    });
+
+    return () => unsubscribe();
+  }, [initializing]); // Added initializing to dependency array
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
 
   // Refresh user data function
   const refreshUserData = async () => {
@@ -169,7 +226,11 @@ export const UserProvider = ({ children }) => {
   // Check if user has specific permissions
   const hasPermission = (permission) => {
     if (!userInfo) return false;
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
     switch (permission) {
       case 'premium_features':
         return userInfo.effectiveIsPremium;
@@ -182,7 +243,11 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+<<<<<<< HEAD
   // Show loading state while initializing
+=======
+  // Show loading state while initializing or loading user data
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
   if (initializing) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -201,6 +266,7 @@ export const UserProvider = ({ children }) => {
     loading,
     error,
     initializing,
+<<<<<<< HEAD
     isStandalone,
 
     // Computed properties
@@ -209,12 +275,25 @@ export const UserProvider = ({ children }) => {
     isAdmin: userInfo?.isAdmin || false,
     isBlocked: userInfo?.blocked || false,
 
+=======
+    
+    // Computed properties
+    isAuthenticated: !!user && !!user.emailVerified, // Only consider verified users as authenticated
+    isPremium: userInfo?.effectiveIsPremium || false,
+    isAdmin: userInfo?.isAdmin || false,
+    isBlocked: userInfo?.blocked || false,
+    
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
     // Functions
     refreshUserData,
     updateUserInfo,
     isCurrentUser,
     hasPermission,
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
     // User properties (with safe defaults)
     displayName: userInfo?.displayName || user?.displayName || '',
     email: userInfo?.email || user?.email || '',

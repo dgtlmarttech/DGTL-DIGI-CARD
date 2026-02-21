@@ -105,14 +105,8 @@ const ContactCard = ({ userInfo }) => {
   };
 
   const shareContact = async () => {
-<<<<<<< HEAD
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://my.dgtldigicard.com';
     const shareUrl = `${baseUrl}/${userInfo?.customUID || userInfo?.uid || ''}`;
-
-=======
-    const shareUrl = `https://my.dgtldigicard.com/${userInfo?.customUID || userInfo?.uid || ''}`;
-    
->>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
     try {
       if (navigator.share) {
         await navigator.share({
@@ -169,22 +163,14 @@ const ContactCard = ({ userInfo }) => {
         </div>
       </div>
 
-<<<<<<< HEAD
       <div
-=======
-      <div 
->>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
         className="w-full max-w-sm mx-auto relative"
         onMouseMove={handleMouseMove}
       >
         {/* Glassmorphism Card */}
         <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl shadow-2xl overflow-hidden relative">
           {/* Glow Effect */}
-<<<<<<< HEAD
           <div
-=======
-          <div 
->>>>>>> 3dfb2372ed1a1b4b12acbb8db30cfbc0b83fef2d
             className="absolute inset-0 opacity-20 pointer-events-none"
             style={{
               background: `radial-gradient(circle at ${mousePosition.x}px ${mousePosition.y}px, ${cardColor}40 0%, transparent 50%)`,

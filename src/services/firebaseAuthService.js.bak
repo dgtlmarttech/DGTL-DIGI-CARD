@@ -45,7 +45,7 @@ const signInUsingEmailPassword = async (email, password) => {
 const signInWithGoogle = async () => {
   try {
     const provider = new GoogleAuthProvider();
-
+    
     // Add custom parameters for better UX
     provider.setCustomParameters({
       prompt: 'select_account'
@@ -54,7 +54,7 @@ const signInWithGoogle = async () => {
     // Always try popup first - it works on mobile browsers too
     try {
       const result = await signInWithPopup(auth, provider);
-
+      
       if (!result || !result.user) {
         throw new Error('Google sign in failed');
       }
@@ -64,17 +64,17 @@ const signInWithGoogle = async () => {
 
     } catch (popupError) {
       // If popup fails with specific errors, fallback to redirect
-      if (popupError.code === 'auth/popup-blocked' ||
-        popupError.code === 'auth/popup-closed-by-user' ||
-        popupError.code === 'auth/cancelled-popup-request') {
-
+      if (popupError.code === 'auth/popup-blocked' || 
+          popupError.code === 'auth/popup-closed-by-user' ||
+          popupError.code === 'auth/cancelled-popup-request') {
+        
         console.log("Popup blocked, falling back to redirect:", popupError.code);
-
+        
         // Fallback to redirect
         await signInWithRedirect(auth, provider);
         return; // Don't continue processing here for redirect
       }
-
+      
       // Re-throw other errors
       throw popupError;
     }
@@ -104,12 +104,12 @@ const processGoogleUser = async (user) => {
   // Check if user exists in Firestore
   const userDocRef = doc(db, "users", user.uid);
   const userDoc = await getDoc(userDocRef);
-
+  
   if (!userDoc.exists()) {
     // Create new user document for Google sign-in
     const [firstName, lastName] = (user.displayName || 'User Name').split(' ');
     const customUID = `${firstName || 'User'}_${lastName || 'Name'}_${Math.floor(1000 + Math.random() * 9000)}`;
-
+    
     await setDoc(userDocRef, {
       uid: user.uid,
       customUID: customUID,
@@ -145,7 +145,7 @@ const signUpUsingEmailPassword = async (data) => {
   try {
     const { firstName, lastName, password, confirmPassword, ...userData } = data;
     const userCreds = await createUserWithEmailAndPassword(auth, data.email, password);
-
+    
     let user = userCreds.user;
     const customUID = `${firstName}_${lastName}_${Math.floor(1000 + Math.random() * 9000)}`;
 
