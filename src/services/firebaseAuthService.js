@@ -14,7 +14,6 @@ import {
   collection, doc, getDoc, getDocs, query, setDoc, where, updateDoc
 } from "firebase/firestore";
 import { auth, db } from "../firebase/firebase";
-import { sendWelcomeEmail } from "./triggerMail";
 
 // Safely access the window object only on the client side
 const getActionCodeSettings = () => {
@@ -172,7 +171,6 @@ const signUpUsingEmailPassword = async (data) => {
       updatedAt: new Date().toISOString()
     });
 
-    await sendWelcomeEmail(data.email, `${firstName} ${lastName}`, customUID);
 
   } catch (e) {
     console.error("signUpUsingEmailPassword error:", e.message);

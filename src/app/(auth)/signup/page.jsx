@@ -111,6 +111,18 @@ const SignUp = () => {
       const currentUser = auth.currentUser;
       if (currentUser) {
         await sendEmailVerification(currentUser);
+
+        // Send welcome email via server-side API (fire-and-forget, doesn't block signup)
+        fetch('/api/send-welcome', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: data.email.trim(),
+            firstName: data.firstName.trim(),
+            uid: currentUser.uid,
+          }),
+        }).catch((err) => console.error('Welcome email API error:', err));
+
         alert("A verification email has been sent. Please check your inbox (and spam folder) to verify your account before logging in.");
         await auth.signOut();
         router.push("/successful-signup");
