@@ -111,6 +111,7 @@ const SignUp = () => {
       const currentUser = auth.currentUser;
       if (currentUser) {
         await sendEmailVerification(currentUser);
+        alert("A verification email has been sent. Please check your inbox (and spam folder) to verify your account before logging in.");
         await auth.signOut();
         router.push("/successful-signup");
       }
@@ -480,6 +481,13 @@ const SignUp = () => {
                         "Create My Digital Card"
                       )}
                     </button>
+                  </div>
+
+                  {/* Verification Reminder */}
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-center">
+                    <p className="text-red-600 font-bold text-sm">
+                      Check your email or spam folder for the verification link after clicking the button!
+                    </p>
                   </div>
 
                   {/* Sign In Link - Added to Step 2 as well */}

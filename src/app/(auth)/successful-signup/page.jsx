@@ -3,34 +3,34 @@ import { useEffect } from 'react';
 
 const SignupSuccessPage = () => {
 
-    useEffect(() => {
-      document.title = "Successful Signup – Digital Visiting Card";
-    
-      // Facebook Pixel
-      (function (f, b, e, v, n, t, s) {
-        if (f.fbq) return;
-        n = f.fbq = function () {
-          n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
-        };
-        if (!f._fbq) f._fbq = n;
-        n.push = n;
-        n.loaded = true;
-        n.version = "2.0";
-        n.queue = [];
-        t = b.createElement(e);
-        t.async = true;
-        t.src = v;
-        s = b.getElementsByTagName(e)[0];
-        s.parentNode.insertBefore(t, s);
-      })(
-        window,
-        document,
-        "script",
-        "https://connect.facebook.net/en_US/fbevents.js"
-      );
-      window.fbq("init", "396102998437619");
-      window.fbq("track", "PageView");
-    }, []);
+  useEffect(() => {
+    document.title = "Successful Signup – Digital Visiting Card";
+
+    // Facebook Pixel
+    (function (f, b, e, v, n, t, s) {
+      if (f.fbq) return;
+      n = f.fbq = function () {
+        n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+      };
+      if (!f._fbq) f._fbq = n;
+      n.push = n;
+      n.loaded = true;
+      n.version = "2.0";
+      n.queue = [];
+      t = b.createElement(e);
+      t.async = true;
+      t.src = v;
+      s = b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t, s);
+    })(
+      window,
+      document,
+      "script",
+      "https://connect.facebook.net/en_US/fbevents.js"
+    );
+    window.fbq("init", "396102998437619");
+    window.fbq("track", "PageView");
+  }, []);
 
   return (
     // Main container for the page, centered with flexbox and responsive padding
@@ -90,7 +90,8 @@ const SignupSuccessPage = () => {
         {/* Informative message to the user */}
         <p style={{
           fontSize: '18px', // Equivalent to text-lg
-          color: '#4b5563', // Equivalent to text-gray-600
+          color: '#dc2626', // Updated to red-600 for emphasis
+          fontWeight: 'bold',
           marginBottom: '32px', // Equivalent to mb-8
           lineHeight: '1.625', // Equivalent to leading-relaxed
         }}>
@@ -126,10 +127,10 @@ const SignupSuccessPage = () => {
               cursor: 'pointer',
               overflow: 'hidden', // Required for shine effect
             }}
-            // Note: Inline styles for :hover, :active, and pseudo-elements (like shine) are not directly possible.
-            // These would require JavaScript event listeners (onMouseEnter, onMouseLeave, etc.) or external CSS.
-            // The hover effects and shine previously implemented via Tailwind groups or pseudo-elements
-            // are not replicable with pure inline styles without JS.
+          // Note: Inline styles for :hover, :active, and pseudo-elements (like shine) are not directly possible.
+          // These would require JavaScript event listeners (onMouseEnter, onMouseLeave, etc.) or external CSS.
+          // The hover effects and shine previously implemented via Tailwind groups or pseudo-elements
+          // are not replicable with pure inline styles without JS.
           >
             {/* Email icon */}
             <svg style={{
@@ -164,8 +165,8 @@ const SignupSuccessPage = () => {
               cursor: 'pointer',
               overflow: 'hidden', // Required for subtle hover background
             }}
-            // Note: Similar to the primary button, complex hover effects and pseudo-elements
-            // are not replicable with pure inline styles without JavaScript.
+          // Note: Similar to the primary button, complex hover effects and pseudo-elements
+          // are not replicable with pure inline styles without JavaScript.
           >
             Go to Sign In Page
           </a>

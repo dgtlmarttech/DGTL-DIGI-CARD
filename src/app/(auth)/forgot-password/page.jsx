@@ -19,8 +19,8 @@ const ForgotPassword = () => {
     try {
       await resetPasswordUsingEmail(data.email);
       setMessage('Password reset email sent. Check your inbox.');
-      
-      router.push('/signin');
+
+      // router.push('/signin'); // Removed to allow user to see the success message
     } catch (err) {
       setMessage(err.message || 'An error occurred. Please try again.');
     }
@@ -50,7 +50,7 @@ const ForgotPassword = () => {
         <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl shadow-2xl p-8 relative overflow-hidden">
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none rounded-3xl"></div>
-          
+
           <div className="relative z-10">
             {/* Header */}
             <div className="text-center mb-8">
@@ -145,11 +145,10 @@ const ForgotPassword = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm transform animate-in zoom-in-95 duration-200">
             <div className="text-center">
-              <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
-                message.includes('sent') 
-                  ? 'bg-green-100 text-green-600' 
+              <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${message.includes('sent')
+                  ? 'bg-green-100 text-green-600'
                   : 'bg-red-100 text-red-600'
-              }`}>
+                }`}>
                 {message.includes('sent') ? (
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -160,10 +159,10 @@ const ForgotPassword = () => {
                   </svg>
                 )}
               </div>
-              <h3 className="text-xl font-bold mb-3 text-gray-900">
+              <h3 className="text-xl font-bold mb-3 text-red-600">
                 {message.includes('sent') ? 'Email Sent!' : 'Oops!'}
               </h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">{message}</p>
+              <p className="text-red-600 mb-6 font-semibold leading-relaxed">{message}</p>
               <button
                 onClick={() => {
                   setMessage('');
@@ -171,11 +170,10 @@ const ForgotPassword = () => {
                     router.push('/signin');
                   }
                 }}
-                className={`w-full py-3 px-6 font-semibold rounded-2xl transition-all duration-200 ${
-                  message.includes('sent')
+                className={`w-full py-3 px-6 font-semibold rounded-2xl transition-all duration-200 ${message.includes('sent')
                     ? 'bg-green-600 hover:bg-green-700 text-white'
                     : 'bg-red-600 hover:bg-red-700 text-white'
-                } hover:shadow-lg transform hover:-translate-y-0.5`}
+                  } hover:shadow-lg transform hover:-translate-y-0.5`}
               >
                 {message.includes('sent') ? 'Continue to Sign In' : 'Try Again'}
               </button>

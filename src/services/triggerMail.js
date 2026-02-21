@@ -14,12 +14,10 @@ const zeptoToken = process.env.NEXT_PUBLIC_ZEPTO_TOKEN;
 const client = new SendMailClient({ url: zeptoUrl, token: zeptoToken });
 
 export async function sendWelcomeEmail(toEmail, toName, uid) {
-  const apiKey = process.env.NEXT_PUBLIC_BREVO_API_KEY;
-  if (!apiKey) {
-    console.error("Error: BREVO_API_KEY is missing in environment variables.");
+  if (!zeptoToken) {
+    console.error("Error: NEXT_PUBLIC_ZEPTO_TOKEN is missing in environment variables.");
     return;
   }
-  const senderEmail = process.env.NEXT_PUBLIC_BREVO_SENDER_EMAIL;
   const link = `https://my.dgtldigicard.com/${uid}`;
 
   const emailTemplate = `
@@ -198,8 +196,7 @@ export async function sendWelcomeEmail(toEmail, toName, uid) {
       htmlbody: emailTemplate,
     });
     if (response.message !== 'OK') {
-      const errorResponse = await response.json();
-      throw new Error(`Error: ${errorResponse.message}`);
+      throw new Error(`Error: ${response.message || 'Unknown ZeptoMail error'}`);
     }
     console.log(`✅ Welcome email sent successfully to ${toEmail}.`);
   } catch (error) {
@@ -214,12 +211,10 @@ export async function sendWelcomeEmail(toEmail, toName, uid) {
  * @param {string} uid - User ID to generate a unique link.
  */
 export async function sendPremiumEmail(toEmail, toName, uid) {
-  const apiKey = process.env.NEXT_PUBLIC_BREVO_API_KEY;
-  if (!apiKey) {
-    console.error("Error: BREVO_API_KEY is missing in environment variables.");
+  if (!zeptoToken) {
+    console.error("Error: NEXT_PUBLIC_ZEPTO_TOKEN is missing in environment variables.");
     return;
   }
-  const senderEmail = process.env.NEXT_PUBLIC_BREVO_SENDER_EMAIL;
   const link = `https://my.dgtldigicard.com/${uid}`;
 
   const emailTemplate = `
@@ -364,8 +359,7 @@ export async function sendPremiumEmail(toEmail, toName, uid) {
       htmlbody: emailTemplate,
     });
     if (response.message !== 'OK') {
-      const errorResponse = await response.json();
-      throw new Error(`Error: ${errorResponse.message}`);
+      throw new Error(`Error: ${response.message || 'Unknown ZeptoMail error'}`);
     }
     console.log(`✅ Premium email sent successfully to ${toEmail}.`);
   } catch (error) {
