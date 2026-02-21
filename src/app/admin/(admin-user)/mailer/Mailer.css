@@ -1,0 +1,162 @@
+.mailer-page-container {
+  max-width: 1000px;
+  margin: 20px auto;
+  padding: 20px;
+  font-family: "Roboto", sans-serif;
+}
+
+.mailer-page-container h1 {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* Table Styling */
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.users-table th,
+.users-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+  font-size: 1rem;
+  color: #333;
+}
+
+.users-table th {
+  background: #f0f0f0;
+  font-weight: bold;
+}
+
+/* Send Email Button */
+.send-email-button {
+  background: #3498db;
+  color: #fff;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.send-email-button:hover {
+  background: #2980b9;
+}
+
+/* Section styling */
+.user-section {
+  margin-bottom: 30px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fdfdfd;
+}
+
+.user-section h2 {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  color: #444;
+}
+
+/* Template Edit Section */
+.template-edit-section {
+  margin-top: 40px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+
+.template-edit-section h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.template-block {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ccc;
+}
+
+.template-block h3 {
+  font-size: 1.8rem;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.template-block button {
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: background 0.3s;
+}
+
+.template-block button:hover {
+  background: #ddd;
+}
+
+.template-edit-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.template-edit-form input,
+.template-edit-form textarea {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.template-preview h4 {
+  font-size: 1.5rem;
+  margin-bottom: 5px;
+  color: #444;
+}
+
+.template-preview .template-content-preview {
+  color: #666;
+  border: 1px solid #eee;
+  padding: 8px;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.save-template-button {
+  background: #27ae60;
+  color: #fff;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.save-template-button:hover {
+  background: #219150;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .user-section h2,
+  .template-edit-section h2 {
+    font-size: 1.8rem;
+  }
+}
+
+p{
+  font-size: 1.2rem;
+  color: #219150;
+}

@@ -1,0 +1,347 @@
+/* UserSettings Sidebar Container */
+.user-settings-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 400px;
+  max-width: 90%;
+  height: 100vh;
+  background: #f8f8f8;
+  z-index: 2000;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Header */
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 10px;
+}
+
+.settings-header h2 {
+  font-size: 1.8rem;
+  color: #333;
+}
+
+.modal-close-button {
+  background: transparent;
+  border: none;
+  font-size: 1.6rem;
+  color: #888;
+  cursor: pointer;
+}
+
+/* Main Section */
+.settings-main {
+  flex: 1;
+  margin-top: 20px;
+}
+
+.profile-section {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.profile-image-container {
+  width: 120px;
+  height: 120px;
+}
+
+.profile-image-container .profile-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-image-container .profile-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Options Container */
+.options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 30px;
+  align-items: stretch;
+}
+
+.settings-option {
+  background: #3498db;
+  color: #fff;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s ease;
+  text-align: center;
+}
+
+.settings-option:hover {
+  background: #2980b9;
+}
+
+/* Style Changer */
+.style-changer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.style-changer span {
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+
+.style-changer select {
+  padding: 10px;
+  font-size: 1rem;
+  border: 2px solid #3498db;
+  border-radius: 8px;
+  background: #f8f8f8;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  outline: none;
+  appearance: none;
+  width: 100%;
+  text-align: center;
+}
+
+.style-changer::after {
+  content: "▼";
+  font-size: 0.9rem;
+  color: #3498db;
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* Tooltip */
+.tooltip-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.tooltip {
+  visibility: hidden;
+  background: #333;
+  color: #fff;
+  text-align: center;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  position: absolute;
+  bottom: -25px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.tooltip-container:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Footer */
+.settings-footer {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.logout-button {
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s ease;
+}
+
+.logout-button:hover {
+  background: #c0392b;
+}
+
+/* Styles for the non-current-user view */
+
+/* Professional login message */
+.login-message {
+  font-size: 1.1rem;
+  color: #333;
+  text-align: center;
+  margin: 20px;
+  line-height: 1.5;
+}
+
+/* Login Button */
+.login-button {
+  background: #1e90ff;
+  color: #fff;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s ease;
+  display: block;
+  margin: 20px auto;
+}
+
+.login-button:hover {
+  background: #187bcd;
+}
+
+/* Crop Modal Popup for Profile Pic */
+.crop-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2100;
+}
+
+.crop-modal-content {
+  background: #fff;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+.crop-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.crop-modal-header h2 {
+  font-size: 1.8rem;
+  color: #333;
+}
+
+.crop-modal-body {
+  font-size: 1rem;
+  color: #555;
+}
+
+.upload-label {
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #333;
+  display: block;
+}
+
+.crop-container {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  background: #000;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 0 auto 15px;
+}
+
+.zoom-control {
+  margin: 10px 0;
+}
+
+.zoom-control input[type="range"] {
+  width: 100%;
+}
+
+.preview-container {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.preview-container h3 {
+  margin-bottom: 5px;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.profile-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: auto;
+}
+
+.profile-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.save-image-button {
+  background: #27ae60;
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+
+.save-image-button:hover {
+  background: #219150;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .user-settings-sidebar {
+    width: 100%;
+    max-width: 100%;
+  }
+}
