@@ -140,10 +140,10 @@ export async function sendWelcomeEmail(toEmail, toName, uid) {
       <!-- Pricing & CTA -->
       <div style="text-align: center; margin-top: 25px;">
         <div style="margin-bottom: 20px;">
-          <span style="font-size: 32px; font-weight: 700; color: #00d1ff;">₹499</span>
-          <span style="font-size: 16px; color: #cccccc; text-decoration: line-through; margin-left: 10px;">₹666</span>
+          <span style="font-size: 32px; font-weight: 700; color: #00d1ff;">₹99</span>
+          <span style="font-size: 16px; color: #cccccc; text-decoration: line-through; margin-left: 10px;">₹499</span>
           <div style="font-size: 14px; color: #ffd700; margin-top: 5px; font-weight: 600;">
-            🎉 Limited Time: 25% OFF!
+            🎉 Launch Offer: 80% OFF!
           </div>
         </div>
         

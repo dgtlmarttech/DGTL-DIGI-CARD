@@ -249,9 +249,7 @@ export default function HomePage() {
                                         <p className="text-gray-600 text-sm mt-1">
                                             {userInfo?.isPremium
                                                 ? '👑 Premium Member'
-                                                : userInfo?.effectiveIsPremium
-                                                    ? '🚀 Trial Active'
-                                                    : '💫 Free Plan'}
+                                                : '⚡ Upgrade to Premium'}
                                         </p>
                                     </div>
                                 </div>
@@ -284,7 +282,7 @@ export default function HomePage() {
                                 onClick={() => router.push('/signup')}
                                 className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-8 sm:px-10 rounded-xl font-semibold text-lg hover:cursor-pointer hover:from-blue-700 hover:to-purple-700 transition duration-200 shadow-lg transform hover:scale-105"
                             >
-                                🚀 Get Started Free
+                                🚀 Get Started Now
                             </button>
                             <button
                                 onClick={() => router.push('/signin')}

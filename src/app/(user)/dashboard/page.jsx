@@ -64,17 +64,7 @@ const ProfilePage = () => {
     }
   }, [userInfo]);
 
-  const trialDaysRemaining = userInfo?.isTrialActive
-    ? Math.max(
-        0,
-        Math.ceil(
-          (new Date(userInfo.trialStartDate?.toDate?.() || userInfo.trialStartDate).getTime() +
-            30 * 24 * 60 * 60 * 1000 -
-            new Date().getTime()) /
-            (1000 * 60 * 60 * 24)
-        )
-      )
-    : 0;
+
 
   const onCropComplete = useCallback((_, pixels) => setCroppedAreaPixels(pixels), []);
 
@@ -178,22 +168,18 @@ const ProfilePage = () => {
     <div className="min-h-screen bg-gray-50 flex">
       {/* Main form area */}
       <div className="flex-1 p-4 lg:pr-[440px]">
-        {/* Premium/Trial Banner */}
+        {/* Premium Banner */}
         <div
           onClick={() => router.push('/payment')}
           className={`mb-6 rounded-xl p-4 text-center text-sm font-semibold text-white shadow-lg cursor-pointer ${
             userInfo?.isPremium
               ? 'bg-gradient-to-r from-yellow-400 to-yellow-600'
-              : userInfo?.isTrialActive
-              ? 'bg-gradient-to-r from-green-500 to-green-700'
               : 'bg-gradient-to-r from-red-500 to-red-700'
           }`}
         >
           {userInfo?.isPremium
             ? "🎉 You're a Premium Member! Manage Your Plan"
-            : userInfo?.isTrialActive
-            ? `🚀 Free Trial: ${trialDaysRemaining} days left! Upgrade now!`
-            : '⚡ Trial ended. Upgrade to Premium to unlock all features!'}
+            : '⚡ Upgrade to Premium for just ₹99/year to unlock all features!'}
         </div>
 
         {/* Avatar Upload */}

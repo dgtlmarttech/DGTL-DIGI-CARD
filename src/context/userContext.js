@@ -40,24 +40,10 @@ export const UserProvider = ({ children }) => {
     checkStandalone();
   }, []);
 
-  // Helper function to calculate effective premium status with trial logic
+  // Helper function to calculate effective premium status (paid only, no free trial)
   const calculateEffectivePremium = (userData) => {
     if (!userData) return false;
-
-    let effectiveIsPremium = userData.isPremium || false;
-
-    // If not truly premium, check trial status
-    if (!effectiveIsPremium && userData.trialStartDate) {
-      const now = new Date();
-      const trialStart = userData.trialStartDate.toDate ? userData.trialStartDate.toDate() : new Date(userData.trialStartDate);
-      const trialEnd = new Date(trialStart.getTime() + (30 * 24 * 60 * 60 * 1000)); //30 days
-
-      if (now < trialEnd) {
-        effectiveIsPremium = true;
-      }
-    }
-
-    return effectiveIsPremium;
+    return userData.isPremium || false;
   };
 
   // Load user data when auth user changes
@@ -153,7 +139,7 @@ export const UserProvider = ({ children }) => {
     if (userInfo) {
       const updatedInfo = { ...userInfo, ...updates };
       // Recalculate effective premium status if relevant fields changed
-      if ('isPremium' in updates || 'trialStartDate' in updates) {
+      if ('isPremium' in updates) {
         updatedInfo.effectiveIsPremium = calculateEffectivePremium(updatedInfo);
       }
       setUserInfo(updatedInfo);

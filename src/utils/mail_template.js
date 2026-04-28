@@ -142,7 +142,7 @@ const getEmailTemplate = (type, userName, daysLeft, isExpired = false) => {
 
               <div class="offer-box">
                 <h2 style="margin: 0 0 15px 0; font-size: 26px; font-weight: 700;">🎉 Limited Time Offer</h2>
-                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Get Premium for just ₹499/year!</p>
+                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Get Premium for just ₹99/year!</p>
                 <p style="margin: 0; opacity: 0.95; font-size: 16px;">Save 25% • Original price ₹665</p>
               </div>
               
@@ -196,7 +196,7 @@ const getEmailTemplate = (type, userName, daysLeft, isExpired = false) => {
               
               <div class="offer-box" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
                 <h2 style="margin: 0 0 15px 0; font-size: 26px; font-weight: 700;">🎯 Final Hours Deal</h2>
-                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Secure Premium for ₹499/year!</p>
+                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Secure Premium for ₹99/year!</p>
                 <p style="margin: 0; opacity: 0.95; font-size: 16px;">Only 48 hours left to claim this offer!</p>
               </div>
               
@@ -251,7 +251,7 @@ const getEmailTemplate = (type, userName, daysLeft, isExpired = false) => {
               
               <div class="offer-box" style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);">
                 <h2 style="margin: 0 0 15px 0; font-size: 26px; font-weight: 700;">🎁 Special Comeback Offer</h2>
-                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Return for just ₹499/year!</p>
+                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Return for just ₹99/year!</p>
                 <p style="margin: 0; opacity: 0.95; font-size: 16px;">This exclusive 25% discount is just for you</p>
               </div>
               
@@ -305,7 +305,7 @@ const getEmailTemplate = (type, userName, daysLeft, isExpired = false) => {
               
               <div class="offer-box" style="background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);">
                 <h2 style="margin: 0 0 15px 0; font-size: 26px; font-weight: 700;">⚡ Last Chance Offer</h2>
-                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Final Price: ₹499/year</p>
+                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Final Price: ₹99/year</p>
                 <p style="margin: 0; opacity: 0.95; font-size: 16px;">This offer expires very soon!</p>
               </div>
               
@@ -359,7 +359,7 @@ const getEmailTemplate = (type, userName, daysLeft, isExpired = false) => {
               
               <div class="offer-box">
                 <h2 style="margin: 0 0 15px 0; font-size: 26px; font-weight: 700;">🎉 Loyalty Discount</h2>
-                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Renew for just ₹499/year!</p>
+                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Renew for just ₹99/year!</p>
                 <p style="margin: 0; opacity: 0.95; font-size: 16px;">25% off your renewal • Limited time</p>
               </div>
               
@@ -406,7 +406,7 @@ const getEmailTemplate = (type, userName, daysLeft, isExpired = false) => {
               
               <div class="offer-box" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
                 <h2 style="margin: 0 0 15px 0; font-size: 26px; font-weight: 700;">🎯 Quick Renewal Deal</h2>
-                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Renew now for ₹499/year!</p>
+                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Renew now for ₹99/year!</p>
                 <p style="margin: 0; opacity: 0.95; font-size: 16px;">Act fast - only 2 days left!</p>
               </div>
               
@@ -453,7 +453,7 @@ const getEmailTemplate = (type, userName, daysLeft, isExpired = false) => {
               
               <div class="offer-box" style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);">
                 <h2 style="margin: 0 0 15px 0; font-size: 26px; font-weight: 700;">🎁 Win-Back Offer</h2>
-                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Return for ₹499/year!</p>
+                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Return for ₹99/year!</p>
                 <p style="margin: 0; opacity: 0.95; font-size: 16px;">Exclusive 25% discount to welcome you back</p>
               </div>
               
@@ -500,7 +500,7 @@ const getEmailTemplate = (type, userName, daysLeft, isExpired = false) => {
               
               <div class="offer-box" style="background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);">
                 <h2 style="margin: 0 0 15px 0; font-size: 26px; font-weight: 700;">⚡ Final Offer</h2>
-                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Last chance: ₹499/year</p>
+                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Last chance: ₹99/year</p>
                 <p style="margin: 0; opacity: 0.95; font-size: 16px;">This offer expires very soon!</p>
               </div>
               

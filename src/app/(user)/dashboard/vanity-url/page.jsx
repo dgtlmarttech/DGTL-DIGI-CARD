@@ -17,7 +17,7 @@ const VanityURLPage = () => {
     const [isValid, setIsValid] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
 
-    const canAccessPremiumFeatures = userInfo?.isPremium || userInfo?.isTrialActive;
+    const canAccessPremiumFeatures = userInfo?.isPremium;
 
     // On mount: sync state from DB
     useEffect(() => {

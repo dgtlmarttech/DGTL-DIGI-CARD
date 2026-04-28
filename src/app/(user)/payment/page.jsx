@@ -44,9 +44,7 @@ const PaymentPage = () => {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-  // Calculate trial days remaining
-  const trialDaysRemaining = userInfo?.isTrialActive && userInfo?.trialStartDate ? 
-    Math.max(0, Math.ceil((new Date(userInfo.trialStartDate?.toDate?.() || userInfo.trialStartDate).getTime() + (30 * 24 * 60 * 60 * 1000) - new Date().getTime()) / (1000 * 60 * 60 * 24))) : 0;
+
 
   useEffect(() => {
     if (!userLoading && !isAuthenticated) {
@@ -91,7 +89,7 @@ const PaymentPage = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          amount: 499,
+          amount: 99,
           userId: user.uid,
           userEmail: user.email
         }),
@@ -307,18 +305,7 @@ const PaymentPage = () => {
         </header>
 
         <main className="p-6 flex-grow">
-          {/* Trial Status */}
-          {userInfo?.isTrialActive && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <FiGift className="text-blue-600 dark:text-blue-400" size={16} />
-                <span className="font-semibold text-blue-800 dark:text-blue-200">Free Trial Active</span>
-              </div>
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                You have {trialDaysRemaining} days left in your free trial. Upgrade now to continue enjoying premium features!
-              </p>
-            </div>
-          )}
+
 
           <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
             Unlock the full potential of your digital card with <strong className="font-semibold text-gray-800 dark:text-gray-200">Premium</strong> features.
@@ -326,7 +313,7 @@ const PaymentPage = () => {
 
           <div className="flex items-baseline gap-2 mb-6">
             <span className="text-5xl font-bold text-gray-900 dark:text-gray-50">
-              ₹499
+              ₹99
             </span>
             <span className="text-lg text-gray-500 dark:text-gray-400">
               /year
@@ -335,7 +322,7 @@ const PaymentPage = () => {
 
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mb-6">
             <p className="text-sm text-green-800 dark:text-green-200 text-center">
-              <span className="font-semibold">Save 58%</span> compared to monthly billing
+              <span className="font-semibold">🎉 Launch Offer!</span> Get premium at just ₹99/year
             </p>
           </div>
 
@@ -423,7 +410,7 @@ const PaymentPage = () => {
                 Processing Payment...
               </div>
             ) : (
-              'Upgrade to Premium - ₹499/year'
+              'Upgrade to Premium - ₹99/year'
             )}
           </button>
 

@@ -167,7 +167,7 @@ const CrmNavbar = ({ children, pageTitle }) => {
                         {userInfo?.firstName || user?.displayName || 'User'}
                       </span>
                       <span className="text-xs text-slate-500 leading-tight">
-                        {userInfo?.isPremium ? '👑 Premium' : '🆓 Free Plan'}
+                        {userInfo?.isPremium ? '👑 Premium' : '⚡ Basic Plan'}
                       </span>
                     </div>
                   </div>
@@ -266,7 +266,7 @@ const CrmNavbar = ({ children, pageTitle }) => {
                       {userInfo?.email || user?.email}
                     </span>
                     <span className="text-xs text-blue-600 font-medium">
-                      {userInfo?.isPremium ? '👑 Premium Member' : '🆓 Free Plan'}
+                      {userInfo?.isPremium ? '👑 Premium Member' : '⚡ Basic Plan'}
                     </span>
                   </div>
                 </div>
