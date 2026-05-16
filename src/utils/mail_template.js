@@ -105,235 +105,15 @@ const getEmailTemplate = (type, userName, daysLeft, isExpired = false) => {
     </div>
   `;
 
+  // NOTE: Trial mailer templates have been removed.
+  // Free trial is replaced with a direct ₹99/year payment.
+  // Only Premium renewal mailers remain below.
+
   const templates = {
-    // Trial 10 days before expiration with discount
-    trial_10_days_before_discount: {
-      subject: `🌟 Exclusive Offer: Your Premium Trial Ends Soon!`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          ${baseStyles}
-        </head>
-        <body style="background-color: #f1f5f9; margin: 0; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-          <div class="container">
-            <div class="header">
-              ${logoHeader}
-              <h1 style="margin: 20px 0 0 0; font-size: 28px; font-weight: 700;">🌟 Exclusive Offer Just for You!</h1>
-              <p style="margin: 15px 0 0 0; opacity: 0.9; font-size: 16px;">Hi ${userName}, your Premium trial ends in 10 days</p>
-            </div>
-            <div class="content">
-              <p style="font-size: 18px; margin-bottom: 25px; color: #475569;">
-                Hello ${userName}, your <strong>DGTL DIGI CARD Premium trial</strong> has been amazing so far! 
-                Don't let this opportunity slip away.
-              </p>
-              
-              <div class="feature-highlight">
-                <h3 style="margin: 0 0 10px 0; color: #1e293b; font-size: 18px;">🚀 Continue enjoying:</h3>
-                <ul style="margin: 10px 0; padding-left: 20px; color: #475569;">
-                  <li>Unlimited digital business cards</li>
-                  <li>Advanced analytics & insights</li>
-                  <li>Custom branding options</li>
-                  <li>Priority customer support</li>
-                </ul>
-              </div>
 
-              <div class="offer-box">
-                <h2 style="margin: 0 0 15px 0; font-size: 26px; font-weight: 700;">🎉 Limited Time Offer</h2>
-                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Get Premium for just ₹99/year!</p>
-                <p style="margin: 0; opacity: 0.95; font-size: 16px;">Save 25% • Original price ₹665</p>
-              </div>
-              
-              <div style="text-align: center;">
-                <a href="https://my.dgtldigicard.com/payment" class="cta-button">
-                  🚀 Upgrade & Save Now
-                </a>
-              </div>
-              
-              <div class="divider"></div>
-              
-              <p style="font-size: 14px; color: #64748b; text-align: center; margin: 0;">
-                Questions about your premium features? <a href="mailto:support@dgtldigicard.com" style="color: #3b82f6;">We're here to help!</a>
-              </p>
-            </div>
-            <div class="footer">
-              <p style="margin: 0 0 15px 0; font-weight: 600; color: #475569;">DGTL DIGI CARD</p>
-              <p style="margin: 0 0 15px 0;"><a href="https://my.dgtldigicard.com/signin" style="color: #3b82f6; text-decoration: none;">Sign in to your account</a> | 
-                 <a href="mailto:contact@dgtlmart.com" style="color: #3b82f6; text-decoration: none;">Contact Support</a></p>
-              <p style="margin: 0; font-size: 12px; color: #94a3b8;">© 2024 DGTL DIGI CARD. Making networking effortless.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `
-    },
+    // ── Premium Renewal Mailers (4 total) ─────────────────────────────────────
 
-    // Trial 2 days before expiration with discount
-    trial_2_days_before_discount: {
-      subject: `⏰ Urgent: Your Premium Trial Expires in 2 Days!`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          ${baseStyles}
-        </head>
-        <body style="background-color: #f1f5f9; margin: 0; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-          <div class="container">
-            <div class="header" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
-              ${logoHeader}
-              <h1 style="margin: 20px 0 0 0; font-size: 28px; font-weight: 700;">⏰ Last Chance Alert!</h1>
-              <p style="margin: 15px 0 0 0; opacity: 0.9; font-size: 16px;">Hi ${userName}, only 2 days left on your Premium trial</p>
-            </div>
-            <div class="content">
-              <p style="font-size: 18px; margin-bottom: 25px; color: #475569;">
-                ${userName}, your <strong>DGTL DIGI CARD Premium trial</strong> expires in just 2 days! 
-                Don't lose access to your premium features.
-              </p>
-              
-              <div class="offer-box" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
-                <h2 style="margin: 0 0 15px 0; font-size: 26px; font-weight: 700;">🎯 Final Hours Deal</h2>
-                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Secure Premium for ₹99/year!</p>
-                <p style="margin: 0; opacity: 0.95; font-size: 16px;">Only 48 hours left to claim this offer!</p>
-              </div>
-              
-              <div style="text-align: center;">
-                <a href="https://my.dgtldigicard.com/payment" class="cta-button" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
-                  🔥 Secure My Premium Access
-                </a>
-              </div>
-              
-              <div class="feature-highlight" style="border-left-color: #dc2626;">
-                <h3 style="margin: 0 0 10px 0; color: #dc2626; font-size: 16px;">⚡ What you'll lose without Premium:</h3>
-                <p style="margin: 0; color: #64748b; font-size: 14px;">
-                  Advanced analytics, unlimited cards, custom branding, and priority support
-                </p>
-              </div>
-            </div>
-            <div class="footer">
-              <p style="margin: 0 0 15px 0; font-weight: 600; color: #475569;">DGTL DIGI CARD</p>
-              <p style="margin: 0 0 15px 0;"><a href="https://my.dgtldigicard.com/signin" style="color: #3b82f6; text-decoration: none;">Sign in to your account</a> | 
-                 <a href="mailto:contact@dgtlmart.com" style="color: #3b82f6; text-decoration: none;">Contact Support</a></p>
-              <p style="margin: 0; font-size: 12px; color: #94a3b8;">© 2024 DGTL DIGI CARD. Making networking effortless.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `
-    },
-
-    // Trial 2 days after expiration comeback offer
-    trial_2_days_after_discount: {
-      subject: `💔 We Miss You! Exclusive Comeback Offer - 25% OFF`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          ${baseStyles}
-        </head>
-        <body style="background-color: #f1f5f9; margin: 0; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-          <div class="container">
-            <div class="header" style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);">
-              ${logoHeader}
-              <h1 style="margin: 20px 0 0 0; font-size: 28px; font-weight: 700;">💔 We Miss You, ${userName}!</h1>
-              <p style="margin: 15px 0 0 0; opacity: 0.9; font-size: 16px;">Your Premium trial ended 2 days ago, but it's not too late</p>
-            </div>
-            <div class="content">
-              <p style="font-size: 18px; margin-bottom: 25px; color: #475569;">
-                We noticed you haven't upgraded yet, ${userName}. We'd love to have you back as a 
-                <strong>DGTL DIGI CARD Premium</strong> member!
-              </p>
-              
-              <div class="offer-box" style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);">
-                <h2 style="margin: 0 0 15px 0; font-size: 26px; font-weight: 700;">🎁 Special Comeback Offer</h2>
-                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Return for just ₹99/year!</p>
-                <p style="margin: 0; opacity: 0.95; font-size: 16px;">This exclusive 25% discount is just for you</p>
-              </div>
-              
-              <div style="text-align: center;">
-                <a href="https://my.dgtldigicard.com/payment" class="cta-button" style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);">
-                  💜 Welcome Me Back
-                </a>
-              </div>
-              
-              <div class="feature-highlight" style="border-left-color: #7c3aed;">
-                <h3 style="margin: 0 0 10px 0; color: #7c3aed; font-size: 16px;">🌟 Ready to get back to premium networking?</h3>
-                <p style="margin: 0; color: #64748b; font-size: 14px;">
-                  Join thousands of professionals who trust DGTL DIGI CARD for their digital networking needs.
-                </p>
-              </div>
-            </div>
-            <div class="footer">
-              <p style="margin: 0 0 15px 0; font-weight: 600; color: #475569;">DGTL DIGI CARD</p>
-              <p style="margin: 0 0 15px 0;"><a href="https://my.dgtldigicard.com/signin" style="color: #3b82f6; text-decoration: none;">Sign in to your account</a> | 
-                 <a href="mailto:contact@dgtlmart.com" style="color: #3b82f6; text-decoration: none;">Contact Support</a></p>
-              <p style="margin: 0; font-size: 12px; color: #94a3b8;">© 2024 DGTL DIGI CARD. Making networking effortless.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `
-    },
-
-    trial_10_days_after_discount: {
-      subject: `🚨 Final Call: Your Last Chance for Premium Access!`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          ${baseStyles}
-        </head>
-        <body style="background-color: #f1f5f9; margin: 0; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-          <div class="container">
-            <div class="header" style="background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);">
-              ${logoHeader}
-              <h1 style="margin: 20px 0 0 0; font-size: 28px; font-weight: 700;">🚨 Final Call, ${userName}!</h1>
-              <p style="margin: 15px 0 0 0; opacity: 0.9; font-size: 16px;">This is your last chance to upgrade at this special price</p>
-            </div>
-            <div class="content">
-              <p style="font-size: 18px; margin-bottom: 25px; color: #475569;">
-                ${userName}, your <strong>DGTL DIGI CARD Premium trial</strong> ended 10 days ago. 
-                This is our final offer to welcome you back.
-              </p>
-              
-              <div class="offer-box" style="background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);">
-                <h2 style="margin: 0 0 15px 0; font-size: 26px; font-weight: 700;">⚡ Last Chance Offer</h2>
-                <p style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600;">Final Price: ₹99/year</p>
-                <p style="margin: 0; opacity: 0.95; font-size: 16px;">This offer expires very soon!</p>
-              </div>
-              
-              <div style="text-align: center;">
-                <a href="https://my.dgtldigicard.com/payment" class="cta-button" style="background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);">
-                  🔥 Claim Final Offer
-                </a>
-              </div>
-              
-              <div class="divider"></div>
-              
-              <p style="font-size: 14px; color: #dc2626; text-align: center; margin: 0; font-weight: 600;">
-                ⚠️ This is our final outreach. Don't miss out on premium digital networking!
-              </p>
-            </div>
-            <div class="footer">
-              <p style="margin: 0 0 15px 0; font-weight: 600; color: #475569;">DGTL DIGI CARD</p>
-              <p style="margin: 0 0 15px 0;"><a href="https://my.dgtldigicard.com/signin" style="color: #3b82f6; text-decoration: none;">Sign in to your account</a> | 
-                 <a href="mailto:contact@dgtlmart.com" style="color: #3b82f6; text-decoration: none;">Contact Support</a></p>
-              <p style="margin: 0; font-size: 12px; color: #94a3b8;">© 2024 DGTL DIGI CARD. Making networking effortless.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `
-    },
-
-    // Premium versions (similar structure with subscription renewal language)
+    // 1. Premium 10 days before renewal
     premium_10_days_before_discount: {
       subject: `🌟 Renewal Reminder: Exclusive Discount Inside!`,
       html: `
@@ -365,7 +145,7 @@ const getEmailTemplate = (type, userName, daysLeft, isExpired = false) => {
               
               <div style="text-align: center;">
                 <a href="https://my.dgtldigicard.com/payment" class="cta-button">
-                  🚀 Renew & Save Now
+                  🚀 Renew &amp; Save Now
                 </a>
               </div>
             </div>
@@ -381,6 +161,7 @@ const getEmailTemplate = (type, userName, daysLeft, isExpired = false) => {
       `
     },
 
+    // 2. Premium 2 days before renewal
     premium_2_days_before_discount: {
       subject: `⏰ Renewal Reminder: 2 Days Left + Special Discount!`,
       html: `
@@ -428,6 +209,7 @@ const getEmailTemplate = (type, userName, daysLeft, isExpired = false) => {
       `
     },
 
+    // 3. Premium 2 days after expiry (win-back)
     premium_2_days_after_discount: {
       subject: `💔 Your Premium Expired - Special Win-Back Offer!`,
       html: `
@@ -475,6 +257,7 @@ const getEmailTemplate = (type, userName, daysLeft, isExpired = false) => {
       `
     },
 
+    // 4. Premium 10 days after expiry (final call)
     premium_10_days_after_discount: {
       subject: `🚨 Final Opportunity: Premium Reactivation Offer`,
       html: `

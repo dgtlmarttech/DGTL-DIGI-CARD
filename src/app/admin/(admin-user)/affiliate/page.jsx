@@ -564,7 +564,7 @@ const AffiliateListPage = () => {
                                                                                     Premium
                                                                                 </>
                                                                             ) : (
-                                                                                'Free'
+                                                                                'Standard'
                                                                             )}
                                                                         </span>
                                                                     </td>

@@ -18,28 +18,9 @@ const AuthLayout = ({ children }) => {
         setErrorMessage(''); // Clear previous errors
 
         if (user) {
-          // Check if email is verified
-          if (!user.emailVerified) {
-            try {
-              await sendEmailVerification(user);
-              setErrorMessage(
-                "Email not verified. A new verification link has been sent. Please verify your email before continuing."
-              );
-              await auth.signOut();
-              setIsUser(false);
-            } catch (verificationError) {
-              console.error('Error sending verification email:', verificationError);
-              setErrorMessage(
-                "Unable to send verification email. Please try again later."
-              );
-              await auth.signOut();
-              setIsUser(false);
-            }
-          } else {
-            // User is authenticated and verified
-            setIsUser(true);
-            router.push('/dashboard');
-          }
+          // User is authenticated (verified via OTP during signup)
+          setIsUser(true);
+          router.push('/dashboard');
         } else {
           // No user is signed in
           setIsUser(false);

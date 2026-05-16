@@ -14,7 +14,6 @@ import {
   collection, doc, getDoc, getDocs, query, setDoc, where, updateDoc
 } from "firebase/firestore";
 import { auth, db } from "../firebase/firebase";
-import { sendWelcomeEmail } from "./triggerMail";
 
 // Safely access the window object only on the client side
 const getActionCodeSettings = () => {
@@ -128,14 +127,24 @@ const processGoogleUser = async (user) => {
       about: "",
       //default values
       isPremium: false,
-      isTrialActive: false,
-      trialStartDate: null,
       // Profile completion status
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
 
-    await sendWelcomeEmail(user.email, `${firstName} ${lastName}`, customUID);
+    try {
+      await fetch('/api/send-welcome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          firstName: `${firstName || 'User'} ${lastName || 'Name'}`,
+          uid: customUID
+        })
+      });
+    } catch (error) {
+      console.error('Error triggering welcome email via API:', error);
+    }
   }
 
   return user;
@@ -165,8 +174,6 @@ const signUpUsingEmailPassword = async (data) => {
       about: userData.about || "",
       //default values
       isPremium: false,
-      isTrialActive: false,
-      trialStartDate: null,
       // Profile completion status
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()

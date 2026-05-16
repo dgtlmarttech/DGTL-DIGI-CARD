@@ -5,10 +5,11 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signUpUsingEmailPassword, signInWithGoogle } from "../../../services/firebaseAuthService";
-import { getAuth, sendEmailVerification } from "firebase/auth";
-import { FaEye, FaEyeSlash, FaUser, FaEnvelope, FaPhone, FaLock, FaArrowRight, FaArrowLeft, FaCheck, FaGoogle } from "react-icons/fa";
-import ProgressIndicator from "../../../components/ProgressIndicator.jsx";
+import { getAuth } from "firebase/auth";
+import { FaEye, FaEyeSlash, FaUser, FaEnvelope, FaPhone, FaLock, FaArrowRight, FaArrowLeft, FaCheck, FaGoogle, FaShieldAlt } from "react-icons/fa";
 import BubbleBackground from "../../../components/BubbleBackground.jsx";
+import { db } from "../../../firebase/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 const SignUp = () => {
   const router = useRouter();
@@ -20,67 +21,100 @@ const SignUp = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [referralCode, setReferralCode] = useState("");
 
+  // OTP State
+  const [emailOtp, setEmailOtp] = useState("");
+  const [phoneOtp, setPhoneOtp] = useState("");
+  const [verificationId, setVerificationId] = useState("");
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [emailTimer, setEmailTimer] = useState(0);
+  const [phoneTimer, setPhoneTimer] = useState(0);
+
   const {
     register,
     handleSubmit,
     watch,
     trigger,
+    getValues,
     formState: { errors },
   } = useForm();
+
+  const emailValue = watch("email");
+  const mobileValue = watch("mobile");
+  const firstNameValue = watch("firstName");
 
   useEffect(() => {
     document.title = "Signup – Digital Visiting Card";
     const urlParams = new URLSearchParams(window.location.search);
     setReferralCode(urlParams.get("ref") || "");
-
-    // Facebook Pixel initialization
-    (function (f, b, e, v, n, t, s) {
-      if (f.fbq) return;
-      n = f.fbq = function () {
-        n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
-      };
-      if (!f._fbq) f._fbq = n;
-      n.push = n;
-      n.loaded = true;
-      n.version = "2.0";
-      n.queue = [];
-      t = b.createElement(e);
-      t.async = true;
-      t.src = v;
-      s = b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t, s);
-    })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
-    if (typeof window !== 'undefined' && window.fbq) {
-      window.fbq("init", "396102998437619");
-      window.fbq("track", "PageView");
-    }
   }, []);
+
+  // Timer logic for resending OTP
+  useEffect(() => {
+    let interval;
+    if (emailTimer > 0) {
+      interval = setInterval(() => setEmailTimer((prev) => prev - 1), 1000);
+    }
+    return () => clearInterval(interval);
+  }, [emailTimer]);
+
+  useEffect(() => {
+    let interval;
+    if (phoneTimer > 0) {
+      interval = setInterval(() => setPhoneTimer((prev) => prev - 1), 1000);
+    }
+    return () => clearInterval(interval);
+  }, [phoneTimer]);
 
   const pwdValue = watch("password", "");
   const confirmValue = watch("confirmPassword", "");
 
-  const handleNextStep = async () => {
+  /**
+   * STEP 1 -> STEP 2: Send OTPs
+   */
+  const handleSendOTPs = async () => {
     setErrorMessage("");
-    const step1Fields = ["firstName", "lastName", "email", "mobile"];
-    const isStep1Valid = await trigger(step1Fields);
+    const isValid = await trigger(["firstName", "lastName", "email", "mobile"]);
+    if (!isValid) return;
 
-    if (isStep1Valid) {
-      setCurrentStep(2);
-    }
-  };
-
-  const handlePrevStep = () => {
-    setCurrentStep(1);
-    setErrorMessage("");
-  };
-
-  const handleGoogleSignUp = async () => {
     setLoading(true);
-    setErrorMessage("");
-
     try {
-      await signInWithGoogle();
-      router.push('/dashboard');
+      // Check if email is already registered
+      const qEmail = query(collection(db, "users"), where("email", "==", emailValue.trim()));
+      const emailSnap = await getDocs(qEmail);
+      if (!emailSnap.empty) {
+        throw new Error("This email is already registered. Please Sign In or use another email.");
+      }
+
+      // Check if phone number is already registered
+      const qMobile = query(collection(db, "users"), where("mobile", "==", mobileValue.trim()));
+      const mobileSnap = await getDocs(qMobile);
+      if (!mobileSnap.empty) {
+        throw new Error("This mobile number is already registered. Please use another mobile number.");
+      }
+
+      // 1. Send Email OTP
+      const emailRes = await fetch('/api/otp/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailValue, firstName: firstNameValue })
+      });
+      const emailData = await emailRes.json();
+      if (!emailData.success) throw new Error(emailData.error || 'Failed to send email OTP');
+
+      // 2. Send Phone OTP (Message Central)
+      const phoneRes = await fetch('/api/otp/phone/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobileNumber: mobileValue })
+      });
+      const phoneData = await phoneRes.json();
+      if (!phoneData.success) throw new Error(phoneData.error || 'Failed to send phone OTP');
+
+      setVerificationId(phoneData.verificationId);
+      setEmailTimer(60);
+      setPhoneTimer(60);
+      setCurrentStep(2);
     } catch (error) {
       setErrorMessage(error.message);
     } finally {
@@ -88,7 +122,70 @@ const SignUp = () => {
     }
   };
 
+  /**
+   * VERIFY EMAIL OTP
+   */
+  const handleVerifyEmail = async () => {
+    if (!emailOtp || emailOtp.length < 6) return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/otp/email/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailValue, otp: emailOtp })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsEmailVerified(true);
+      } else {
+        setErrorMessage(data.message || 'Invalid Email OTP');
+      }
+    } catch (error) {
+      setErrorMessage('Verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * VERIFY PHONE OTP
+   */
+  const handleVerifyPhone = async () => {
+    if (!phoneOtp || phoneOtp.length < 6) return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/otp/phone/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          mobileNumber: mobileValue, 
+          otp: phoneOtp,
+          verificationId: verificationId
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsPhoneVerified(true);
+      } else {
+        setErrorMessage(data.message || 'Invalid Phone OTP');
+      }
+    } catch (error) {
+      setErrorMessage('Verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * FINAL SUBMIT (STEP 3)
+   */
   const onSubmit = async (data) => {
+    if (!isEmailVerified || !isPhoneVerified) {
+      setErrorMessage("Please verify both Email and Phone first.");
+      setCurrentStep(2);
+      return;
+    }
+
     setErrorMessage("");
     setLoading(true);
 
@@ -110,9 +207,10 @@ const SignUp = () => {
 
       const currentUser = auth.currentUser;
       if (currentUser) {
-        await sendEmailVerification(currentUser);
-
-        // Send welcome email via server-side API (fire-and-forget, doesn't block signup)
+        // Since we verified via OTP, we can potentially skip manual link verification 
+        // but it's good to have for Firebase consistency. 
+        // Here we just redirect as they are already "verified" in our logic.
+        
         fetch('/api/send-welcome', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -121,408 +219,357 @@ const SignUp = () => {
             firstName: data.firstName.trim(),
             uid: currentUser.uid,
           }),
-        }).catch((err) => console.error('Welcome email API error:', err));
+        }).catch((err) => console.error('Welcome email error:', err));
 
-        alert("A verification email has been sent. Please check your inbox (and spam folder) to verify your account before logging in.");
-        await auth.signOut();
-        router.push("/successful-signup");
+        router.push("/dashboard");
       }
     } catch (error) {
       setErrorMessage(error.message);
-      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  if (isLoading) {
-    return <ProgressIndicator type={2} />;
-  }
+  const handleGoogleSignUp = async () => {
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+      router.push('/dashboard');
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-4 lg:p-8">
       <BubbleBackground />
 
-      {/* Main Container */}
-      <div className="relative z-10 w-full max-w-6xl min-h-[90vh] grid lg:grid-cols-2 bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-visible">
+      {/* Modern, Premium Glassmorphism Loading Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/60 backdrop-blur-md animate-fadeIn">
+          <div className="bg-white/10 border border-white/20 p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-4 max-w-xs text-center backdrop-blur-lg">
+            <div className="h-12 w-12 animate-[spin_1s_linear_infinite] rounded-full border-4 border-white/20 border-t-blue-400"></div>
+            <p className="text-white font-semibold text-lg">Please wait...</p>
+            <p className="text-white/75 text-sm">Processing your request</p>
+          </div>
+        </div>
+      )}
 
-        {/* Left Panel - Brand Side */}
-        <div className="hidden lg:flex flex-col justify-center items-center p-8 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white relative">
+      <div className="relative z-10 w-full max-w-6xl min-h-[85vh] grid lg:grid-cols-2 bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
+        
+        {/* Left Side (Branding) */}
+        <div className="hidden lg:flex flex-col justify-center items-center p-8 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white">
           <div className="text-center max-w-sm">
-            <img
-              src="/form.jpg"
-              alt="Digital Card Preview"
-              className="w-40 h-28 object-cover rounded-xl shadow-xl mx-auto mb-6"
-            />
-
-            <h1 className="text-3xl font-bold mb-4 leading-tight">
-              Create Your Digital
-              <span className="block text-yellow-300">Business Card</span>
-            </h1>
-
-            {/* Step Indicator */}
-            <div className="flex justify-center items-center mb-6 space-x-4">
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${currentStep >= 1 ? 'bg-white text-blue-600 border-white' : 'border-white/50 text-white/50'
-                }`}>
-                {currentStep > 1 ? <FaCheck size={16} /> : '1'}
+            <h1 className="text-4xl font-bold mb-6">Join the Digital Revolution</h1>
+            <p className="text-white/80 mb-8 text-lg">Verify your identity and start creating professional business cards in minutes.</p>
+            
+            <div className="flex flex-col gap-6">
+              <div className={`flex items-center gap-4 p-4 rounded-xl transition-all ${currentStep === 1 ? 'bg-white/20 border border-white/30' : 'opacity-50'}`}>
+                <div className="w-10 h-10 rounded-full bg-white text-blue-600 flex items-center justify-center font-bold">1</div>
+                <div className="text-left">
+                  <p className="font-semibold text-lg">Basic Info</p>
+                  <p className="text-sm">Personal details</p>
+                </div>
               </div>
-              <div className={`w-8 h-1 rounded transition-all duration-300 ${currentStep >= 2 ? 'bg-white' : 'bg-white/30'
-                }`}></div>
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${currentStep >= 2 ? 'bg-white text-blue-600 border-white' : 'border-white/50 text-white/50'
-                }`}>
-                2
+              <div className={`flex items-center gap-4 p-4 rounded-xl transition-all ${currentStep === 2 ? 'bg-white/20 border border-white/30' : 'opacity-50'}`}>
+                <div className="w-10 h-10 rounded-full bg-white text-blue-600 flex items-center justify-center font-bold">2</div>
+                <div className="text-left">
+                  <p className="font-semibold text-lg">Security Check</p>
+                  <p className="text-sm">Email & Phone OTP</p>
+                </div>
               </div>
-            </div>
-
-            <div className="space-y-2 text-sm">
-              <div className={`transition-all duration-300 ${currentStep === 1 ? 'text-yellow-300 font-semibold' : 'text-white/80'}`}>
-                📝 Personal Information
-              </div>
-              <div className={`transition-all duration-300 ${currentStep === 2 ? 'text-yellow-300 font-semibold' : 'text-white/80'}`}>
-                🔐 Secure Your Account
-              </div>
-            </div>
-
-            <div className="mt-6 space-y-2 text-xs text-white/70">
-              <div className="flex items-center justify-center space-x-2">
-                <span>🚀</span>
-                <span>Quick Registration</span>
-              </div>
-              <div className="flex items-center justify-center space-x-2">
-                <span>🌐</span>
-                <span>Instant DigiCard URL</span>
+              <div className={`flex items-center gap-4 p-4 rounded-xl transition-all ${currentStep === 3 ? 'bg-white/20 border border-white/30' : 'opacity-50'}`}>
+                <div className="w-10 h-10 rounded-full bg-white text-blue-600 flex items-center justify-center font-bold">3</div>
+                <div className="text-left">
+                  <p className="font-semibold text-lg">Account Setup</p>
+                  <p className="text-sm">Create password</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Panel - Form Side */}
-        <div className="flex flex-col justify-center p-4 lg:p-8">
-          <div className="w-full max-w-sm mx-auto">
-
-            {/* Header */}
-            <div className="text-center mb-6">
+        {/* Right Side (Form) */}
+        <div className="flex flex-col justify-center p-6 lg:p-12">
+          <div className="w-full max-w-md mx-auto">
+            
+            {/* Step Header */}
+            <div className="mb-8 text-center">
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                {currentStep === 1 ? "Let's Get Started" : "Secure Your Account"}
+                {currentStep === 1 && "Start Your Journey"}
+                {currentStep === 2 && "Identity Verification"}
+                {currentStep === 3 && "Secure Your Account"}
               </h2>
-              <p className="text-gray-600">
-                {currentStep === 1 ? "Tell us about yourself" : "Create a secure password"}
+              <p className="text-gray-500">
+                {currentStep === 1 && "Fill in your details to get started"}
+                {currentStep === 2 && "We've sent codes to your email and phone"}
+                {currentStep === 3 && "Almost there! Create your password"}
               </p>
-
-              {/* Mobile Step Indicator */}
-              <div className="flex justify-center items-center mt-4 lg:hidden space-x-2">
-                <div className={`w-8 h-2 rounded transition-all duration-300 ${currentStep >= 1 ? 'bg-blue-600' : 'bg-gray-200'
-                  }`}></div>
-                <div className={`w-8 h-2 rounded transition-all duration-300 ${currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-200'
-                  }`}></div>
-              </div>
             </div>
 
-            {/* Error Message */}
             {errorMessage && (
-              <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-400 rounded">
-                <p className="text-red-700 text-sm">{errorMessage}</p>
+              <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg flex items-center gap-3">
+                <span className="text-xl">⚠️</span>
+                <p className="text-sm font-medium">{errorMessage}</p>
               </div>
             )}
 
-            {/* Google Sign-Up Button - Only show on step 1 */}
-            {currentStep === 1 && (
-              <>
-                <button
-                  onClick={handleGoogleSignUp}
-                  disabled={isLoading}
-                  className="w-full mb-4 flex items-center justify-center gap-3 px-6 py-3 bg-white border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <FaGoogle className="text-red-500" size={18} />
-                  Continue with Google
-                </button>
-
-                {/* Divider */}
-                <div className="flex items-center mb-4">
-                  <div className="flex-1 border-t border-gray-300"></div>
-                  <span className="px-3 text-sm text-gray-500">or</span>
-                  <div className="flex-1 border-t border-gray-300"></div>
-                </div>
-              </>
-            )}
-
-            {/* Form */}
-            <form onSubmit={handleSubmit(onSubmit)} noValidate>
-
-              {/* Step 1: Personal Information */}
+            <form onSubmit={handleSubmit(onSubmit)}>
+              
+              {/* STEP 1: Basic Info */}
               {currentStep === 1 && (
-                <div className="space-y-4 animate-fadeIn text-gray-600">
-
-                  {/* Name Fields */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                        <FaUser className="text-blue-500" size={12} />
-                        First Name*
-                      </label>
-                      <input
-                        className={`w-full px-4 py-3 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${errors.firstName ? 'border-red-400' : 'border-gray-200'
-                          }`}
-                        placeholder="John"
-                        {...register("firstName", {
-                          required: "First name is required",
-                          minLength: { value: 2, message: "Minimum 2 characters" },
-                        })}
-                      />
-                      {errors.firstName && (
-                        <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                        <FaUser className="text-blue-500" size={12} />
-                        Last Name*
-                      </label>
-                      <input
-                        className={`w-full px-4 py-3 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${errors.lastName ? 'border-red-400' : 'border-gray-200'
-                          }`}
-                        placeholder="Doe"
-                        {...register("lastName", {
-                          required: "Last name is required",
-                          minLength: { value: 2, message: "Minimum 2 characters" },
-                        })}
-                      />
-                      {errors.lastName && (
-                        <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                      <FaEnvelope className="text-blue-500" size={12} />
-                      Email Address*
-                    </label>
-                    <input
-                      type="email"
-                      className={`w-full px-4 py-3 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${errors.email ? 'border-red-400' : 'border-gray-200'
-                        }`}
-                      placeholder="contact@dgtlmart.com"
-                      {...register("email", {
-                        required: "Email is required",
-                        pattern: {
-                          value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                          message: "Please enter a valid email",
-                        },
-                      })}
-                    />
-                    {errors.email && (
-                      <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-                    )}
-                  </div>
-
-                  {/* Mobile */}
-                  <div>
-                    <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                      <FaPhone className="text-blue-500" size={12} />
-                      Mobile Number
-                    </label>
-                    <input
-                      type="tel"
-                      className={`w-full px-4 py-3 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${errors.mobile ? 'border-red-400' : 'border-gray-200'
-                        }`}
-                      placeholder="9810559439"
-                      {...register("mobile", {
-                        pattern: {
-                          value: /^[0-9]{6,14}$/,
-                          message: "Please enter a valid phone number",
-                        },
-                      })}
-                    />
-                    {errors.mobile && (
-                      <p className="text-red-500 text-sm mt-1">{errors.mobile.message}</p>
-                    )}
-                  </div>
-
-                  {/* Next Button */}
-                  <button
+                <div className="space-y-5 animate-fadeIn">
+                   <button
                     type="button"
-                    onClick={handleNextStep}
-                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                    onClick={handleGoogleSignUp}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-3 border-2 border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-all mb-6"
                   >
-                    Continue
-                    <FaArrowRight size={14} />
+                    <FaGoogle className="text-red-500" />
+                    Continue with Google
                   </button>
 
-                  {/* Sign In Link */}
-                  <div className="text-center pt-4 border-t border-gray-100">
-                    <p className="text-gray-600 text-sm">
-                      Already have an account?{" "}
-                      <Link
-                        href="/signin"
-                        className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="flex-1 h-[1px] bg-gray-200"></div>
+                    <span className="text-gray-400 text-sm">or register with email</span>
+                    <div className="flex-1 h-[1px] bg-gray-200"></div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-bold text-gray-700 block mb-1">First Name*</label>
+                      <input
+                        {...register("firstName", { required: "Required" })}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                        placeholder="John"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-bold text-gray-700 block mb-1">Last Name*</label>
+                      <input
+                        {...register("lastName", { required: "Required" })}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                        placeholder="Doe"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-bold text-gray-700 block mb-1">Email*</label>
+                    <input
+                      type="email"
+                      {...register("email", { required: "Required", pattern: /^\S+@\S+$/i })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                      placeholder="john@example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-bold text-gray-700 block mb-1">Mobile Number*</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">+91</span>
+                      <input
+                        type="tel"
+                        {...register("mobile", { required: "Required", minLength: 10, maxLength: 10 })}
+                        className="w-full pl-14 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                        placeholder="9876543210"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSendOTPs}
+                    className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-6"
+                  >
+                    Send Verification Codes
+                    <FaArrowRight />
+                  </button>
+                </div>
+              )}
+
+              {/* STEP 2: Verification */}
+              {currentStep === 2 && (
+                <div className="space-y-8 animate-fadeIn">
+                  
+                  {/* Email OTP Section */}
+                  <div className="p-5 border-2 border-gray-100 rounded-2xl bg-gray-50/50">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isEmailVerified ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
+                          {isEmailVerified ? <FaCheck /> : <FaEnvelope />}
+                        </div>
+                        <span className="font-bold text-gray-700">Email OTP</span>
+                      </div>
+                      {isEmailVerified && <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">VERIFIED</span>}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <input
+                        disabled={isEmailVerified}
+                        type="text"
+                        maxLength={6}
+                        value={emailOtp}
+                        onChange={(e) => setEmailOtp(e.target.value)}
+                        className="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-xl font-bold tracking-[0.5em] text-center outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-gray-900"
+                        placeholder="000000"
+                      />
+                      <button
+                        type="button"
+                        disabled={isEmailVerified || emailOtp.length < 6}
+                        onClick={handleVerifyEmail}
+                        className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
                       >
-                        Sign In
-                      </Link>
-                    </p>
+                        Verify
+                      </button>
+                    </div>
+                    {!isEmailVerified && (
+                      <button 
+                        type="button"
+                        disabled={emailTimer > 0}
+                        onClick={handleSendOTPs}
+                        className="mt-3 text-sm font-semibold text-blue-600 hover:underline disabled:text-gray-400"
+                      >
+                        {emailTimer > 0 ? `Resend in ${emailTimer}s` : "Resend Email Code"}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Phone OTP Section */}
+                  <div className="p-5 border-2 border-gray-100 rounded-2xl bg-gray-50/50">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isPhoneVerified ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
+                          {isPhoneVerified ? <FaCheck /> : <FaPhone />}
+                        </div>
+                        <span className="font-bold text-gray-700">Phone OTP</span>
+                      </div>
+                      {isPhoneVerified && <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">VERIFIED</span>}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <input
+                        disabled={isPhoneVerified}
+                        type="text"
+                        maxLength={6}
+                        value={phoneOtp}
+                        onChange={(e) => setPhoneOtp(e.target.value)}
+                        className="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-xl font-bold tracking-[0.5em] text-center outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-gray-900"
+                        placeholder="000000"
+                      />
+                      <button
+                        type="button"
+                        disabled={isPhoneVerified || phoneOtp.length < 6}
+                        onClick={handleVerifyPhone}
+                        className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                      >
+                        Verify
+                      </button>
+                    </div>
+                    {!isPhoneVerified && (
+                      <button 
+                        type="button"
+                        disabled={phoneTimer > 0}
+                        onClick={handleSendOTPs}
+                        className="mt-3 text-sm font-semibold text-blue-600 hover:underline disabled:text-gray-400"
+                      >
+                        {phoneTimer > 0 ? `Resend in ${phoneTimer}s` : "Resend SMS Code"}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(1)}
+                      className="flex-1 py-4 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
+                    >
+                      <FaArrowLeft /> Back
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!isEmailVerified || !isPhoneVerified}
+                      onClick={() => setCurrentStep(3)}
+                      className="flex-[2] py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-lg"
+                    >
+                      Continue <FaArrowRight />
+                    </button>
                   </div>
                 </div>
               )}
 
-              {/* Step 2: Security */}
-              {currentStep === 2 && (
-                <div className="space-y-4 animate-fadeIn text-gray-600">
+              {/* STEP 3: Password */}
+              {currentStep === 3 && (
+                <div className="space-y-6 animate-fadeIn">
+                  <div className="bg-blue-50 p-4 rounded-xl flex items-center gap-3 mb-6">
+                    <FaShieldAlt className="text-blue-600 text-2xl" />
+                    <p className="text-sm text-blue-800">Your email and phone are verified! Now create a password for your account.</p>
+                  </div>
 
-                  {/* Password */}
                   <div>
-                    <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                      <FaLock className="text-blue-500" size={12} />
-                      Password*
-                    </label>
+                    <label className="text-sm font-bold text-gray-700 block mb-1">Create Password*</label>
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"}
-                        className={`w-full px-4 py-3 pr-12 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${errors.password ? 'border-red-400' : 'border-gray-200'
-                          }`}
-                        placeholder="Create a strong password"
-                        {...register("password", {
-                          required: "Password is required",
-                          minLength: { value: 8, message: "Minimum 8 characters required" },
-                          pattern: {
-                            value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                            message: "Include uppercase, lowercase, and number",
-                          },
+                        {...register("password", { 
+                          required: "Required",
+                          minLength: { value: 8, message: "Minimum 8 characters" }
                         })}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                        placeholder="••••••••"
                       />
-                      {pwdValue && (
-                        <button
-                          type="button"
-                          className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
-                        </button>
-                      )}
-                    </div>
-                    {errors.password && (
-                      <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
-                    )}
-
-                    {/* Password Requirements */}
-                    {pwdValue && (
-                      <div className="mt-2 space-y-1">
-                        <div className={`text-xs flex items-center gap-2 ${pwdValue.length >= 8 ? 'text-green-600' : 'text-gray-500'
-                          }`}>
-                          <div className={`w-2 h-2 rounded-full ${pwdValue.length >= 8 ? 'bg-green-500' : 'bg-gray-300'
-                            }`}></div>
-                          At least 8 characters
-                        </div>
-                        <div className={`text-xs flex items-center gap-2 ${/[A-Z]/.test(pwdValue) ? 'text-green-600' : 'text-gray-500'
-                          }`}>
-                          <div className={`w-2 h-2 rounded-full ${/[A-Z]/.test(pwdValue) ? 'bg-green-500' : 'bg-gray-300'
-                            }`}></div>
-                          One uppercase letter
-                        </div>
-                        <div className={`text-xs flex items-center gap-2 ${/[a-z]/.test(pwdValue) ? 'text-green-600' : 'text-gray-500'
-                          }`}>
-                          <div className={`w-2 h-2 rounded-full ${/[a-z]/.test(pwdValue) ? 'bg-green-500' : 'bg-gray-300'
-                            }`}></div>
-                          One lowercase letter
-                        </div>
-                        <div className={`text-xs flex items-center gap-2 ${/\d/.test(pwdValue) ? 'text-green-600' : 'text-gray-500'
-                          }`}>
-                          <div className={`w-2 h-2 rounded-full ${/\d/.test(pwdValue) ? 'bg-green-500' : 'bg-gray-300'
-                            }`}></div>
-                          One number
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Confirm Password */}
-                  <div>
-                    <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                      <FaLock className="text-blue-500" size={12} />
-                      Confirm Password*
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showConfirm ? "text" : "password"}
-                        className={`w-full px-4 py-3 pr-12 rounded-xl border-2 bg-gray-50/50 transition-all duration-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 ${errors.confirmPassword ? 'border-red-400' : 'border-gray-200'
-                          }`}
-                        placeholder="Confirm your password"
-                        {...register("confirmPassword", {
-                          required: "Please confirm your password",
-                          validate: (value) => value === pwdValue || "Passwords do not match",
-                        })}
-                      />
-                      {confirmValue && (
-                        <button
-                          type="button"
-                          className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                          onClick={() => setShowConfirm(!showConfirm)}
-                        >
-                          {showConfirm ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
-                        </button>
-                      )}
-                    </div>
-                    {errors.confirmPassword && (
-                      <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>
-                    )}
-                  </div>
-
-                  {/* Buttons */}
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={handlePrevStep}
-                      className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
-                    >
-                      <FaArrowLeft size={14} />
-                      Back
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="flex-2 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex-grow-2"
-                      style={{ flexGrow: 2 }}
-                    >
-                      {isLoading ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                          Creating...
-                        </div>
-                      ) : (
-                        "Create My Digital Card"
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Verification Reminder */}
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-center">
-                    <p className="text-red-600 font-bold text-sm">
-                      Check your email or spam folder for the verification link after clicking the button!
-                    </p>
-                  </div>
-
-                  {/* Sign In Link - Added to Step 2 as well */}
-                  <div className="text-center pt-4 border-t border-gray-100">
-                    <p className="text-gray-600 text-sm">
-                      Already have an account?{" "}
-                      <Link
-                        href="/signin"
-                        className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                      <button
+                        type="button"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                        onClick={() => setShowPassword(!showPassword)}
                       >
-                        Sign In
-                      </Link>
-                    </p>
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                    </div>
+                    {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
                   </div>
 
-                  {/* Helper Text */}
-                  <p className="text-xs text-gray-500 text-center">
-                    Complete your business profile after account creation
-                  </p>
+                  <div>
+                    <label className="text-sm font-bold text-gray-700 block mb-1">Confirm Password*</label>
+                    <input
+                      type={showConfirm ? "text" : "password"}
+                      {...register("confirmPassword", { 
+                        validate: val => val === pwdValue || "Passwords do not match"
+                      })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    Complete Registration
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(2)}
+                    className="w-full py-3 text-gray-500 font-semibold hover:text-gray-700"
+                  >
+                    Back to Verification
+                  </button>
                 </div>
               )}
 
             </form>
+
+            {/* Footer */}
+            <div className="mt-8 text-center border-t border-gray-100 pt-6">
+              <p className="text-gray-600 text-sm">
+                Already have an account?{" "}
+                <Link href="/signin" className="font-bold text-blue-600 hover:underline">
+                  Sign In
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -533,7 +580,7 @@ const SignUp = () => {
           to { opacity: 1; transform: translateY(0); }
         }
         .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
+          animation: fadeIn 0.4s ease-out;
         }
       `}</style>
     </div>

@@ -97,9 +97,23 @@ const ProfilePage = () => {
     try {
       toast.info('Uploading avatar...', { autoClose: 2000 });
       const croppedUrl = await getCroppedImg(imageSrc, croppedAreaPixels);
-      const imgRef = ref(storage, `avatars/${user.uid}.png`);
-      await uploadString(imgRef, croppedUrl, 'data_url');
-      const url = await getDownloadURL(imgRef);
+
+      // Secure direct upload to Cloudinary (bypassing filled Firebase storage)
+      const formData = new FormData();
+      formData.append('file', croppedUrl);
+      formData.append('upload_preset', 'digicard_preset');
+
+      const response = await fetch('https://api.cloudinary.com/v1_1/dbbll23jz/image/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Image uploading to Cloudinary failed.');
+      }
+
+      const data = await response.json();
+      const url = data.secure_url;
 
       await updateDoc(doc(db, 'users', user.uid), { imgUrl: url });
       updateUserInfo({ imgUrl: url });

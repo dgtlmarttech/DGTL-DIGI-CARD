@@ -88,14 +88,28 @@ const UserSettings = ({ currentUser, onLogout, onEditProfile, onClose, isPremium
       reader.readAsDataURL(file);
     });
 
-  // Save cropped image to Firebase Storage and update Firestore
+  // Save cropped image to Cloudinary and update Firestore
   const handleSaveImage = useCallback(async () => {
     try {
       const croppedImageDataUrl = await getCroppedImg(imageSrc, croppedAreaPixels);
-      const storageRef = ref(storage, `images/${currentUser.uid}.png`);
-      const metadata = { contentType: "image/png" };
-      await uploadString(storageRef, croppedImageDataUrl, "data_url", metadata);
-      const downloadURL = await getDownloadURL(storageRef);
+
+      // Secure direct upload to Cloudinary (bypassing filled Firebase storage)
+      const formData = new FormData();
+      formData.append('file', croppedImageDataUrl);
+      formData.append('upload_preset', 'digicard_preset');
+
+      const response = await fetch('https://api.cloudinary.com/v1_1/dbbll23jz/image/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Image uploading to Cloudinary failed.');
+      }
+
+      const data = await response.json();
+      const downloadURL = data.secure_url;
+
       const userDocRef = doc(db, "users", currentUser.uid);
       await updateDoc(userDocRef, { imgUrl: downloadURL }, { merge: true });
       setIsCropModalOpen(false);

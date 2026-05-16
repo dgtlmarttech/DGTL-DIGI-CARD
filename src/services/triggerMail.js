@@ -1,5 +1,44 @@
-// firebaseEmailService.js
+// triggerMail.js
 import { SendMailClient } from 'zeptomail';
+
+const zeptoUrl = process.env.NEXT_PUBLIC_ZEPTO_URL || 'https://api.zeptomail.com/';
+const zeptoToken = process.env.NEXT_PUBLIC_ZEPTO_TOKEN;
+
+if (!zeptoToken) {
+  console.error('Missing ZEPTO_TOKEN! Email sending will fail.');
+}
+
+const client = new SendMailClient({ url: zeptoUrl, token: zeptoToken });
+
+async function sendZeptoMail(toEmail, toName, subject, htmlContent) {
+  if (!zeptoToken) {
+    console.error("❌ Error: ZEPTO_TOKEN is missing in .env");
+    return false;
+  }
+
+  try {
+    const response = await client.sendMail({
+      from: { address: 'support@dgtldigicard.com', name: 'DigitalCard Team' },
+      to: [{ email_address: { address: toEmail, name: toName || toEmail.split('@')[0] } }],
+      subject: subject,
+      htmlbody: htmlContent,
+    });
+
+    const sent = response.message === 'OK' || (response.data && response.data.some(item => item.code === 'EM_104'));
+
+    if (!sent) {
+      console.error("Email delivery failed:", response);
+    }
+    return sent;
+  } catch (error) {
+    console.error("Email service error:", error.message);
+    return false;
+  }
+}
+
+// Keeping a reference to the old function name to avoid breaking imports if any
+const sendNodeMail = sendZeptoMail;
+
 
 /**
  * Sends a welcome email to a new user.
@@ -7,17 +46,7 @@ import { SendMailClient } from 'zeptomail';
  * @param {string} toName - Recipient's name.
  * @param {string} uid - User ID to generate a unique link.
  */
-
-const zeptoUrl = process.env.NEXT_PUBLIC_ZEPTO_URL || 'https://api.zeptomail.com/';
-const zeptoToken = process.env.NEXT_PUBLIC_ZEPTO_TOKEN;
-
-const client = new SendMailClient({ url: zeptoUrl, token: zeptoToken });
-
 export async function sendWelcomeEmail(toEmail, toName, uid) {
-  if (!zeptoToken) {
-    console.error("Error: NEXT_PUBLIC_ZEPTO_TOKEN is missing in environment variables.");
-    return;
-  }
   const link = `https://my.dgtldigicard.com/${uid}`;
 
   const emailTemplate = `
@@ -188,19 +217,14 @@ export async function sendWelcomeEmail(toEmail, toName, uid) {
 </div>
 `;
 
-  try {
-    const response = await client.sendMail({
-      from: { address: 'support@dgtldigicard.com', name: 'DigitalCard Team' },
-      to: [{ email_address: { address: toEmail, name: toName || toEmail.split('@')[0] } }],
-      subject: "Welcome to DGTLDigicard - Your Digital Business Card",
-      htmlbody: emailTemplate,
-    });
-    if (response.message !== 'OK') {
-      throw new Error(`Error: ${response.message || 'Unknown ZeptoMail error'}`);
-    }
-    console.log(`✅ Welcome email sent successfully to ${toEmail}.`);
-  } catch (error) {
-    console.error("❌ Failed to send welcome email:", error.message);
+  const success = await sendNodeMail(
+    toEmail, 
+    toName, 
+    "Welcome to DGTLDigicard - Your Digital Business Card", 
+    emailTemplate
+  );
+  if (success) {
+    console.log(`Welcome email sent to ${toEmail}`);
   }
 }
 
@@ -211,10 +235,11 @@ export async function sendWelcomeEmail(toEmail, toName, uid) {
  * @param {string} uid - User ID to generate a unique link.
  */
 export async function sendPremiumEmail(toEmail, toName, uid) {
-  if (!zeptoToken) {
-    console.error("Error: NEXT_PUBLIC_ZEPTO_TOKEN is missing in environment variables.");
-    return;
-  }
+  // Premium confirmation emails are currently disabled
+  console.log(`Premium email skipped for ${toEmail} (Service Disabled)`);
+  return true;
+
+  /*
   const link = `https://my.dgtldigicard.com/${uid}`;
 
   const emailTemplate = `
@@ -351,18 +376,45 @@ export async function sendPremiumEmail(toEmail, toName, uid) {
 </div>
 `;
 
-  try {
-    const response = await client.sendMail({
-      from: { address: 'support@dgtldigicard.com', name: 'DigitalCard Team' },
-      to: [{ email_address: { address: toEmail, name: toName || toEmail.split('@')[0] } }],
-      subject: "Welcome to Premium Membership!",
-      htmlbody: emailTemplate,
-    });
-    if (response.message !== 'OK') {
-      throw new Error(`Error: ${response.message || 'Unknown ZeptoMail error'}`);
-    }
-    console.log(`✅ Premium email sent successfully to ${toEmail}.`);
-  } catch (error) {
-    console.error("❌ Failed to send premium email:", error.message);
+  const success = await sendNodeMail(
+    toEmail, 
+    toName, 
+    "Welcome to Premium Membership!", 
+    emailTemplate
+  );
+  if (success) {
+    console.log(`Premium membership email sent to ${toEmail}`);
   }
+  */
+}
+
+/**
+ * Sends an OTP verification email.
+ */
+export async function sendOTPEmail(toEmail, toName, otp) {
+  const emailTemplate = `
+    <div style="font-family: sans-serif; padding: 20px; color: #333;">
+      <h2 style="color: #00d1ff;">Verification Code</h2>
+      <p>Hello ${toName || 'User'},</p>
+      <p>Your verification code for DGTLmart DigiCard is:</p>
+      <div style="background: #f4f4f4; padding: 20px; font-size: 32px; font-weight: bold; letter-spacing: 5px; text-align: center; border-radius: 8px;">
+        ${otp}
+      </div>
+      <p>This code will expire in 5 minutes.</p>
+      <p>If you didn't request this, please ignore this email.</p>
+    </div>
+  `;
+
+  const success = await sendNodeMail(
+    toEmail, 
+    toName, 
+    `${otp} is your verification code`, 
+    emailTemplate
+  );
+
+  if (success) {
+    console.log(`OTP sent to ${toEmail}`);
+  }
+
+  return success;
 }

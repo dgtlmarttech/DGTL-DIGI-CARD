@@ -99,7 +99,7 @@ const UserInfo = () => {
   const categories = [
     {
       key: "normal",
-      label: "Free Users",
+      label: "Standard Users",
       icon: Users,
       color: "blue",
       bgColor: "bg-blue-50",

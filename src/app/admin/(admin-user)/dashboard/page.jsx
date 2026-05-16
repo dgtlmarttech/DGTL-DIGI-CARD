@@ -33,7 +33,7 @@ const featureCards = [
     href: '/admin/user-info',
     icon: Users,
     title: 'User Management',
-    description: 'Comprehensive user management with four categories: Free-tier, Premium, Expired Premium, and Blocked users.',
+    description: 'Comprehensive user management with four categories: Standard-tier, Premium, Expired Premium, and Blocked users.',
     stats: { label: 'Total Users', value: '2,847' },
     color: 'from-green-500 to-green-600',
     bgColor: 'bg-green-50',

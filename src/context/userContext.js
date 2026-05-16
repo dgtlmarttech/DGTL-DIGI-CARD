@@ -40,7 +40,7 @@ export const UserProvider = ({ children }) => {
     checkStandalone();
   }, []);
 
-  // Helper function to calculate effective premium status (paid only, no free trial)
+  // Helper function to calculate effective premium status (paid only)
   const calculateEffectivePremium = (userData) => {
     if (!userData) return false;
     return userData.isPremium || false;
@@ -58,12 +58,8 @@ export const UserProvider = ({ children }) => {
         return;
       }
 
-      // Only proceed if user is verified
-      if (!authUser.emailVerified) {
-        console.log('User email not verified');
-        setUserInfo(null);
-        return;
-      }
+      // We bypass the native Firebase email verification check because our app 
+      // already enforces secure Email and Mobile OTP verification during signup!
 
       const userData = await getUserData(authUser.uid);
 
@@ -190,7 +186,7 @@ export const UserProvider = ({ children }) => {
     isStandalone,
 
     // Computed properties
-    isAuthenticated: !!user && !!user.emailVerified,
+    isAuthenticated: !!user,
     isPremium: userInfo?.effectiveIsPremium || false,
     isAdmin: userInfo?.isAdmin || false,
     isBlocked: userInfo?.blocked || false,

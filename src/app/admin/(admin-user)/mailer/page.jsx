@@ -24,7 +24,7 @@ const MailerControl = () => {
   const [testMail, setTestMail] = useState({
     to: '',
     userName: '',
-    type: 'trial_2_days_before_discount'
+    type: 'premium_2_days_before_discount'
   });
   
   const [isTestLoading, setIsTestLoading] = useState(false);
@@ -34,10 +34,6 @@ const MailerControl = () => {
 
   // Email template types
   const templateTypes = [
-    { value: 'trial_2_days_before_discount', label: 'Trial - 2 Days Before (Discount)', category: 'Trial' },
-    { value: 'trial_2_days_after_discount', label: 'Trial - 2 Days After (Discount)', category: 'Trial' },
-    { value: 'trial_10_days_after_discount', label: 'Trial - 10 Days After (Discount)', category: 'Trial' },
-    { value: 'trial_10_days_before_discount', label: 'Trial - 10 Days Before (Discount)', category: 'Trial' },
     { value: 'premium_2_days_before_discount', label: 'Premium - 2 Days Before (Discount)', category: 'Premium' },
     { value: 'premium_2_days_after_discount', label: 'Premium - 2 Days After (Discount)', category: 'Premium' },
     { value: 'premium_10_days_after_discount', label: 'Premium - 10 Days After (Discount)', category: 'Premium' },
@@ -292,10 +288,9 @@ const MailerControl = () => {
                   <div>
                     <h3 className="font-semibold text-blue-900 mb-2">Automated Email Campaign</h3>
                     <p className="text-blue-800 mb-4">
-                      This will manually trigger the automated mailer system to send scheduled emails based on user trial and premium statuses.
+                      This will manually trigger the automated mailer system to send scheduled emails based on user premium statuses.
                     </p>
                     <ul className="list-disc list-inside space-y-1 text-blue-800 text-sm">
-                      <li>Trial expiration reminders (2 days before, 2 days after, 10 days after)</li>
                       <li>Premium renewal reminders (2 days before, 2 days after, 10 days after)</li>
                       <li>Discount offers for eligible users</li>
                       <li>Duplicate prevention - won't send the same email twice</li>
@@ -362,17 +357,7 @@ const MailerControl = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center space-x-2">
-                <Clock className="w-5 h-5 text-blue-600" />
-                <span>Trial Templates</span>
-              </h3>
-              <div className="space-y-2">
-                {templateTypes.filter(t => t.category === 'Trial').map((template) => (
-                  <div key={template.value} className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm font-medium text-blue-900">{template.label}</p>
-                  </div>
-                ))}
-              </div>
+              {/* Trial templates section removed */}
             </div>
 
             <div>

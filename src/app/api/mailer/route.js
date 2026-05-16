@@ -1,16 +1,8 @@
 // /app/api/mailer/route.js
 import { NextResponse } from 'next/server';
-import admin from 'firebase-admin';
+import admin, { adminDb as db } from '../../../firebase/firebaseAdmin';
 import { SendMailClient } from 'zeptomail';
 import getEmailTemplate from '../../../utils/mail_template';
-
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
-  });
-}
-
-const db = admin.firestore();
 
 const zeptoUrl = process.env.NEXT_PUBLIC_ZEPTO_URL || 'https://api.zeptomail.com/';
 const zeptoToken = process.env.NEXT_PUBLIC_ZEPTO_TOKEN;
@@ -72,6 +64,7 @@ export async function POST() {
     const usersSnapshot = await db.collection('users').get();
     let emailsSent = 0;
 
+    /*
     for (const doc of usersSnapshot.docs) {
       const user = doc.data();
       if (!user.email) continue;
@@ -79,17 +72,7 @@ export async function POST() {
 
       let emailType = null;
 
-      // Trial emails (with discount variants)
-      if (!user.isPremium && user.trialStartDate) {
-        const trialStart = user.trialStartDate.toDate ? user.trialStartDate.toDate() : new Date(user.trialStartDate);
-        const trialEnd = new Date(trialStart.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-        if (trialEnd > now && trialEnd <= twoDaysFromNow) emailType = 'trial_2_days_before_discount';
-        else if (trialEnd <= twoDaysAgo && trialEnd > tenDaysAgo) emailType = 'trial_2_days_after_discount';
-        else if (trialEnd <= tenDaysAgo) emailType = 'trial_10_days_after_discount';
-        else if (trialEnd > now && trialEnd <= new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000))
-          emailType = 'trial_10_days_before_discount'; // optional to catch 10 days before as well
-      }
+      // Trial emails have been removed as the free trial is replaced with a direct 99 rs payment.
 
       // Premium emails (with discount variants)
       if (user.isPremium && user.expireDate) {
@@ -122,10 +105,11 @@ export async function POST() {
         emailsSent++;
       }
     }
+    */
 
-    return NextResponse.json({ success: true, emailsSent, message: `Sent ${emailsSent} emails` });
+    return NextResponse.json({ success: true, emailsSent, message: `Automated mailer is currently disabled. Only OTP and Welcome emails are active.` });
   } catch (error) {
     console.error('Mailer worker error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error in mailer' }, { status: 500 });
   }
 }

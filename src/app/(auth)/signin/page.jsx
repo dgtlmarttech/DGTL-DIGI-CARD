@@ -56,15 +56,6 @@ const SignIn = () => {
         try {
             await signInUsingEmailPassword(data.email, data.password);
 
-            const currentUser = auth.currentUser;
-
-            if (currentUser && !currentUser.emailVerified) {
-                await sendEmailVerification(currentUser);
-                setErrorMessage("Email not verified. A new verification link has been sent. Please verify your email before logging in.");
-                await auth.signOut();
-                return;
-            }
-
             router.push('/dashboard');
         } catch (err) {
             setErrorMessage(err.message);
