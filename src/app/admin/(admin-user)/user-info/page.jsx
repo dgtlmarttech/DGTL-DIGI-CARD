@@ -17,7 +17,8 @@ import {
   Filter,
   RefreshCw,
   AlertTriangle,
-  UserCheck
+  UserCheck,
+  Download
 } from 'lucide-react';
 
 const UserInfo = () => {
@@ -148,6 +149,82 @@ const UserInfo = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
+  const exportToCSV = () => {
+    if (users.length === 0) return;
+
+    // Define CSV Headers
+    const headers = [
+      'Document ID / UID',
+      'First Name',
+      'Last Name',
+      'Email',
+      'Mobile',
+      'Business Name',
+      'Custom URL Path',
+      'Status / Plan',
+      'Amount Paid',
+      'Is Blocked',
+      'Creation Date'
+    ];
+
+    // Build the CSV content
+    const csvRows = [headers.join(',')];
+
+    users.forEach(user => {
+      // Determine status string
+      let status = 'Standard';
+      if (user.blocked) {
+        status = 'Blocked';
+      } else if (user.isPremium) {
+        const isExpired = user.expireDate && new Date(user.expireDate) <= today;
+        status = isExpired ? 'Premium (Expired)' : 'Premium (Active)';
+      }
+
+      // Determine amount paid: only if premium and has paymentData
+      let amountPaid = '₹0';
+      if (user.isPremium && user.paymentData) {
+        amountPaid = '₹99';
+      }
+
+      // Escape quotes and double-quotes in fields to prevent invalid CSV format
+      const escape = (val) => {
+        if (val === null || val === undefined) return '';
+        const stringVal = String(val);
+        if (stringVal.includes(',') || stringVal.includes('"') || stringVal.includes('\n')) {
+          return `"${stringVal.replace(/"/g, '""')}"`;
+        }
+        return stringVal;
+      };
+
+      const row = [
+        escape(user.id || user.uid),
+        escape(user.firstName),
+        escape(user.lastName),
+        escape(user.email),
+        escape(user.mobile),
+        escape(user.businessName || ''),
+        escape(user.customUID || ''),
+        escape(status),
+        escape(amountPaid),
+        escape(user.blocked ? 'Yes' : 'No'),
+        escape(user.createdAt ? new Date(user.createdAt).toLocaleString() : 'N/A')
+      ];
+
+      csvRows.push(row.join(','));
+    });
+
+    // Create a data blob and download it
+    const csvContent = "\uFEFF" + csvRows.join('\n'); // Add UTF-8 BOM to display special characters correctly in Excel
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `dgtl_digicard_users_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const getUserStats = () => {
     const stats = {
       normal: users.filter(user => !user.isPremium && !user.blocked).length,
@@ -191,14 +268,23 @@ const UserInfo = () => {
                 <p className="text-gray-600">Manage and monitor all registered users</p>
               </div>
             </div>
-            <button
-              onClick={fetchUsers}
-              disabled={loading}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
-            </button>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={exportToCSV}
+                className="flex items-center space-x-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 transform"
+              >
+                <Download className="w-4 h-4" />
+                <span>Export CSV</span>
+              </button>
+              <button
+                onClick={fetchUsers}
+                disabled={loading}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 active:scale-95 transform"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+              </button>
+            </div>
           </div>
         </div>
 
