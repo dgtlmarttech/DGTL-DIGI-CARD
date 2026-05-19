@@ -5,6 +5,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useUser } from '../../context/userContext';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 const UserLayout = ({ children }) => {
   const { user, loading, initializing, isAuthenticated } = useUser();
   const router = useRouter();
@@ -35,12 +38,15 @@ const UserLayout = ({ children }) => {
   // Render DashboardLayout wrapping all authenticated pages
   if (isAuthenticated) {
     return (
-      <DashboardLayout
-        pageTitle={getPageTitleFromPath(pathname)}
-        currentPath={pathname}
-      >
-        {children}
-      </DashboardLayout>
+      <>
+        <DashboardLayout
+          pageTitle={getPageTitleFromPath(pathname)}
+          currentPath={pathname}
+        >
+          {children}
+        </DashboardLayout>
+        <ToastContainer position="top-right" autoClose={3000} />
+      </>
     );
   }
 

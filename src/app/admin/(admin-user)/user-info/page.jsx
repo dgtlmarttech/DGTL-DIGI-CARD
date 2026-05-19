@@ -32,7 +32,13 @@ const UserInfo = () => {
     setLoading(true);
     try {
       const usersData = await getAllUsers();
-      setUsers(usersData);
+      // Sort users by createdAt descending (newest first)
+      const sortedUsers = usersData.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+      setUsers(sortedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -285,17 +291,36 @@ const UserInfo = () => {
                 >
                   <div className="flex items-start space-x-4">
                     {/* User Avatar */}
-                    <div className="relative">
-                      <img
-                        src={user.imgUrl || '/default-avatar.png'}
-                        alt={`${user.firstName} ${user.lastName}`}
-                        className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-                        onError={(e) => {
-                          e.target.src = '/default-avatar.png';
-                        }}
-                      />
+                    <div className="relative flex-shrink-0">
+                      {(user.imgUrl || user.profilePicture) ? (
+                        <img
+                          src={user.imgUrl || user.profilePicture}
+                          alt={`${user.firstName || ''} ${user.lastName || ''}`}
+                          className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            const fallback = e.target.nextSibling;
+                            if (fallback) fallback.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className={`w-16 h-16 rounded-full border-2 border-gray-200 flex items-center justify-center font-bold text-white text-lg bg-gradient-to-br ${
+                          currentCategory.key === 'premium' ? 'from-purple-500 to-indigo-700' :
+                          currentCategory.key === 'expired' ? 'from-amber-500 to-orange-600' :
+                          currentCategory.key === 'blocked' ? 'from-red-500 to-rose-700' :
+                          'from-blue-500 to-indigo-600'
+                        } shadow-sm`}
+                        style={{ display: (user.imgUrl || user.profilePicture) ? 'none' : 'flex' }}
+                      >
+                        {user.firstName || user.lastName ? (
+                          ((user.firstName?.charAt(0) || '').toUpperCase() + (user.lastName?.charAt(0) || '').toUpperCase())
+                        ) : (
+                          <User className="w-6 h-6" />
+                        )}
+                      </div>
                       {user.isPremium && (
-                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center">
+                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center border-2 border-white shadow-md">
                           <Crown className="w-3 h-3 text-white" />
                         </div>
                       )}

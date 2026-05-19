@@ -26,6 +26,7 @@ const ProfilePage = () => {
   const router = useRouter();
   const { user, userInfo, updateUserInfo } = useUser();
   const [loading, setLoading] = useState(false);
+  const [savingPhoto, setSavingPhoto] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
   const [imageSrc, setImageSrc] = useState(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -92,9 +93,10 @@ const ProfilePage = () => {
   };
 
   const saveCroppedImage = async () => {
-    if (!imageSrc || !croppedAreaPixels) return;
+    if (!imageSrc || !croppedAreaPixels || savingPhoto) return;
 
     try {
+      setSavingPhoto(true);
       toast.info('Uploading avatar...', { autoClose: 2000 });
       const croppedUrl = await getCroppedImg(imageSrc, croppedAreaPixels);
 
@@ -123,6 +125,8 @@ const ProfilePage = () => {
     } catch (error) {
       console.error('Error saving cropped image:', error);
       toast.error('Failed to update avatar. Please try again.');
+    } finally {
+      setSavingPhoto(false);
     }
   };
 
@@ -455,26 +459,40 @@ const ProfilePage = () => {
         </div>
 
         {/* Desktop Save Button */}
-    <div className="hidden md:flex justify-end mb-6">
-      <button
-        onClick={saveProfile}
-        disabled={loading}
-        className="rounded-lg bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700 disabled:opacity-50"
-      >
-        {loading ? "Saving..." : "Save Changes"}
-      </button>
-    </div>
+        <div className="hidden md:flex justify-end mb-6">
+          <button
+            onClick={saveProfile}
+            disabled={loading}
+            className="rounded-lg bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700 active:scale-95 transition-transform duration-150 disabled:opacity-50 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+          >
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Saving Changes...</span>
+              </>
+            ) : (
+              <span>Save Changes</span>
+            )}
+          </button>
+        </div>
 
-    {/* Mobile Save Button (fixed at bottom) */}
-    <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg md:hidden">
-      <button
-        onClick={saveProfile}
-        disabled={loading}
-        className="w-full rounded-lg bg-blue-600 py-4 text-white font-semibold disabled:opacity-50"
-      >
-        {loading ? "Saving..." : "Save Changes"}
-      </button>
-    </div>
+        {/* Mobile Save Button (fixed at bottom) */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg md:hidden z-40">
+          <button
+            onClick={saveProfile}
+            disabled={loading}
+            className="w-full rounded-lg bg-blue-600 py-4 text-white font-semibold active:scale-[0.98] transition-transform duration-150 disabled:opacity-50 flex items-center justify-center space-x-2"
+          >
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Saving Changes...</span>
+              </>
+            ) : (
+              <span>Save Changes</span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Desktop Preview Panel */}
@@ -512,16 +530,28 @@ const ProfilePage = () => {
             </div>
             <div className="mt-4 flex gap-2">
               <button
-                className="flex-1 border py-2 rounded-lg"
-                onClick={() => setShowCropper(false)}
+                disabled={savingPhoto}
+                className="flex-1 border border-gray-300 py-2 rounded-lg text-gray-700 hover:bg-gray-50 active:scale-95 transition-transform duration-150 disabled:opacity-50"
+                onClick={() => {
+                  setShowCropper(false);
+                  setImageSrc(null);
+                }}
               >
                 Cancel
               </button>
               <button
-                className="flex-1 bg-blue-600 text-white py-2 rounded-lg"
+                disabled={savingPhoto}
+                className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 active:scale-95 transition-transform duration-150 disabled:opacity-50 flex items-center justify-center space-x-2"
                 onClick={saveCroppedImage}
               >
-                Save Photo
+                {savingPhoto ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Uploading...</span>
+                  </>
+                ) : (
+                  <span>Save Photo</span>
+                )}
               </button>
             </div>
           </div>
