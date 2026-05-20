@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useUser } from '../../context/userContext';
 import { usePathname, useRouter } from 'next/navigation';
-import  CrmNavbar from '../../components/layouts/CrmNavbar'
+import CrmNavbar from '../../components/layouts/CrmNavbar'
 
 const CrmLayout = ({ children }) => {
   const { user, loading, initializing, isAuthenticated } = useUser();
