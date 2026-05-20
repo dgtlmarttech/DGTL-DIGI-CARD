@@ -39,20 +39,6 @@ export default function RootLayout({ children }) {
             gtag('config', 'G-5VW1K9T1EZ');
           `}
         </Script>
-
-        {/* AI Agent Chat Widget */}
-        <Script id="ai-agent-config" strategy="afterInteractive">
-          {`
-            window.AI_AGENT_CONFIG = {
-              clientId: "28b018c90a7b78d5",
-              apiUrl: "https://agent-ai-backend-1.onrender.com/api/chat"
-            };
-          `}
-        </Script>
-        <Script
-          src="https://ai-agents-lake-sigma.vercel.app/widget.js"
-          strategy="afterInteractive"
-        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
