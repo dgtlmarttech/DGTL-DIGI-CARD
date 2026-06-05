@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { resetPasswordUsingEmail } from '../../../services/firebaseAuthService';
+
 import ProgressIndicator from '../../../components/ProgressIndicator';
 import BubbleBackground from '../../../components/BubbleBackground';
 
@@ -17,7 +17,23 @@ const ForgotPassword = () => {
     setLoading(true);
     setMessage('');
     try {
-      await resetPasswordUsingEmail(data.email);
+      const response = await fetch('/api/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: data.email }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        if (result.error === 'auth/user-not-found') {
+          throw new Error('User does not exist with this email');
+        }
+        throw new Error(result.error || 'An error occurred. Please try again.');
+      }
+
       setMessage('Password reset email sent. Check your inbox.');
 
       // router.push('/signin'); // Removed to allow user to see the success message

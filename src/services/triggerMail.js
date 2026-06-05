@@ -393,22 +393,56 @@ export async function sendPremiumEmail(toEmail, toName, uid) {
  */
 export async function sendOTPEmail(toEmail, toName, otp) {
   const emailTemplate = `
-    <div style="font-family: sans-serif; padding: 20px; color: #333;">
-      <h2 style="color: #00d1ff;">Verification Code</h2>
-      <p>Hello ${toName || 'User'},</p>
-      <p>Your verification code for DGTLmart DigiCard is:</p>
-      <div style="background: #f4f4f4; padding: 20px; font-size: 32px; font-weight: bold; letter-spacing: 5px; text-align: center; border-radius: 8px;">
-        ${otp}
+    <div style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #e0e0e0; background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%); padding: 40px 20px;">
+      
+      <!-- Main Container -->
+      <div style="max-width: 600px; margin: 0 auto; background: #1e1e1e; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,209,255,0.2); border: 1px solid #00d1ff;">
+        
+        <!-- Header Section -->
+        <div style="background: linear-gradient(135deg, #00d1ff 0%, #0099cc 100%); padding: 30px; text-align: center; position: relative; overflow: hidden;">
+          <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000; letter-spacing: -0.5px;">
+            Verification Required
+          </h1>
+        </div>
+        
+        <!-- Content Section -->
+        <div style="padding: 40px 30px; text-align: center;">
+          <p style="margin: 0 0 20px 0; font-size: 18px; color: #e0e0e0;">
+            Hello <strong>${toName || 'User'}</strong>,
+          </p>
+          
+          <p style="margin: 0 0 30px 0; font-size: 16px; color: #a0a0a0;">
+            Please use the following One Time Password (OTP) to verify your account. Do not share this code with anyone.
+          </p>
+          
+          <!-- OTP Box -->
+          <div style="display: inline-block; background: linear-gradient(135deg, rgba(0,209,255,0.1) 0%, rgba(0,153,204,0.1) 100%); border: 2px dashed #00d1ff; border-radius: 12px; padding: 20px 40px; margin-bottom: 30px;">
+            <div style="font-size: 36px; font-weight: 800; color: #00d1ff; letter-spacing: 8px;">
+              ${otp}
+            </div>
+          </div>
+          
+          <p style="margin: 0; font-size: 14px; color: #ff6b6b; font-weight: 500;">
+            ⏳ This code is valid for 10 minutes.
+          </p>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background: #0a0a0a; padding: 20px 30px; text-align: center; border-top: 1px solid #333333;">
+          <p style="margin: 0; font-size: 13px; color: #888888; line-height: 1.5;">
+            If you didn't request this verification, please ignore this email or contact support.<br>
+            © ${new Date().getFullYear()} DGTLmart DigiCard
+          </p>
+        </div>
+        
       </div>
-      <p>This code will expire in 5 minutes.</p>
-      <p>If you didn't request this, please ignore this email.</p>
     </div>
   `;
 
   const success = await sendNodeMail(
     toEmail, 
     toName, 
-    `${otp} is your verification code`, 
+    `${otp} is your verification code for DGTLmart DigiCard`, 
     emailTemplate
   );
 
