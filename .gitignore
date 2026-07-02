@@ -43,3 +43,15 @@ next-env.d.ts
 
 # Local Netlify folder
 .netlify
+
+# Security and Secrets
+serviceAccountKey.json
+*.csv
+scratch/
+test_*.js
+get_*.js
+export_*.js
+list_*.js
+check_*.js
+storage_analysis.js
+testmail.js
