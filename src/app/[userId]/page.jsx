@@ -283,7 +283,9 @@ function PWAInstallBanner({ onVisibilityChange }) {
 }
 
 export default function LiveCardPage() {
-    const { userId } = useParams();
+    const params = useParams();
+    const rawUserId = params?.userId;
+    const userId = rawUserId ? decodeURIComponent(rawUserId) : null;
     const router = useRouter();
     const { user, userInfo, isCurrentUser, loading: userLoading, isStandalone } = useUser();
 

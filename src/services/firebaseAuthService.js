@@ -107,7 +107,9 @@ const processGoogleUser = async (user) => {
   if (!userDoc.exists()) {
     // Create new user document for Google sign-in
     const [firstName, lastName] = (user.displayName || 'User Name').split(' ');
-    const customUID = `${firstName || 'User'}_${lastName || 'Name'}_${Math.floor(1000 + Math.random() * 9000)}`;
+    const safeFirstName = (firstName || 'User').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const safeLastName = (lastName || 'Name').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const customUID = `${safeFirstName}_${safeLastName}_${Math.floor(1000 + Math.random() * 9000)}`;
 
     await setDoc(userDocRef, {
       uid: user.uid,
@@ -156,7 +158,9 @@ const signUpUsingEmailPassword = async (data) => {
     const userCreds = await createUserWithEmailAndPassword(auth, data.email, password);
 
     let user = userCreds.user;
-    const customUID = `${firstName}_${lastName}_${Math.floor(1000 + Math.random() * 9000)}`;
+    const safeFirstName = (firstName || 'User').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const safeLastName = (lastName || 'Name').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const customUID = `${safeFirstName}_${safeLastName}_${Math.floor(1000 + Math.random() * 9000)}`;
 
     const userDocRef = doc(db, "users", user.uid);
     await setDoc(userDocRef, {
