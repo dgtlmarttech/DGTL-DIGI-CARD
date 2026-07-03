@@ -1,0 +1,10 @@
+ 
+Android:-
+C8:DE:DC:57:AA:8B:97:58:33:01:D9:61:A8:C6:B7:B0:AA:96:EE:52:12:BE:5A:07:C8:2B:8B:BE:88:5A:9C:B8
+Final assetlinks.json (Ready to Copy-Paste)
+Tell your backend developer to host this file at: https://my.dgtldigicard.com/.well-known/assetlinks.json
+json[  {    "relation": ["delegate_permission/common.handle_all_urls"],    "target": {      "namespace": "android_app",      "package_name": "com.digicard.app",      "sha256_cert_fingerprints": [        "C8:DE:DC:57:AA:8B:97:58:33:01:D9:61:A8:C6:B7:B0:AA:96:EE:52:12:BE:5A:07:C8:2B:8B:BE:88:5A:9C:B8"      ]    }  }]
+Bonus — SHA1 (useful for Firebase/Google Sign-In console)
+9E:D6:64:1E:E2:7D:D2:0A:8F:43:F5:C7:3C:16:0A:23:E8:0A:29:47
+ 
+ 

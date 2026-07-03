@@ -293,6 +293,23 @@ export default function LiveCardPage() {
     const [loading, setLoading] = useState(true);
     const [bannerVisible, setBannerVisible] = useState(false);
 
+    // Deep linking fallback to open the native app on mobile devices
+    useEffect(() => {
+        if (!userId || typeof window === 'undefined') return;
+
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            const appScheme = `digicard://${userId}`;
+            // Attempt to open the app directly. If it fails, the web card will simply continue to show.
+            const timer = setTimeout(() => {
+                window.location.assign(appScheme);
+            }, 300);
+            
+            return () => clearTimeout(timer);
+        }
+    }, [userId]);
+
     useEffect(() => {
         const fetchData = async () => {
             // Try to load from cache first for immediate display/offline

@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.digicard.app",
+      "sha256_cert_fingerprints": [
+        "C8:DE:DC:57:AA:8B:97:58:33:01:D9:61:A8:C6:B7:B0:AA:96:EE:52:12:BE:5A:07:C8:2B:8B:BE:88:5A:9C:B8"
+      ]
+    }
+  }
+]
