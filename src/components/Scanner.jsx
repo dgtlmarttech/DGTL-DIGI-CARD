@@ -192,7 +192,19 @@ const Scanner = ({ isActive, onScanSuccess, onScanError, onScannerStopped }) => 
       // Attempt to start the QR code scanner with the selected camera
       await html5QrCodeRef.current.start(
         selectedCameraId, // Camera ID
-        { fps: 10, qrbox: { width: 250, height: 250 }, disableFlip: false }, // Configuration
+        { 
+          fps: 20, 
+          qrbox: (viewfinderWidth, viewfinderHeight) => {
+            const minEdgePercentage = 0.8; // 80% of the smallest edge for a larger, easier scan area
+            const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+            const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+            return {
+              width: qrboxSize,
+              height: qrboxSize
+            };
+          },
+          disableFlip: false 
+        }, // Configuration
         qrCodeSuccessCallback, // Success callback
         qrCodeErrorCallback // Error callback
       );
@@ -245,7 +257,13 @@ const Scanner = ({ isActive, onScanSuccess, onScanError, onScannerStopped }) => 
           const devices = await Html5Qrcode.getCameras(); // Get available camera devices
           setAvailableCameras(devices);
           if (devices && devices.length > 0) {
-            setSelectedCameraId(devices[0].id); // Select the first camera by default
+            // Try to find the back camera automatically
+            const backCamera = devices.find(device => 
+              device.label.toLowerCase().includes('back') || 
+              device.label.toLowerCase().includes('environment') ||
+              device.label.toLowerCase().includes('rear')
+            );
+            setSelectedCameraId(backCamera ? backCamera.id : devices[0].id);
           } else {
             setCameraPermissionStatus('not-found');
             onScanError('No cameras found on this device.');
