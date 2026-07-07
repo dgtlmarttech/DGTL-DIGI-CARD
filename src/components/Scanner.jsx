@@ -103,8 +103,12 @@ const Scanner = ({ isActive, onScanSuccess, onScanError, onScannerStopped }) => 
     if (!html5QrCodeRef.current) {
       html5QrCodeRef.current = new Html5Qrcode(qrReaderId);
     }
+    let hasScanned = false; // Flag to prevent multiple rapid scans
 
     const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+      if (hasScanned) return; // Ignore any scans after the first one
+      hasScanned = true;
+
       console.log(`QR Code Scanned: ${decodedText}`);
       toast.success('QR Code Scanned!', { autoClose: 2000 });
 
