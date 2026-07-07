@@ -109,7 +109,7 @@ const Scanner = ({ isActive, onScanSuccess, onScanError, onScannerStopped }) => 
       toast.success('QR Code Scanned!', { autoClose: 2000 });
 
       let parsedContact = {
-        name: '', company: '', title: '', email: '', phone: '', notes: '', vcardString: decodedText
+        name: '', company: '', title: '', email: '', phone: '', notes: '', website: '', vcardString: decodedText
       };
 
       // Attempt to parse different QR code formats
@@ -122,6 +122,7 @@ const Scanner = ({ isActive, onScanSuccess, onScanError, onScannerStopped }) => 
           title: vcardData.title,
           email: vcardData.email,
           phone: vcardData.phone,
+          website: vcardData.website,
           notes: vcardData.notes,
         };
         toast.info('vCard detected.');

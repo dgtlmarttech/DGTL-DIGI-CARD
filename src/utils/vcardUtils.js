@@ -11,32 +11,31 @@ export const parseVCard = (vcardString) => {
   let title = '';
   let email = '';
   let phone = '';
+  let website = '';
   const notesLines = [];
 
   if (vcardString && vcardString.startsWith('BEGIN:VCARD')) {
     const lines = vcardString.split('\n');
     lines.forEach(line => {
-      if (line.startsWith('FN:')) { // Formatted Name
+      const upperLine = line.toUpperCase();
+      if (upperLine.startsWith('FN:')) { // Formatted Name
         name = line.substring(3).trim();
-      } else if (line.startsWith('ORG:')) { // Organization (Company)
+      } else if (upperLine.startsWith('ORG:')) { // Organization (Company)
         company = line.substring(4).trim();
-      } else if (line.startsWith('TITLE:')) { // Title
+      } else if (upperLine.startsWith('TITLE:')) { // Title
         title = line.substring(6).trim();
-      } else if (line.startsWith('EMAIL;TYPE=INTERNET:')) { // Email
-        email = line.substring('EMAIL;TYPE=INTERNET:'.length).trim();
-      } else if (line.startsWith('EMAIL:')) { // Fallback for simpler EMAIL
-        email = line.substring(6).trim();
-      } else if (line.startsWith('TEL;TYPE=CELL:')) { // Mobile Phone
-        phone = line.substring('TEL;TYPE=CELL:'.length).trim();
-      } else if (line.startsWith('TEL:')) { // General Phone
-        phone = line.substring(4).trim();
-      } else if (line.startsWith('NOTE:')) { // Notes
+      } else if (upperLine.startsWith('EMAIL')) { // Email
+        email = line.substring(line.indexOf(':') + 1).trim();
+      } else if (upperLine.startsWith('TEL')) { // Phone
+        phone = line.substring(line.indexOf(':') + 1).trim();
+      } else if (upperLine.startsWith('URL')) { // Website
+        website = line.substring(line.indexOf(':') + 1).trim();
+      } else if (upperLine.startsWith('NOTE:')) { // Notes
         notesLines.push(line.substring(5).trim());
       }
-      // You can add more vCard properties here as needed (e.g., ADR for address, URL for website)
     });
   }
-  return { name, company, title, email, phone, notes: notesLines.join('\n') };
+  return { name, company, title, email, phone, website, notes: notesLines.join('\n') };
 };
 
 /**
