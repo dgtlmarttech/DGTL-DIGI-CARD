@@ -140,7 +140,9 @@ END:VCARD`;
           {/* Address */}
           <div className="d-flex align-items-center">
             <BsGeoAltFill className="text-info fs-5" style={{ width: '30px' }} />
-            <span className="ms-2">{address}</span>
+            <a href={`https://maps.google.com/?q=${encodeURIComponent(address)}`} target="_blank" rel="noopener noreferrer" className="text-decoration-none text-dark ms-2">
+              {address}
+            </a>
           </div>
         </div>
 

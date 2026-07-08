@@ -310,11 +310,16 @@ const ContactCard = ({ userInfo }) => {
                 </div>
                 <div className="flex-1">
                   <p className="text-xs font-medium text-white/60 uppercase tracking-wider">Address</p>
-                  <div className="text-white font-medium">
+                  <a 
+                    href={`https://maps.google.com/?q=${encodeURIComponent(userInfo.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white font-medium hover:text-orange-300 transition-colors block"
+                  >
                     {userInfo.address.split('\n').map((line, index) => (
                       <div key={index}>{line}</div>
                     ))}
-                  </div>
+                  </a>
                 </div>
               </div>
             )}

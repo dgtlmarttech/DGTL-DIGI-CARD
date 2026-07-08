@@ -216,6 +216,9 @@ const ContactCard3 = ({ userInfo }) => {
                     <p className="font-medium text-gray-900">{userInfo.address}</p>
                     <p className="text-sm text-gray-500">Address</p>
                   </div>
+                  <a href={`https://maps.google.com/?q=${encodeURIComponent(userInfo.address)}`} target="_blank" rel="noopener noreferrer" className="p-2 bg-orange-100 rounded-lg hover:bg-orange-200 transition-colors mt-1">
+                    <MapPin size={16} className="text-orange-600" />
+                  </a>
                 </div>
               )}
             </div>

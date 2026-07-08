@@ -394,11 +394,16 @@ const App = ({ userInfo = sampleUserInfo }) => {
                 </div>
                 <div className="flex-1">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Address</p>
-                  <div className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                  <a
+                    href={`https://maps.google.com/?q=${encodeURIComponent(userInfo.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-semibold text-gray-800 dark:text-gray-100 hover:underline block"
+                  >
                     {userInfo.address.split('\n').map((line, index) => (
                       <div key={index}>{line}</div>
                     ))}
-                  </div>
+                  </a>
                 </div>
               </div>
             )}
