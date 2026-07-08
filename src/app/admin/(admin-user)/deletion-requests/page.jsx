@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react';
-import { getAllDeletionRequests } from '../../../../../services/firebaseAuthService';
+import { getAllDeletionRequests } from '../../../../services/firebaseAuthService';
 import { 
   Trash2, 
   Search, 

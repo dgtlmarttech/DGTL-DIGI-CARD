@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import admin, { adminDb as db } from '../../../firebase/firebaseAdmin';
-import { sendAccountDeletionAlert } from '../../../../services/triggerMail';
+import { sendAccountDeletionAlert } from '../../../services/triggerMail';
 
 export async function POST(request) {
   try {
