@@ -452,3 +452,45 @@ export async function sendOTPEmail(toEmail, toName, otp) {
 
   return success;
 }
+
+/**
+ * Sends an alert email to the admin when an account deletion is requested.
+ */
+export async function sendAccountDeletionAlert(userEmail, reason) {
+  const adminEmail = 'support@dgtldigicard.com'; // or whatever the admin email is
+  
+  const emailTemplate = `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+      <h2 style="color: #d9534f;">New Account Deletion Request</h2>
+      <p>A user has requested to delete their account.</p>
+      <table style="border-collapse: collapse; width: 100%; max-width: 600px; margin-top: 20px;">
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; width: 120px;">User Email</td>
+          <td style="padding: 10px; border: 1px solid #ddd;">${userEmail}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Reason</td>
+          <td style="padding: 10px; border: 1px solid #ddd;">${reason || 'No reason provided'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Requested At</td>
+          <td style="padding: 10px; border: 1px solid #ddd;">${new Date().toLocaleString()}</td>
+        </tr>
+      </table>
+      <p style="margin-top: 30px;">Please check the Firebase Firestore <b>accountDeletionRequests</b> collection for more details or to update the status.</p>
+    </div>
+  `;
+
+  const success = await sendNodeMail(
+    adminEmail, 
+    'Admin', 
+    `🚨 Account Deletion Request - ${userEmail}`, 
+    emailTemplate
+  );
+
+  if (success) {
+    console.log(`Account deletion alert sent to admin for user ${userEmail}`);
+  }
+
+  return success;
+}

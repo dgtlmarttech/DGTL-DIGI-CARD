@@ -7,7 +7,8 @@ import {
   Link2, 
   LogOut,
   ChevronLeft,
-  Menu
+  Menu,
+  Trash2
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -38,6 +39,12 @@ const navItems = [
     label: 'Email Center',
     description: 'Send & manage emails'
   },
+  {
+    href: '/admin/deletion-requests',
+    icon: Trash2,
+    label: 'Account Deletions',
+    description: 'Manage deletion requests'
+  }
 ];
 
 // Affiliate section as a group

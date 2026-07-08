@@ -379,6 +379,24 @@ const getAllUsers = async () => {
   }
 };
 
+/**
+ * Retrieves all account deletion requests from Firestore.
+ * @returns {Promise<Array>} An array of deletion request objects.
+ */
+const getAllDeletionRequests = async () => {
+  try {
+    const requestsCollection = collection(db, "accountDeletionRequests");
+    const requestsSnapshot = await getDocs(requestsCollection);
+    return requestsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Error fetching deletion requests:", error);
+    throw error;
+  }
+};
+
 const checkEmailExists = async (email) => {
   try {
     const signInMethods = await fetchSignInMethodsForEmail(auth, email);
@@ -406,5 +424,6 @@ export {
   checkEmailExists,
   blockUser,
   getAllUsers,
-  unblockUser
+  unblockUser,
+  getAllDeletionRequests
 };
