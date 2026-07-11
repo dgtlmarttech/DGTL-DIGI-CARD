@@ -200,6 +200,21 @@ const ProfilePage = () => {
             : '⚡ Upgrade to Premium for just ₹99/year to unlock all features!'}
         </div>
 
+        {/* Profile Statistics (Views) */}
+        <div className="mb-6 rounded-xl bg-white p-6 shadow-sm flex items-center justify-between border-l-4 border-blue-500">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Profile Analytics</h2>
+            <p className="text-sm text-gray-500">Total views on your digital card</p>
+          </div>
+          <div className="flex items-center gap-3 bg-blue-50 px-4 py-3 rounded-xl border border-blue-100">
+            <span className="text-2xl">👁️</span>
+            <div>
+              <p className="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-0.5">Total Views</p>
+              <p className="text-2xl font-bold text-blue-800 leading-none">{userInfo?.cardViews || 0}</p>
+            </div>
+          </div>
+        </div>
+
         {/* Avatar Upload */}
         <div className="mb-6 rounded-xl bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-gray-900">Profile Picture</h2>

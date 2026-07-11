@@ -359,6 +359,32 @@ export default function LiveCardPage() {
         }
     }, [userId, userLoading, userInfo, isCurrentUser, router]);
 
+    // Track views when the card is successfully loaded
+    useEffect(() => {
+        if (!pageUserInfo || isCurrentUser(userId)) return;
+
+        const trackView = async () => {
+            try {
+                const viewKey = `viewed_${pageUserInfo.uid}`;
+                if (sessionStorage.getItem(viewKey)) return;
+
+                const res = await fetch('/api/track-view', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: pageUserInfo.uid }),
+                });
+
+                if (res.ok) {
+                    sessionStorage.setItem(viewKey, 'true');
+                }
+            } catch (err) {
+                console.error("Error tracking view:", err);
+            }
+        };
+
+        trackView();
+    }, [pageUserInfo, userId, isCurrentUser]);
+
     const renderCard = () => {
         const data = pageUserInfo;
         if (!data) return null;

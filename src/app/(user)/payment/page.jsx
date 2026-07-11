@@ -226,10 +226,7 @@ const PaymentPage = () => {
         <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-6 mb-6">
           <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Premium Features</h3>
           <ul className="text-left space-y-3 text-gray-700 dark:text-gray-300">
-            <li className="flex items-center gap-3">
-              <FiGift className="text-indigo-500 flex-shrink-0" size={16} />
-              <span>Ad-free digital card experience</span>
-            </li>
+
             <li className="flex items-center gap-3">
               <FiGift className="text-indigo-500 flex-shrink-0" size={16} />
               <span>6+ premium card themes</span>
@@ -327,10 +324,7 @@ const PaymentPage = () => {
           </div>
 
           <ul className="space-y-3 mb-6 text-sm text-gray-700 dark:text-gray-300">
-            <li className="flex items-center gap-3">
-              <FiCheckCircle className="text-green-500 flex-shrink-0" size={16} />
-              <span>Remove all advertisements</span>
-            </li>
+
             <li className="flex items-center gap-3">
               <FiCheckCircle className="text-green-500 flex-shrink-0" size={16} />
               <span>6+ premium card themes</span>
