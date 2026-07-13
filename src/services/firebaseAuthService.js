@@ -305,7 +305,7 @@ const emailAuthException = (code) => {
   }
 };
 
-const updateUserPaymentStatus = async (userId, paymentData) => {
+const updateUserPaymentStatus = async (userId, paymentData, planType = 'premium') => {
   try {
     const userRef = doc(db, "users", userId);
 
@@ -314,7 +314,9 @@ const updateUserPaymentStatus = async (userId, paymentData) => {
     expireDate.setFullYear(expireDate.getFullYear() + 1);
 
     await updateDoc(userRef, {
-      isPremium: true,
+      isPremium: planType === 'premium',
+      isBasic: planType === 'basic',
+      planType: planType,
       paymentData, // payment details (paymentId, orderId, signature, etc.)
       expireDate: expireDate.toISOString(), // store as ISO string
     });

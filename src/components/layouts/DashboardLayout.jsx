@@ -18,6 +18,15 @@ const DashboardLayout = ({ children, pageTitle }) => {
     }
   }, [loading, isAuthenticated, router]);
 
+  // Enforce Paywall: Redirect to payment if no active plan
+  useEffect(() => {
+    if (!loading && isAuthenticated && pathname && !pathname.startsWith('/payment')) {
+      if (!userInfo?.effectiveIsPremium && !userInfo?.effectiveIsBasic) {
+        router.push('/payment');
+      }
+    }
+  }, [loading, isAuthenticated, userInfo, pathname, router]);
+
   const handleLogout = async () => {
     await auth.signOut();
     router.push('/signin');
@@ -113,11 +122,11 @@ const DashboardLayout = ({ children, pageTitle }) => {
 
                 {!isStandalone && (
                   <button
-                    onClick={() => router.push('/install-app')}
+                    onClick={() => window.open('YOUR_PLAYSTORE_LINK_HERE', '_blank')}
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full font-bold text-sm hover:bg-blue-700 transition duration-200 shadow-md transform hover:scale-105"
                   >
                     <span>📱</span>
-                    <span>Install App</span>
+                    <span>Get our App</span>
                   </button>
                 )}
 
@@ -177,13 +186,13 @@ const DashboardLayout = ({ children, pageTitle }) => {
               {!isStandalone && (
                 <button
                   onClick={() => {
-                    router.push('/install-app');
+                    window.open('YOUR_PLAYSTORE_LINK_HERE', '_blank');
                     setMobileMenuOpen(false);
                   }}
                   className="flex items-center w-full text-left px-4 py-3 text-sm font-medium rounded-xl text-blue-600 hover:bg-blue-50/70 transition-all duration-200"
                 >
                   <span className="mr-3 text-base">📱</span>
-                  Install App
+                  Get our App
                 </button>
               )}
 

@@ -168,11 +168,24 @@ const ProfilePage = () => {
 
   const saveProfile = async () => {
     if (!user) return;
+    
+    const isBasicOnly = userInfo?.isBasic && !userInfo?.isPremium;
+    let currentEdits = userInfo?.profileEditsCount || 0;
+    
+    if (isBasicOnly) {
+      if (currentEdits >= 50) {
+        toast.error('You have reached your limit of 50 edits. Upgrade to Premium for unlimited edits.');
+        return;
+      }
+      currentEdits += 1;
+    }
+
     try {
       setLoading(true);
       toast.info('Saving profile...', { autoClose: 2000 });
-      await updateDoc(doc(db, 'users', user.uid), formData);
-      updateUserInfo(formData);
+      const dataToSave = { ...formData, profileEditsCount: currentEdits };
+      await updateDoc(doc(db, 'users', user.uid), dataToSave);
+      updateUserInfo(dataToSave);
       toast.success('Profile updated successfully! 🎉');
     } catch (error) {
       console.error('Error saving profile:', error);
@@ -181,6 +194,9 @@ const ProfilePage = () => {
       setLoading(false);
     }
   };
+
+  const isBasicOnly = userInfo?.isBasic && !userInfo?.isPremium;
+  const editsLeft = isBasicOnly ? Math.max(0, 50 - (userInfo?.profileEditsCount || 0)) : null;
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -192,28 +208,46 @@ const ProfilePage = () => {
           className={`mb-6 rounded-xl p-4 text-center text-sm font-semibold text-white shadow-lg cursor-pointer ${
             userInfo?.isPremium
               ? 'bg-gradient-to-r from-yellow-400 to-yellow-600'
-              : 'bg-gradient-to-r from-red-500 to-red-700'
+              : 'bg-gradient-to-r from-blue-500 to-indigo-600'
           }`}
         >
           {userInfo?.isPremium
             ? "🎉 You're a Premium Member! Manage Your Plan"
-            : '⚡ Upgrade to Premium for just ₹99/year to unlock all features!'}
+            : '⚡ Upgrade to Premium for just ₹499/year to unlock advanced tracking and vanity URLs!'}
         </div>
 
-        {/* Profile Statistics (Views) */}
-        <div className="mb-6 rounded-xl bg-white p-6 shadow-sm flex items-center justify-between border-l-4 border-blue-500">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Profile Analytics</h2>
-            <p className="text-sm text-gray-500">Total views on your digital card</p>
-          </div>
-          <div className="flex items-center gap-3 bg-blue-50 px-4 py-3 rounded-xl border border-blue-100">
-            <span className="text-2xl">👁️</span>
+        {/* Profile Statistics (Views) - Premium Only */}
+        {userInfo?.isPremium ? (
+          <div className="mb-6 rounded-xl bg-white p-6 shadow-sm flex items-center justify-between border-l-4 border-blue-500">
             <div>
-              <p className="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-0.5">Total Views</p>
-              <p className="text-2xl font-bold text-blue-800 leading-none">{userInfo?.cardViews || 0}</p>
+              <h2 className="text-lg font-semibold text-gray-900">Profile Analytics</h2>
+              <p className="text-sm text-gray-500">Total views on your digital card</p>
+            </div>
+            <div className="flex items-center gap-3 bg-blue-50 px-4 py-3 rounded-xl border border-blue-100">
+              <span className="text-2xl">👁️</span>
+              <div>
+                <p className="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-0.5">Total Views</p>
+                <p className="text-2xl font-bold text-blue-800 leading-none">{userInfo?.cardViews || 0}</p>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="mb-6 rounded-xl bg-gray-50 p-6 shadow-sm flex items-center justify-between border-l-4 border-gray-300 opacity-80">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                Profile Analytics 
+                <span className="bg-yellow-100 text-yellow-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Premium</span>
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">Upgrade to track your digital card views in real-time.</p>
+            </div>
+            <button 
+              onClick={() => router.push('/payment')} 
+              className="hidden sm:block px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-semibold hover:bg-yellow-600 transition-colors shadow-sm"
+            >
+              Unlock Analytics
+            </button>
+          </div>
+        )}
 
         {/* Avatar Upload */}
         <div className="mb-6 rounded-xl bg-white p-6 shadow-sm">
@@ -473,11 +507,15 @@ const ProfilePage = () => {
           )}
         </div>
 
-        {/* Desktop Save Button */}
-        <div className="hidden md:flex justify-end mb-6">
+        <div className="hidden md:flex justify-end mb-6 items-center gap-4">
+          {isBasicOnly && (
+            <div className="text-sm font-medium text-gray-500">
+              <span className={editsLeft <= 5 ? 'text-red-500 font-bold' : ''}>{editsLeft}</span> / 50 edits remaining
+            </div>
+          )}
           <button
             onClick={saveProfile}
-            disabled={loading}
+            disabled={loading || (isBasicOnly && editsLeft === 0)}
             className="rounded-lg bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700 active:scale-95 transition-transform duration-150 disabled:opacity-50 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
           >
             {loading ? (
@@ -486,16 +524,21 @@ const ProfilePage = () => {
                 <span>Saving Changes...</span>
               </>
             ) : (
-              <span>Save Changes</span>
+              <span>{isBasicOnly && editsLeft === 0 ? 'Limit Reached' : 'Save Changes'}</span>
             )}
           </button>
         </div>
 
         {/* Mobile Save Button (fixed at bottom) */}
         <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg md:hidden z-40">
+          {isBasicOnly && (
+            <div className="text-center text-xs font-medium text-gray-500 mb-2">
+              <span className={editsLeft <= 5 ? 'text-red-500 font-bold' : ''}>{editsLeft}</span> / 50 edits remaining
+            </div>
+          )}
           <button
             onClick={saveProfile}
-            disabled={loading}
+            disabled={loading || (isBasicOnly && editsLeft === 0)}
             className="w-full rounded-lg bg-blue-600 py-4 text-white font-semibold active:scale-[0.98] transition-transform duration-150 disabled:opacity-50 flex items-center justify-center space-x-2"
           >
             {loading ? (
@@ -504,7 +547,7 @@ const ProfilePage = () => {
                 <span>Saving Changes...</span>
               </>
             ) : (
-              <span>Save Changes</span>
+              <span>{isBasicOnly && editsLeft === 0 ? 'Limit Reached' : 'Save Changes'}</span>
             )}
           </button>
         </div>

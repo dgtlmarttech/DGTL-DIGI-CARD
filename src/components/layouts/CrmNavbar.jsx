@@ -174,11 +174,11 @@ const CrmNavbar = ({ children, pageTitle }) => {
 
                   {!isStandalone && (
                     <button
-                      onClick={() => router.push('/install-app')}
+                      onClick={() => window.open('YOUR_PLAYSTORE_LINK_HERE', '_blank')}
                       className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full font-bold text-sm hover:bg-blue-700 transition duration-200 shadow-md transform hover:scale-105"
                     >
                       <span>📱</span>
-                      <span>Install App</span>
+                      <span>Get our App</span>
                     </button>
                   )}
 
@@ -236,12 +236,12 @@ const CrmNavbar = ({ children, pageTitle }) => {
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    router.push('/install-app');
+                    window.open('YOUR_PLAYSTORE_LINK_HERE', '_blank');
                   }}
                   className="flex items-center w-full text-left px-4 py-4 text-sm font-semibold rounded-xl text-blue-600 hover:bg-blue-50 transition-all duration-300 touch-manipulation"
                 >
                   <span className="mr-4 text-lg">📱</span>
-                  <span className="font-medium">Install App</span>
+                  <span className="font-medium">Get our App</span>
                 </button>
               )}
 

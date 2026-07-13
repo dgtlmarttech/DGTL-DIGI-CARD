@@ -8,11 +8,6 @@ import { useUser } from '../../../context/userContext';
 import { updateUserPaymentStatus } from '../../../services/firebaseAuthService';
 import { toast } from 'react-toastify';
 
-/**
- * A promise-based function to dynamically load an external script.
- * @param {string} src The URL of the script to load.
- * @returns {Promise<boolean>} A promise that resolves to true if the script loaded successfully, false otherwise.
- */
 const loadScript = (src) => {
   return new Promise((resolve) => {
     const script = document.createElement('script');
@@ -23,10 +18,6 @@ const loadScript = (src) => {
   });
 };
 
-/**
- * A component for the premium payment page. It handles user authentication,
- * checks for existing premium status, and manages the Razorpay payment flow.
- */
 const PaymentPage = () => {
   const router = useRouter();
   const { 
@@ -35,8 +26,8 @@ const PaymentPage = () => {
     loading: userLoading, 
     isAuthenticated, 
     isPremium,
-    updateUserInfo,
-    refreshUserData
+    isBasic,
+    updateUserInfo
   } = useUser();
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -44,18 +35,13 @@ const PaymentPage = () => {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-
-
   useEffect(() => {
     if (!userLoading && !isAuthenticated) {
       router.push('/signin');
     }
   }, [isAuthenticated, userLoading, router]);
 
-  /**
-   * Handles the payment process by creating an order and opening the Razorpay checkout.
-   */
-  const handlePayment = useCallback(async () => {
+  const handlePayment = useCallback(async (planType, amount) => {
     if (!agreedToTerms) {
       setErrorMsg('Please agree to the terms and conditions to proceed.');
       toast.error('Please agree to the terms and conditions to proceed.');
@@ -72,7 +58,6 @@ const PaymentPage = () => {
     setErrorMsg('');
     toast.info('Initializing payment...', { autoClose: 2000 });
 
-    // Load the Razorpay SDK
     const sdkOK = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
     if (!sdkOK) {
       const error = 'Unable to load the payment gateway. Please check your internet connection.';
@@ -84,21 +69,17 @@ const PaymentPage = () => {
 
     let order;
     try {
-      // Create a new order via API route
       const res = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          amount: 99,
+          amount: amount,
           userId: user.uid,
           userEmail: user.email
         }),
       });
 
-      if (!res.ok) {
-        throw new Error('Failed to create order.');
-      }
-
+      if (!res.ok) throw new Error('Failed to create order.');
       order = await res.json();
     } catch (e) {
       const error = 'Failed to create payment order. Please try again.';
@@ -108,25 +89,23 @@ const PaymentPage = () => {
       return;
     }
 
-    // Razorpay checkout options
     const options = {
       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY,
       amount: order.amount,
       currency: order.currency,
-      name: 'DigiCard Premium',
-      description: 'Yearly Subscription - Premium Features',
+      name: `DigiCard ${planType === 'premium' ? 'Premium' : 'Basic'}`,
+      description: `Yearly Subscription - ${planType === 'premium' ? 'Premium' : 'Basic'} Plan`,
       order_id: order.id,
       prefill: {
         name: `${userInfo?.firstName || ''} ${userInfo?.lastName || ''}`.trim() || user?.displayName || '',
         email: userInfo?.email || user?.email || '',
         contact: userInfo?.mobile || user?.phoneNumber || '',
       },
-      theme: { color: '#4c51bf' },
+      theme: { color: planType === 'premium' ? '#4c51bf' : '#10b981' },
       handler: async (resp) => {
         try {
           toast.info('Verifying payment...', { autoClose: 2000 });
           
-          // Verify payment on the server side
           const verify = await fetch('/api/verify-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -138,29 +117,26 @@ const PaymentPage = () => {
             }),
           });
           
-          if (!verify.ok) {
-            throw new Error('Payment verification failed.');
-          }
+          if (!verify.ok) throw new Error('Payment verification failed.');
 
-          // Update the user's payment status in Firebase
           await updateUserPaymentStatus(user.uid, {
             paymentId: resp.razorpay_payment_id,
             orderId: resp.razorpay_order_id,
             signature: resp.razorpay_signature,
-            isPremium: true,
-            premiumStartDate: new Date(),
-            premiumEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
-          });
+            planStartDate: new Date().toISOString(),
+            planEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+          }, planType);
 
-          // Update local user context
           updateUserInfo({ 
-            isPremium: true,
-            premiumStartDate: new Date(),
-            premiumEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+            isPremium: planType === 'premium',
+            isBasic: planType === 'basic',
+            planType: planType,
+            planStartDate: new Date(),
+            planEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
           });
 
           setPaymentSuccess(true);
-          toast.success('🎉 Welcome to Premium! Your account has been upgraded successfully!');
+          toast.success(`🎉 Welcome to ${planType === 'premium' ? 'Premium' : 'Basic'}! Your account is upgraded!`);
         } catch (e) {
           console.error('Payment verification error:', e);
           const error = 'Payment successful, but failed to update your account. Please contact support.';
@@ -188,7 +164,6 @@ const PaymentPage = () => {
     rzp1.open();
   }, [agreedToTerms, user, userInfo, updateUserInfo]);
 
-  // Loading state
   if (userLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -203,60 +178,28 @@ const PaymentPage = () => {
     );
   }
 
-  // Success view component
-  const SuccessView = ({ title, message, isPremiumUser = false }) => (
+  const SuccessView = ({ title, message, plan }) => (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4 font-sans">
       <div className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center text-gray-800 dark:text-gray-200">
         <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 ${
-          isPremiumUser ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-800/30 dark:text-yellow-300' : 'bg-green-100 text-green-600 dark:bg-green-800/30 dark:text-green-300'
+          plan === 'premium' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-800/30 dark:text-yellow-300' : 'bg-green-100 text-green-600 dark:bg-green-800/30 dark:text-green-300'
         }`}>
-          {isPremiumUser ? <FiStar size={32} /> : <FiCheckCircle size={32} />}
+          {plan === 'premium' ? <FiStar size={32} /> : <FiCheckCircle size={32} />}
         </div>
         <h1 className="text-3xl font-bold mb-2">{title}</h1>
-        <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">
-          {message}
-        </p>
+        <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">{message}</p>
         
-        {isPremiumUser && userInfo?.premiumEndDate && (
+        {userInfo?.planEndDate && (
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            Your premium subscription is valid until {new Date(userInfo.premiumEndDate.toDate?.() || userInfo.premiumEndDate).toLocaleDateString()}
+            Your subscription is valid until {new Date(userInfo.planEndDate.toDate?.() || userInfo.planEndDate).toLocaleDateString()}
           </p>
         )}
 
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-6 mb-6">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Premium Features</h3>
-          <ul className="text-left space-y-3 text-gray-700 dark:text-gray-300">
-
-            <li className="flex items-center gap-3">
-              <FiGift className="text-indigo-500 flex-shrink-0" size={16} />
-              <span>6+ premium card themes</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <FiGift className="text-indigo-500 flex-shrink-0" size={16} />
-              <span>Custom vanity URL</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <FiGift className="text-indigo-500 flex-shrink-0" size={16} />
-              <span>Unlimited profile edits</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <FiGift className="text-indigo-500 flex-shrink-0" size={16} />
-              <span>Priority customer support</span>
-            </li>
-          </ul>
-        </div>
-
-        <div className="flex gap-3">
-          <Link 
-            href="/dashboard" 
-            className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors text-center"
-          >
+        <div className="flex gap-3 mt-6">
+          <Link href="/dashboard" className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors text-center">
             Go to Dashboard
           </Link>
-          <Link 
-            href={`/${userInfo?.customUID || user?.uid}`}
-            className="flex-1 px-6 py-3 border border-indigo-600 text-indigo-600 rounded-xl font-semibold hover:bg-indigo-50 transition-colors text-center"
-          >
+          <Link href={`/${userInfo?.customUID || user?.uid}`} className="flex-1 px-6 py-3 border border-indigo-600 text-indigo-600 rounded-xl font-semibold hover:bg-indigo-50 transition-colors text-center">
             View My Card
           </Link>
         </div>
@@ -264,154 +207,154 @@ const PaymentPage = () => {
     </div>
   );
 
-  // Show success screen for existing premium users
-  if (isPremium && !paymentSuccess) {
-    return (
-      <SuccessView
-        title="You're Already Premium!"
-        message="You're enjoying all the exclusive features of DigiCard Premium."
-        isPremiumUser={true}
-      />
-    );
-  }
-
-  // Show success screen after successful payment
   if (paymentSuccess) {
     return (
       <SuccessView
-        title="Welcome to Premium!"
-        message="Your payment was successful and your Premium plan is now active."
+        title="Welcome Aboard!"
+        message="Your payment was successful and your plan is now active."
+        plan={userInfo?.isPremium ? 'premium' : 'basic'}
       />
     );
   }
 
-  // Main purchase flow view
+  if (isPremium) {
+    return <SuccessView title="You're Premium!" message="You are enjoying all the exclusive features of DigiCard Premium." plan="premium" />;
+  }
+  
+  if (isBasic) {
+    return <SuccessView title="You're on the Basic Plan!" message="You have access to all essential networking tools." plan="basic" />;
+  }
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4 font-sans">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden text-gray-800 dark:text-gray-200 flex flex-col">
-        <header className="flex items-center p-6 border-b border-gray-200 dark:border-gray-700">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 font-sans">
+      <div className="max-w-7xl mx-auto">
+        <header className="flex items-center mb-8">
           <button 
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" 
             onClick={() => router.back()}
           >
             <FiArrowLeft size={24} />
           </button>
-          <h1 className="flex-grow text-center text-xl font-bold tracking-wide">
-            Upgrade to Premium
-          </h1>
         </header>
 
-        <main className="p-6 flex-grow">
-
-
-          <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
-            Unlock the full potential of your digital card with <strong className="font-semibold text-gray-800 dark:text-gray-200">Premium</strong> features.
+        <div className="text-center mb-12">
+          <h2 className="text-sm font-semibold text-green-600 tracking-wide uppercase">Pricing</h2>
+          <h1 className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
+            Simple, honest pricing
+          </h1>
+          <p className="mt-4 text-xl text-gray-500 dark:text-gray-400">
+            One low yearly price. No per-contact fees, no surprises.
           </p>
+        </div>
 
-          <div className="flex items-baseline gap-2 mb-6">
-            <span className="text-5xl font-bold text-gray-900 dark:text-gray-50">
-              ₹99
-            </span>
-            <span className="text-lg text-gray-500 dark:text-gray-400">
-              /year
-            </span>
+        <div className="mt-12 space-y-4 sm:mt-16 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-6 lg:max-w-4xl lg:mx-auto xl:max-w-none xl:mx-0">
+          {/* Basic Plan */}
+          <div className="border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800 flex flex-col">
+            <div className="p-6">
+              <h2 className="text-lg leading-6 font-semibold tracking-wider text-green-600">BASIC</h2>
+              <p className="mt-8">
+                <span className="text-5xl font-extrabold text-gray-900 dark:text-white">₹199</span>
+                <span className="text-base font-medium text-gray-500 dark:text-gray-400">/year</span>
+              </p>
+              <p className="mt-4 text-sm text-gray-500 dark:text-gray-400 italic">Everything you need to start networking.</p>
+            </div>
+            <div className="pt-6 pb-8 px-6 flex-1 flex flex-col">
+              <ul className="mt-2 space-y-4 flex-1">
+                {[
+                  'Smart digital business card',
+                  'Profile photo & auto-generated URL',
+                  'Up to 50 profile & detail edits',
+                  'QR code + built-in card scanner',
+                  'Networking CRM dashboard',
+                  'Contact management & bulk import',
+                  'Contact labels & notes',
+                  'WhatsApp direct messaging'
+                ].map((feature) => (
+                  <li key={feature} className="flex">
+                    <FiCheckCircle className="flex-shrink-0 h-5 w-5 text-green-500" />
+                    <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => handlePayment('basic', 199)}
+                disabled={!agreedToTerms || isProcessing}
+                className={`mt-8 w-full block border border-transparent rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${
+                  agreedToTerms && !isProcessing ? 'bg-green-600 hover:bg-green-700 transform hover:scale-[1.02]' : 'bg-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {isProcessing ? 'Processing...' : 'Get Basic'}
+              </button>
+            </div>
           </div>
 
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mb-6">
-            <p className="text-sm text-green-800 dark:text-green-200 text-center">
-              <span className="font-semibold">🎉 Launch Offer!</span> Get premium at just ₹99/year
-            </p>
+          {/* Premium Plan */}
+          <div className="border border-yellow-400 dark:border-yellow-600 rounded-2xl shadow-lg divide-y divide-gray-200 dark:divide-gray-700 bg-orange-50/10 dark:bg-gray-800 relative flex flex-col">
+            <div className="absolute top-0 right-0 -mt-4 mr-4 px-4 py-1 bg-yellow-500 text-white text-xs font-bold uppercase tracking-wide rounded-full shadow-md flex items-center gap-1">
+               <FiStar /> MOST POPULAR
+            </div>
+            <div className="p-6">
+              <h2 className="text-lg leading-6 font-semibold tracking-wider text-yellow-600">PREMIUM</h2>
+              <p className="mt-8">
+                <span className="text-5xl font-extrabold text-gray-900 dark:text-white">₹499</span>
+                <span className="text-base font-medium text-gray-500 dark:text-gray-400">/year</span>
+              </p>
+              <p className="mt-4 text-sm text-gray-500 dark:text-gray-400 italic">
+                Everything in Basic, <span className="font-semibold text-yellow-600">plus power tools.</span>
+              </p>
+            </div>
+            <div className="pt-6 pb-8 px-6 flex-1 flex flex-col">
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Everything in Basic, plus:</p>
+              <ul className="space-y-4 flex-1">
+                {[
+                  'Custom vanity URL (yourname.dgtldigicard.com)',
+                  '6+ premium card themes',
+                  'Unlimited profile & detail edits',
+                  'Advanced view & engagement analytics',
+                  'Real-time profile tracking & analytics',
+                  'WhatsApp broadcast & message templates',
+                  'Priority customer support'
+                ].map((feature) => (
+                  <li key={feature} className="flex">
+                    <FiCheckCircle className="flex-shrink-0 h-5 w-5 text-yellow-500" />
+                    <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => handlePayment('premium', 499)}
+                disabled={!agreedToTerms || isProcessing}
+                className={`mt-8 w-full block border border-transparent rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${
+                  agreedToTerms && !isProcessing ? 'bg-yellow-500 hover:bg-yellow-600 transform hover:scale-[1.02]' : 'bg-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {isProcessing ? 'Processing...' : 'Get Premium'}
+              </button>
+            </div>
           </div>
+        </div>
 
-          <ul className="space-y-3 mb-6 text-sm text-gray-700 dark:text-gray-300">
-
-            <li className="flex items-center gap-3">
-              <FiCheckCircle className="text-green-500 flex-shrink-0" size={16} />
-              <span>6+ premium card themes</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <FiCheckCircle className="text-green-500 flex-shrink-0" size={16} />
-              <span>Custom vanity URL (yourname.dgtlcard.com)</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <FiCheckCircle className="text-green-500 flex-shrink-0" size={16} />
-              <span>Unlimited profile edits</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <FiCheckCircle className="text-green-500 flex-shrink-0" size={16} />
-              <span>Advanced contact analytics</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <FiCheckCircle className="text-green-500 flex-shrink-0" size={16} />
-              <span>Priority customer support</span>
-            </li>
-          </ul>
-
-          <div className="flex items-start gap-2 mb-6">
+        <div className="mt-8 flex justify-center">
+          <div className="flex items-center gap-2">
             <input
               type="checkbox"
               id="agree"
               checked={agreedToTerms}
               onChange={(e) => setAgreedToTerms(e.target.checked)}
-              className="mt-1 form-checkbox h-4 w-4 text-indigo-600 dark:text-indigo-400 transition duration-150 ease-in-out border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:bg-gray-700"
+              className="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out border-gray-300 rounded cursor-pointer"
             />
-            <label htmlFor="agree" className="text-sm text-gray-600 dark:text-gray-400">
-              I agree to the{' '}
-              <Link 
-                href="/terms" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-indigo-600 dark:text-indigo-400 hover:underline"
-              >
-                Terms & Conditions
-              </Link>{' '}
-              and{' '}
-              <Link 
-                href="/privacy" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-indigo-600 dark:text-indigo-400 hover:underline"
-              >
-                Privacy Policy
-              </Link>
+            <label htmlFor="agree" className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+              I agree to the <Link href="/terms" className="text-indigo-600 hover:underline">Terms & Conditions</Link> and <Link href="/privacy" className="text-indigo-600 hover:underline">Privacy Policy</Link>
             </label>
           </div>
-
-          {errorMsg && (
-            <div className="flex items-center gap-2 p-3 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-900/30 dark:text-red-400 mb-4">
-              <FiXCircle size={16} className="flex-shrink-0" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
-        </main>
-
-        <footer className="p-6 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-700">
-          <button
-            onClick={handlePayment}
-            disabled={!agreedToTerms || isProcessing}
-            className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all duration-300 ease-in-out ${
-              agreedToTerms && !isProcessing
-                ? 'bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-50 transform hover:scale-[1.02]'
-                : 'bg-gray-400 cursor-not-allowed dark:bg-gray-600'
-            }`}
-          >
-            {isProcessing ? (
-              <div className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Processing Payment...
-              </div>
-            ) : (
-              'Upgrade to Premium - ₹99/year'
-            )}
-          </button>
-
-          <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-3">
-            Secure payment powered by Razorpay • Cancel anytime
-          </p>
-        </footer>
+        </div>
+        
+        {errorMsg && (
+          <div className="mt-4 flex items-center justify-center gap-2 p-3 text-sm text-red-700 bg-red-100 rounded-lg max-w-lg mx-auto">
+            <FiXCircle size={16} className="flex-shrink-0" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
       </div>
     </div>
   );

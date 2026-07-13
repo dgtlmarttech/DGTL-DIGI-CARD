@@ -24,7 +24,7 @@ function PWAInstallBanner() {
     }, []);
 
     const handleInstallClick = () => {
-        router.push('/install-app');
+        window.open('YOUR_PLAYSTORE_LINK_HERE', '_blank');
     };
 
     const handleDismiss = () => {
@@ -42,8 +42,8 @@ function PWAInstallBanner() {
                         📱
                     </div>
                     <div>
-                        <p className="font-semibold text-sm">Install DgtlDigiCard App</p>
-                        <p className="text-xs text-blue-100">Get quick access and offline features</p>
+                        <p className="font-semibold text-sm">Get the DgtlDigiCard App</p>
+                        <p className="text-xs text-blue-100">Download our new Android app from Play Store</p>
                     </div>
                 </div>
 
@@ -52,7 +52,7 @@ function PWAInstallBanner() {
                         onClick={handleInstallClick}
                         className="bg-white text-blue-600 px-4 py-2 rounded-lg text-sm font-semibold hover:cursor-pointer hover:bg-blue-50 transition-colors duration-200"
                     >
-                        Install Now
+                        Get it on Play Store
                     </button>
                     <button
                         onClick={handleDismiss}
@@ -106,11 +106,11 @@ function HeaderInstallButton() {
 
     return (
         <button
-            onClick={() => router.push('/install-app')}
+            onClick={() => window.open('YOUR_PLAYSTORE_LINK_HERE', '_blank')}
             className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold text-sm hover:cursor-pointer hover:from-green-700 hover:to-green-800 transition duration-200 shadow-md transform hover:scale-105"
         >
             <span>📱</span>
-            <span>Install App</span>
+            <span>Get our App</span>
         </button>
     );
 }

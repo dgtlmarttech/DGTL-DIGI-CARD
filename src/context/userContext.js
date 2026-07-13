@@ -46,6 +46,12 @@ export const UserProvider = ({ children }) => {
     return userData.isPremium || false;
   };
 
+  // Helper function to calculate effective basic status (paid only)
+  const calculateEffectiveBasic = (userData) => {
+    if (!userData) return false;
+    return userData.isBasic || false;
+  };
+
   // Load user data when auth user changes
   const loadUserData = async (authUser) => {
     try {
@@ -65,9 +71,11 @@ export const UserProvider = ({ children }) => {
 
       if (userData) {
         const effectiveIsPremium = calculateEffectivePremium(userData);
+        const effectiveIsBasic = calculateEffectiveBasic(userData);
         const completeUserInfo = {
           ...userData,
-          effectiveIsPremium
+          effectiveIsPremium,
+          effectiveIsBasic
         };
         setUserInfo(completeUserInfo);
         // Save to localStorage for offline access
@@ -138,6 +146,9 @@ export const UserProvider = ({ children }) => {
       if ('isPremium' in updates) {
         updatedInfo.effectiveIsPremium = calculateEffectivePremium(updatedInfo);
       }
+      if ('isBasic' in updates) {
+        updatedInfo.effectiveIsBasic = calculateEffectiveBasic(updatedInfo);
+      }
       setUserInfo(updatedInfo);
     }
   };
@@ -188,6 +199,7 @@ export const UserProvider = ({ children }) => {
     // Computed properties
     isAuthenticated: !!user,
     isPremium: userInfo?.effectiveIsPremium || false,
+    isBasic: userInfo?.effectiveIsBasic || false,
     isAdmin: userInfo?.isAdmin || false,
     isBlocked: userInfo?.blocked || false,
 

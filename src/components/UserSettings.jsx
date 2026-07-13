@@ -184,23 +184,14 @@ const UserSettings = ({ currentUser, onLogout, onEditProfile, onClose, isPremium
             {/* Edit Details button */}
             <div className="relative group">
               <button
-                className={`w-full px-4 py-3 rounded-lg text-left transition-colors flex items-center justify-between ${
-                  isPremium ? 'bg-indigo-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 cursor-not-allowed'
-                }`}
+                className="w-full px-4 py-3 rounded-lg bg-indigo-500 text-white text-left transition-colors flex items-center justify-between hover:bg-indigo-600"
                 onClick={onEditProfile}
-                disabled={!isPremium}
               >
                 <div className="flex items-center gap-3">
                   <FiEdit size={20} />
                   <span>Edit Details</span>
                 </div>
-                {!isPremium && <FiInfo size={20} className="text-gray-400" />}
               </button>
-              {!isPremium && (
-                <span className="absolute left-1/2 bottom-full -translate-x-1/2 mb-2 px-3 py-1 text-xs text-white bg-gray-800 dark:bg-gray-600 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  Buy Premium to unlock this feature
-                </span>
-              )}
             </div>
 
             {/* Change Profile Pic button */}
