@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUser } from '../../context/userContext';
 import { auth } from '../../firebase/firebase';
+import { toast } from 'react-toastify';
 
 const DashboardLayout = ({ children, pageTitle }) => {
   const router = useRouter();
@@ -19,9 +20,11 @@ const DashboardLayout = ({ children, pageTitle }) => {
   }, [loading, isAuthenticated, router]);
 
   // Enforce Paywall: Redirect to payment if no active plan
+  // Wait for userInfo to be fully loaded before checking (avoids false redirect on load)
   useEffect(() => {
-    if (!loading && isAuthenticated && pathname && !pathname.startsWith('/payment')) {
-      if (!userInfo?.effectiveIsPremium && !userInfo?.effectiveIsBasic) {
+    if (!loading && isAuthenticated && userInfo !== undefined && pathname && !pathname.startsWith('/payment')) {
+      // userInfo is null means Firestore returned nothing — no plan exists
+      if (userInfo === null || (!userInfo?.effectiveIsPremium && !userInfo?.effectiveIsBasic)) {
         router.push('/payment');
       }
     }
@@ -57,6 +60,13 @@ const DashboardLayout = ({ children, pageTitle }) => {
   }
   if (!isAuthenticated) return null;
 
+  // Prevent flash: if userInfo is loaded but no plan, show nothing while redirect happens
+  if (!loading && isAuthenticated && userInfo !== undefined && pathname && !pathname.startsWith('/payment')) {
+    if (userInfo === null || (!userInfo?.effectiveIsPremium && !userInfo?.effectiveIsBasic)) {
+      return null;
+    }
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30">
       {/* Navbar */}
@@ -85,7 +95,13 @@ const DashboardLayout = ({ children, pageTitle }) => {
                   return (
                     <button
                       key={item.name}
-                      onClick={() => router.push(item.href)}
+                      onClick={() => {
+                        if (!userInfo?.effectiveIsPremium && !userInfo?.effectiveIsBasic && !item.href.startsWith('/payment')) {
+                          toast.error('Please subscribe to a plan to access this feature.');
+                          return;
+                        }
+                        router.push(item.href);
+                      }}
                       className={`px-4 py-2.5 rounded-xl text-sm font-medium flex items-center transition-all duration-200 ${active
                         ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-200/50 transform scale-105'
                         : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-800 hover:shadow-md hover:scale-105'
@@ -122,7 +138,7 @@ const DashboardLayout = ({ children, pageTitle }) => {
 
                 {!isStandalone && (
                   <button
-                    onClick={() => window.open('YOUR_PLAYSTORE_LINK_HERE', '_blank')}
+                    onClick={() => window.open('https://play.google.com/store/apps/details?id=com.dgtldigicard.app', '_blank')}
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full font-bold text-sm hover:bg-blue-700 transition duration-200 shadow-md transform hover:scale-105"
                   >
                     <span>📱</span>
@@ -169,6 +185,11 @@ const DashboardLayout = ({ children, pageTitle }) => {
                   <button
                     key={item.name}
                     onClick={() => {
+                      if (!userInfo?.effectiveIsPremium && !userInfo?.effectiveIsBasic && !item.href.startsWith('/payment')) {
+                        toast.error('Please subscribe to a plan to access this feature.');
+                        setMobileMenuOpen(false);
+                        return;
+                      }
                       router.push(item.href);
                       setMobileMenuOpen(false);
                     }}
@@ -186,7 +207,7 @@ const DashboardLayout = ({ children, pageTitle }) => {
               {!isStandalone && (
                 <button
                   onClick={() => {
-                    window.open('YOUR_PLAYSTORE_LINK_HERE', '_blank');
+                    window.open('https://play.google.com/store/apps/details?id=com.dgtldigicard.app', '_blank');
                     setMobileMenuOpen(false);
                   }}
                   className="flex items-center w-full text-left px-4 py-3 text-sm font-medium rounded-xl text-blue-600 hover:bg-blue-50/70 transition-all duration-200"

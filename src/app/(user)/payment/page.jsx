@@ -226,7 +226,7 @@ const PaymentPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-7xl mx-auto">
         <header className="flex items-center mb-8">
           <button 
@@ -237,7 +237,7 @@ const PaymentPage = () => {
           </button>
         </header>
 
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h2 className="text-sm font-semibold text-green-600 tracking-wide uppercase">Pricing</h2>
           <h1 className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
             Simple, honest pricing
@@ -247,7 +247,7 @@ const PaymentPage = () => {
           </p>
         </div>
 
-        <div className="mt-12 space-y-4 sm:mt-16 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-6 lg:max-w-4xl lg:mx-auto xl:max-w-none xl:mx-0">
+        <div className="mt-6 space-y-4 sm:mt-8 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-6 lg:max-w-4xl lg:mx-auto">
           {/* Basic Plan */}
           <div className="border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800 flex flex-col">
             <div className="p-6">
