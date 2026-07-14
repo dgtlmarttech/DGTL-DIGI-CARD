@@ -169,21 +169,10 @@ const ProfilePage = () => {
   const saveProfile = async () => {
     if (!user) return;
     
-    const isBasicOnly = userInfo?.isBasic && !userInfo?.isPremium;
-    let currentEdits = userInfo?.profileEditsCount || 0;
-    
-    if (isBasicOnly) {
-      if (currentEdits >= 50) {
-        toast.error('You have reached your limit of 50 edits. Upgrade to Premium for unlimited edits.');
-        return;
-      }
-      currentEdits += 1;
-    }
-
     try {
       setLoading(true);
       toast.info('Saving profile...', { autoClose: 2000 });
-      const dataToSave = { ...formData, profileEditsCount: currentEdits };
+      const dataToSave = { ...formData };
       await updateDoc(doc(db, 'users', user.uid), dataToSave);
       updateUserInfo(dataToSave);
       toast.success('Profile updated successfully! 🎉');
@@ -194,9 +183,6 @@ const ProfilePage = () => {
       setLoading(false);
     }
   };
-
-  const isBasicOnly = userInfo?.isBasic && !userInfo?.isPremium;
-  const editsLeft = isBasicOnly ? Math.max(0, 50 - (userInfo?.profileEditsCount || 0)) : null;
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -508,14 +494,9 @@ const ProfilePage = () => {
         </div>
 
         <div className="hidden md:flex justify-end mb-6 items-center gap-4">
-          {isBasicOnly && (
-            <div className="text-sm font-medium text-gray-500">
-              <span className={editsLeft <= 5 ? 'text-red-500 font-bold' : ''}>{editsLeft}</span> / 50 edits remaining
-            </div>
-          )}
           <button
             onClick={saveProfile}
-            disabled={loading || (isBasicOnly && editsLeft === 0)}
+            disabled={loading}
             className="rounded-lg bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700 active:scale-95 transition-transform duration-150 disabled:opacity-50 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
           >
             {loading ? (
@@ -524,21 +505,16 @@ const ProfilePage = () => {
                 <span>Saving Changes...</span>
               </>
             ) : (
-              <span>{isBasicOnly && editsLeft === 0 ? 'Limit Reached' : 'Save Changes'}</span>
+              <span>Save Changes</span>
             )}
           </button>
         </div>
 
         {/* Mobile Save Button (fixed at bottom) */}
         <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg md:hidden z-40">
-          {isBasicOnly && (
-            <div className="text-center text-xs font-medium text-gray-500 mb-2">
-              <span className={editsLeft <= 5 ? 'text-red-500 font-bold' : ''}>{editsLeft}</span> / 50 edits remaining
-            </div>
-          )}
           <button
             onClick={saveProfile}
-            disabled={loading || (isBasicOnly && editsLeft === 0)}
+            disabled={loading}
             className="w-full rounded-lg bg-blue-600 py-4 text-white font-semibold active:scale-[0.98] transition-transform duration-150 disabled:opacity-50 flex items-center justify-center space-x-2"
           >
             {loading ? (
@@ -547,7 +523,7 @@ const ProfilePage = () => {
                 <span>Saving Changes...</span>
               </>
             ) : (
-              <span>{isBasicOnly && editsLeft === 0 ? 'Limit Reached' : 'Save Changes'}</span>
+              <span>Save Changes</span>
             )}
           </button>
         </div>

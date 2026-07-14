@@ -263,7 +263,7 @@ const PaymentPage = () => {
                 {[
                   'Smart digital business card',
                   'Profile photo & auto-generated URL',
-                  'Up to 50 profile & detail edits',
+                  'Unlimited profile & detail edits',
                   'QR code + built-in card scanner',
                   'Networking CRM dashboard',
                   'Contact management & bulk import',
