@@ -6,9 +6,11 @@ import { collection, query, where, onSnapshot, getDoc, doc, deleteDoc, updateDoc
 import { auth, db } from '../../../../firebase/firebase';
 import { toast, ToastContainer } from 'react-toastify';
 import { exportContactsToVCF } from '../../../../utils/vcardUtils';
+import { useUser } from '../../../../context/userContext';
 
 const ContactsPage = () => {
   const [user, loadingAuth] = useAuthState(auth);
+  const { userInfo } = useUser();
   const router = useRouter();
   const [contacts, setContacts] = useState([]);
   const [labels, setLabels] = useState([]);
@@ -187,12 +189,23 @@ const ContactsPage = () => {
         </button>
         
         <button
-          onClick={() => router.push('/crm/import')}
-          className="bg-orange-600 text-white p-4 rounded-xl hover:bg-orange-700 transition-colors flex items-center justify-center"
+          onClick={() => {
+            if (userInfo?.effectiveIsPremium) {
+              router.push('/crm/import');
+            } else {
+              toast.error('Bulk import is a Premium feature. Please upgrade.');
+              router.push('/payment');
+            }
+          }}
+          className={`text-white p-4 rounded-xl transition-colors flex items-center justify-center ${userInfo?.effectiveIsPremium ? 'bg-orange-600 hover:bg-orange-700' : 'bg-gray-400 opacity-70 cursor-not-allowed'}`}
+          title={!userInfo?.effectiveIsPremium ? "Premium Feature" : ""}
         >
           <span className="text-2xl mr-2">📥</span>
           <div>
-            <div className="font-semibold">Import CSV</div>
+            <div className="font-semibold flex items-center gap-1">
+              Import CSV
+              {!userInfo?.effectiveIsPremium && <span className="bg-yellow-400 text-yellow-900 text-[10px] px-1.5 py-0.5 rounded font-bold ml-1">PRO</span>}
+            </div>
             <div className="text-sm opacity-90">Bulk import</div>
           </div>
         </button>

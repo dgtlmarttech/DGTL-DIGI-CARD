@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../../../firebase/firebase';
 import { toast, ToastContainer } from 'react-toastify';
+import { useUser } from '../../../context/userContext';
 
 const CrmDashboard = () => {
   const [user, loadingAuth] = useAuthState(auth);
+  const { userInfo } = useUser();
   const router = useRouter();
   const [contacts, setContacts] = useState([]);
   const [labels, setLabels] = useState([]);
@@ -125,11 +127,22 @@ const CrmDashboard = () => {
         </button>
         
         <button
-          onClick={() => router.push('/crm/import')}
-          className="bg-purple-600 text-white p-6 rounded-xl hover:bg-purple-700 transition-colors"
+          onClick={() => {
+            if (userInfo?.effectiveIsPremium) {
+              router.push('/crm/import');
+            } else {
+              toast.error('Bulk import is a Premium feature. Please upgrade.');
+              router.push('/payment');
+            }
+          }}
+          className={`text-white p-6 rounded-xl transition-colors ${userInfo?.effectiveIsPremium ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-400 opacity-70 cursor-not-allowed'}`}
+          title={!userInfo?.effectiveIsPremium ? "Premium Feature" : ""}
         >
           <div className="text-2xl mb-2">📥</div>
-          <div className="font-semibold">Import CSV</div>
+          <div className="font-semibold flex items-center justify-center gap-1">
+            Import CSV
+            {!userInfo?.effectiveIsPremium && <span className="bg-yellow-400 text-yellow-900 text-[10px] px-1.5 py-0.5 rounded font-bold ml-1">PRO</span>}
+          </div>
           <div className="text-sm opacity-90">Bulk import contacts</div>
         </button>
         

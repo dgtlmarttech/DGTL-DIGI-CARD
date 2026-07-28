@@ -263,10 +263,8 @@ const PaymentPage = () => {
                 {[
                   'Smart digital business card',
                   'Profile photo & auto-generated URL',
-                  'Unlimited profile & detail edits',
                   'QR code + built-in card scanner',
                   'Networking CRM dashboard',
-                  'Contact management & bulk import',
                   'Contact labels & notes',
                   'WhatsApp direct messaging'
                 ].map((feature) => (
@@ -310,9 +308,10 @@ const PaymentPage = () => {
                   'Custom vanity URL (yourname.dgtldigicard.com)',
                   '6+ premium card themes',
                   'Unlimited profile & detail edits',
+                  'Contact management & bulk import',
                   'Advanced view & engagement analytics',
                   'Real-time profile tracking & analytics',
-                  'WhatsApp broadcast & message templates',
+                  'WhatsApp direct messaging',
                   'Priority customer support'
                 ].map((feature) => (
                   <li key={feature} className="flex">

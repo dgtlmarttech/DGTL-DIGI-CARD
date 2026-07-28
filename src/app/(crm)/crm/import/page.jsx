@@ -1,20 +1,34 @@
 'use client';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRouter } from 'next/navigation';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../../../../firebase/firebase';
 import { toast, ToastContainer } from 'react-toastify';
+import { useUser } from '../../../../context/userContext';
 
 const ImportPage = () => {
   const [user, loadingAuth] = useAuthState(auth);
+  const { userInfo, loading: loadingUser } = useUser();
   const router = useRouter();
   const csvFileInputRef = useRef(null);
   const [isImporting, setIsImporting] = useState(false);
   const [importPreview, setImportPreview] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
 
+  useEffect(() => {
+    if (!loadingUser && userInfo && !userInfo.effectiveIsPremium) {
+      toast.error('Bulk import is a Premium feature.');
+      router.push('/payment');
+    }
+  }, [userInfo, loadingUser, router]);
+
   const handleFileSelect = (e) => {
+    if (!userInfo?.effectiveIsPremium) {
+      toast.error('Bulk import is a Premium feature.');
+      router.push('/payment');
+      return;
+    }
     const file = e.target.files[0];
     if (!file) return;
 
