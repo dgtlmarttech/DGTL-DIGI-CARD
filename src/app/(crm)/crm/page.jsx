@@ -26,7 +26,7 @@ const CrmDashboard = () => {
     let unsubscribeContacts, unsubscribeLabels, unsubscribeGroups;
 
     if (user) {
-      // Listen for contacts
+      // Listen for contactss
       const contactsQuery = query(collection(db, 'contacts'), where('userId', '==', user.uid));
       unsubscribeContacts = onSnapshot(contactsQuery, (snapshot) => {
         const fetchedContacts = [];
@@ -100,7 +100,7 @@ const CrmDashboard = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <ToastContainer position="top-right" autoClose={3000} />
-      
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">CRM Dashboard</h1>
         <p className="text-gray-600">Welcome back! Here's an overview of your contacts and CRM activity.</p>
@@ -116,7 +116,7 @@ const CrmDashboard = () => {
           <div className="font-semibold">View Contacts</div>
           <div className="text-sm opacity-90">{contactAnalytics.totalContacts} total</div>
         </button>
-        
+
         <button
           onClick={() => router.push('/crm/scan-qr')}
           className="bg-green-600 text-white p-6 rounded-xl hover:bg-green-700 transition-colors"
@@ -125,7 +125,7 @@ const CrmDashboard = () => {
           <div className="font-semibold">Scan QR Code</div>
           <div className="text-sm opacity-90">Add contact quickly</div>
         </button>
-        
+
         <button
           onClick={() => {
             if (userInfo?.effectiveIsPremium) {
@@ -145,7 +145,7 @@ const CrmDashboard = () => {
           </div>
           <div className="text-sm opacity-90">Bulk import contacts</div>
         </button>
-        
+
         <div className="bg-orange-600 text-white p-6 rounded-xl">
           <div className="text-2xl mb-2">📊</div>
           <div className="font-semibold">Analytics</div>
