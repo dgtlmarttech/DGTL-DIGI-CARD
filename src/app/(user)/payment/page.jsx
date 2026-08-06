@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiArrowLeft, FiCheckCircle, FiXCircle, FiGift, FiStar } from 'react-icons/fi';
+import { FiArrowLeft, FiCheckCircle, FiXCircle, FiGift, FiStar, FiTag, FiLoader } from 'react-icons/fi';
 import Link from 'next/link';
 import { useUser } from '../../../context/userContext';
 import { updateUserPaymentStatus } from '../../../services/firebaseAuthService';
@@ -20,11 +20,11 @@ const loadScript = (src) => {
 
 const PaymentPage = () => {
   const router = useRouter();
-  const { 
-    user, 
-    userInfo, 
-    loading: userLoading, 
-    isAuthenticated, 
+  const {
+    user,
+    userInfo,
+    loading: userLoading,
+    isAuthenticated,
     isPremium,
     isBasic,
     updateUserInfo
@@ -35,11 +35,74 @@ const PaymentPage = () => {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('');
+  const [isRedeeming, setIsRedeeming] = useState(false);
+  const [couponSuccess, setCouponSuccess] = useState(false);
+
   useEffect(() => {
     if (!userLoading && !isAuthenticated) {
       router.push('/signin');
     }
   }, [isAuthenticated, userLoading, router]);
+
+  const handleRedeemCoupon = useCallback(async () => {
+    const trimmedCode = couponCode.trim();
+    if (!trimmedCode) {
+      toast.error('Please enter a coupon code.');
+      return;
+    }
+    if (!user) {
+      toast.error('User not authenticated. Please try again.');
+      return;
+    }
+
+    setIsRedeeming(true);
+    setErrorMsg('');
+
+    try {
+      // Get the user's current ID token for secure backend verification
+      const idToken = await user.getIdToken();
+
+      const res = await fetch('/api/redeem-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          couponCode: trimmedCode,
+          userId: user.uid,
+          idToken,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrorMsg(data.error || 'Failed to redeem coupon. Please try again.');
+        toast.error(data.error || 'Failed to redeem coupon.');
+        return;
+      }
+
+      // Update local context to reflect new subscription immediately
+      updateUserInfo({
+        isPremium: data.planType === 'premium',
+        isBasic: data.planType === 'basic',
+        planType: data.planType,
+        planStartDate: new Date().toISOString(),
+        planEndDate: data.planEndDate,
+      });
+
+      setCouponSuccess(true);
+      setPaymentSuccess(true);
+      toast.success(`🎉 Coupon applied! Welcome to ${data.planType === 'premium' ? 'Premium' : 'Basic'}!`);
+    } catch (err) {
+      console.error('Coupon redemption error:', err);
+      const errMsg = 'An unexpected error occurred. Please try again.';
+      setErrorMsg(errMsg);
+      toast.error(errMsg);
+    } finally {
+      setIsRedeeming(false);
+    }
+  }, [couponCode, user, updateUserInfo]);
 
   const handlePayment = useCallback(async (planType, amount) => {
     if (!agreedToTerms) {
@@ -72,7 +135,7 @@ const PaymentPage = () => {
       const res = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           amount: amount,
           userId: user.uid,
           userEmail: user.email
@@ -105,7 +168,7 @@ const PaymentPage = () => {
       handler: async (resp) => {
         try {
           toast.info('Verifying payment...', { autoClose: 2000 });
-          
+
           const verify = await fetch('/api/verify-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -116,7 +179,7 @@ const PaymentPage = () => {
               userId: user.uid,
             }),
           });
-          
+
           if (!verify.ok) throw new Error('Payment verification failed.');
 
           await updateUserPaymentStatus(user.uid, {
@@ -127,7 +190,7 @@ const PaymentPage = () => {
             planEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
           }, planType);
 
-          updateUserInfo({ 
+          updateUserInfo({
             isPremium: planType === 'premium',
             isBasic: planType === 'basic',
             planType: planType,
@@ -181,14 +244,13 @@ const PaymentPage = () => {
   const SuccessView = ({ title, message, plan }) => (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4 font-sans">
       <div className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center text-gray-800 dark:text-gray-200">
-        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 ${
-          plan === 'premium' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-800/30 dark:text-yellow-300' : 'bg-green-100 text-green-600 dark:bg-green-800/30 dark:text-green-300'
-        }`}>
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 ${plan === 'premium' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-800/30 dark:text-yellow-300' : 'bg-green-100 text-green-600 dark:bg-green-800/30 dark:text-green-300'
+          }`}>
           {plan === 'premium' ? <FiStar size={32} /> : <FiCheckCircle size={32} />}
         </div>
         <h1 className="text-3xl font-bold mb-2">{title}</h1>
         <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">{message}</p>
-        
+
         {userInfo?.planEndDate && (
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
             Your subscription is valid until {new Date(userInfo.planEndDate.toDate?.() || userInfo.planEndDate).toLocaleDateString()}
@@ -220,7 +282,7 @@ const PaymentPage = () => {
   if (isPremium) {
     return <SuccessView title="You're Premium!" message="You are enjoying all the exclusive features of DigiCard Premium." plan="premium" />;
   }
-  
+
   if (isBasic) {
     return <SuccessView title="You're on the Basic Plan!" message="You have access to all essential networking tools." plan="basic" />;
   }
@@ -229,8 +291,8 @@ const PaymentPage = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-7xl mx-auto">
         <header className="flex items-center mb-8">
-          <button 
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" 
+          <button
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             onClick={() => router.back()}
           >
             <FiArrowLeft size={24} />
@@ -245,6 +307,49 @@ const PaymentPage = () => {
           <p className="mt-4 text-xl text-gray-500 dark:text-gray-400">
             One low yearly price. No per-contact fees, no surprises.
           </p>
+        </div>
+
+        {/* Coupon Redemption Section */}
+        <div className="max-w-lg mx-auto mb-10">
+          <div className="bg-white dark:bg-gray-800 border border-dashed border-indigo-300 dark:border-indigo-600 rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <FiTag className="text-indigo-500" size={18} />
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Have a coupon code?</h3>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                id="coupon-code-input"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === 'Enter' && handleRedeemCoupon()}
+                disabled={isRedeeming}
+                className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-4 py-2.5 text-sm font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-60"
+              />
+              <button
+                id="redeem-coupon-btn"
+                onClick={handleRedeemCoupon}
+                disabled={isRedeeming || !couponCode.trim()}
+                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+              >
+                {isRedeeming ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    Applying...
+                  </>
+                ) : (
+                  <>
+                    <FiGift size={15} />
+                    Apply
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">Coupon codes are case-insensitive and grant instant subscription access.</p>
+          </div>
         </div>
 
         <div className="mt-6 space-y-4 sm:mt-8 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-6 lg:max-w-4xl lg:mx-auto">
@@ -277,9 +382,8 @@ const PaymentPage = () => {
               <button
                 onClick={() => handlePayment('basic', 199)}
                 disabled={!agreedToTerms || isProcessing}
-                className={`mt-8 w-full block border border-transparent rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${
-                  agreedToTerms && !isProcessing ? 'bg-green-600 hover:bg-green-700 transform hover:scale-[1.02]' : 'bg-gray-400 cursor-not-allowed'
-                }`}
+                className={`mt-8 w-full block border border-transparent rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${agreedToTerms && !isProcessing ? 'bg-green-600 hover:bg-green-700 transform hover:scale-[1.02]' : 'bg-gray-400 cursor-not-allowed'
+                  }`}
               >
                 {isProcessing ? 'Processing...' : 'Get Basic'}
               </button>
@@ -289,7 +393,7 @@ const PaymentPage = () => {
           {/* Premium Plan */}
           <div className="border border-yellow-400 dark:border-yellow-600 rounded-2xl shadow-lg divide-y divide-gray-200 dark:divide-gray-700 bg-orange-50/10 dark:bg-gray-800 relative flex flex-col">
             <div className="absolute top-0 right-0 -mt-4 mr-4 px-4 py-1 bg-yellow-500 text-white text-xs font-bold uppercase tracking-wide rounded-full shadow-md flex items-center gap-1">
-               <FiStar /> MOST POPULAR
+              <FiStar /> MOST POPULAR
             </div>
             <div className="p-6">
               <h2 className="text-lg leading-6 font-semibold tracking-wider text-yellow-600">PREMIUM</h2>
@@ -323,9 +427,8 @@ const PaymentPage = () => {
               <button
                 onClick={() => handlePayment('premium', 499)}
                 disabled={!agreedToTerms || isProcessing}
-                className={`mt-8 w-full block border border-transparent rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${
-                  agreedToTerms && !isProcessing ? 'bg-yellow-500 hover:bg-yellow-600 transform hover:scale-[1.02]' : 'bg-gray-400 cursor-not-allowed'
-                }`}
+                className={`mt-8 w-full block border border-transparent rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${agreedToTerms && !isProcessing ? 'bg-yellow-500 hover:bg-yellow-600 transform hover:scale-[1.02]' : 'bg-gray-400 cursor-not-allowed'
+                  }`}
               >
                 {isProcessing ? 'Processing...' : 'Get Premium'}
               </button>
@@ -347,7 +450,7 @@ const PaymentPage = () => {
             </label>
           </div>
         </div>
-        
+
         {errorMsg && (
           <div className="mt-4 flex items-center justify-center gap-2 p-3 text-sm text-red-700 bg-red-100 rounded-lg max-w-lg mx-auto">
             <FiXCircle size={16} className="flex-shrink-0" />

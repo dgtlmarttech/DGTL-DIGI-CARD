@@ -9,7 +9,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const UserLayout = ({ children }) => {
-  const { user, loading, initializing, isAuthenticated } = useUser();
+  const { user, loading, initializing, isAuthenticated, isPremium, isBasic } = useUser();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -20,8 +20,15 @@ const UserLayout = ({ children }) => {
     // Redirect to signin if not authenticated
     if (!isAuthenticated) {
       router.push('/signin');
+      return;
     }
-  }, [initializing, loading, isAuthenticated, router]);
+    
+    // Redirect to pricing page if no subscription
+    if (!isPremium && !isBasic && pathname !== '/payment') {
+      router.push('/payment');
+      return;
+    }
+  }, [initializing, loading, isAuthenticated, isPremium, isBasic, pathname, router]);
 
   // Show loading spinner during auth processes
   if (initializing || loading) {

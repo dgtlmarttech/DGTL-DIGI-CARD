@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import CrmNavbar from '../../components/layouts/CrmNavbar'
 
 const CrmLayout = ({ children }) => {
-  const { user, loading, initializing, isAuthenticated } = useUser();
+  const { user, loading, initializing, isAuthenticated, isPremium, isBasic } = useUser();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -17,8 +17,15 @@ const CrmLayout = ({ children }) => {
     // If not authenticated after initialization, redirect to signin
     if (!isAuthenticated) {
       router.push('/signin');
+      return;
     }
-  }, [user, loading, initializing, isAuthenticated, router]);
+
+    // Redirect to pricing if no subscription
+    if (!isPremium && !isBasic) {
+      router.push('/payment');
+      return;
+    }
+  }, [user, loading, initializing, isAuthenticated, isPremium, isBasic, router, pathname]);
 
   // Show loading while initializing or loading user data
   if (initializing || loading) {
