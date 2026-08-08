@@ -103,8 +103,8 @@ export async function POST(req) {
 
     const batch = adminDb.batch();
 
-    // Update user subscription
-    batch.update(userRef, {
+    // Update user subscription (using set with merge: true in case the user doc doesn't exist yet)
+    batch.set(userRef, {
       isPremium: planType === 'premium',
       isBasic: planType === 'basic',
       planType: planType,
@@ -116,7 +116,7 @@ export async function POST(req) {
         planStartDate: new Date().toISOString(),
         planEndDate: expireDate.toISOString(),
       },
-    });
+    }, { merge: true });
 
     // Update coupon usage
     batch.update(couponRef, {
