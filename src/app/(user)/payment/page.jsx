@@ -358,6 +358,7 @@ const PaymentPage = () => {
             <div className="p-6">
               <h2 className="text-lg leading-6 font-semibold tracking-wider text-green-600">BASIC</h2>
               <p className="mt-8">
+                <span className="text-3xl font-bold text-gray-500 dark:text-gray-400 line-through mr-2">₹299</span>
                 <span className="text-5xl font-extrabold text-gray-900 dark:text-white">₹199</span>
                 <span className="text-base font-medium text-gray-500 dark:text-gray-400">/year</span>
               </p>
@@ -398,6 +399,7 @@ const PaymentPage = () => {
             <div className="p-6">
               <h2 className="text-lg leading-6 font-semibold tracking-wider text-yellow-600">PREMIUM</h2>
               <p className="mt-8">
+                <span className="text-3xl font-bold text-gray-500 dark:text-gray-400 line-through mr-2">₹599</span>
                 <span className="text-5xl font-extrabold text-gray-900 dark:text-white">₹499</span>
                 <span className="text-base font-medium text-gray-500 dark:text-gray-400">/year</span>
               </p>
