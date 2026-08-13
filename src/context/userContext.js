@@ -40,16 +40,16 @@ export const UserProvider = ({ children }) => {
     checkStandalone();
   }, []);
 
-  // Helper function to calculate effective premium status (paid only)
   const calculateEffectivePremium = (userData) => {
     if (!userData) return false;
-    let hasPremium = userData.isPremium;
+    let hasPremium = userData.isPremium || userData.premiumPlan === 'premium';
     // We optionally check standard expireDate if it's there and not manually overridden
-    if (hasPremium && userData.expireDate) {
-       hasPremium = new Date(userData.expireDate) > new Date();
+    if (hasPremium && (userData.expireDate || userData.premiumEndDate)) {
+       const expiry = userData.expireDate || userData.premiumEndDate;
+       hasPremium = new Date(expiry) > new Date();
     }
 
-    let hasPA = userData.planType === 'personal_assistant';
+    let hasPA = userData.planType === 'personal_assistant' || userData.premiumPlan === 'pa' || userData.hasPA === true;
     if (hasPA && userData.paExpireDate) {
        hasPA = new Date(userData.paExpireDate) > new Date();
     }
@@ -69,7 +69,7 @@ export const UserProvider = ({ children }) => {
   // Helper function to calculate effective personal assistant status
   const calculateEffectivePA = (userData) => {
     if (!userData) return false;
-    let hasPA = userData.planType === 'personal_assistant';
+    let hasPA = userData.planType === 'personal_assistant' || userData.premiumPlan === 'pa' || userData.hasPA === true;
     if (hasPA && userData.paExpireDate) {
        hasPA = new Date(userData.paExpireDate) > new Date();
     }
