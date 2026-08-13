@@ -30,7 +30,7 @@ const Appearance = () => {
   const [cardColor, setCardColor] = useState('#1187ac');
   const [showPreview, setShowPreview] = useState(false);
 
-  const canAccessPremiumFeatures = userInfo?.isPremium;
+  const canAccessPremiumFeatures = userInfo?.effectiveIsPremium;
 
   useEffect(() => {
     if (userInfo) {

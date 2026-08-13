@@ -40,9 +40,9 @@ const DashboardLayout = ({ children, pageTitle }) => {
     { name: 'Card Styles', href: '/dashboard/appearance', icon: '🎨' },
     { name: 'Vanity URL', href: '/dashboard/vanity-url', icon: '🔗' },
     {
-      name: userInfo?.isPremium ? 'Manage Subscription' : 'Upgrade',
+      name: userInfo?.effectiveIsPremium ? 'Manage Subscription' : 'Upgrade',
       href: '/payment',
-      icon: userInfo?.isPremium ? '👑' : '⭐',
+      icon: userInfo?.effectiveIsPremium ? '👑' : '⭐',
     },
     { name: 'View Card', href: `/${userInfo?.customUID || user?.uid}`, icon: '👁️' },
     { name: 'CRM', href: '/crm', icon: '📊' },

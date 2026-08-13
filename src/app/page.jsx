@@ -247,7 +247,7 @@ export default function HomePage() {
                                             Welcome back, {userInfo?.firstName || 'User'}!
                                         </h3>
                                         <p className="text-gray-600 text-sm mt-1">
-                                            {userInfo?.isPremium
+                                            {userInfo?.effectiveIsPremium
                                                 ? '👑 Premium Member'
                                                 : '⚡ Upgrade to Premium'}
                                         </p>

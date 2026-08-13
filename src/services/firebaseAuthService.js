@@ -313,13 +313,23 @@ const updateUserPaymentStatus = async (userId, paymentData, planType = 'premium'
     const expireDate = new Date();
     expireDate.setFullYear(expireDate.getFullYear() + 1);
 
-    await updateDoc(userRef, {
-      isPremium: planType === 'premium',
-      isBasic: planType === 'basic',
-      planType: planType,
-      paymentData, // payment details (paymentId, orderId, signature, etc.)
-      expireDate: expireDate.toISOString(), // store as ISO string
-    });
+    if (planType === 'personal_assistant') {
+      const updatePayload = {
+        planType: planType,
+        paExpireDate: expireDate.toISOString(),
+        paPaymentData: paymentData,
+      };
+      await updateDoc(userRef, updatePayload);
+    } else {
+      const updatePayload = {
+        planType: planType,
+        paymentData,
+        expireDate: expireDate.toISOString(),
+        isPremium: planType === 'premium',
+        isBasic: planType === 'basic',
+      };
+      await updateDoc(userRef, updatePayload);
+    }
 
     console.log("User payment status updated successfully");
   } catch (error) {

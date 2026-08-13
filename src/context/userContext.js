@@ -43,13 +43,37 @@ export const UserProvider = ({ children }) => {
   // Helper function to calculate effective premium status (paid only)
   const calculateEffectivePremium = (userData) => {
     if (!userData) return false;
-    return userData.isPremium || false;
+    let hasPremium = userData.isPremium;
+    // We optionally check standard expireDate if it's there and not manually overridden
+    if (hasPremium && userData.expireDate) {
+       hasPremium = new Date(userData.expireDate) > new Date();
+    }
+
+    let hasPA = userData.planType === 'personal_assistant';
+    if (hasPA && userData.paExpireDate) {
+       hasPA = new Date(userData.paExpireDate) > new Date();
+    }
+    return hasPremium || hasPA;
   };
 
   // Helper function to calculate effective basic status (paid only)
   const calculateEffectiveBasic = (userData) => {
     if (!userData) return false;
-    return userData.isBasic || false;
+    let hasBasic = userData.isBasic;
+    if (hasBasic && userData.expireDate) {
+       hasBasic = new Date(userData.expireDate) > new Date();
+    }
+    return hasBasic;
+  };
+
+  // Helper function to calculate effective personal assistant status
+  const calculateEffectivePA = (userData) => {
+    if (!userData) return false;
+    let hasPA = userData.planType === 'personal_assistant';
+    if (hasPA && userData.paExpireDate) {
+       hasPA = new Date(userData.paExpireDate) > new Date();
+    }
+    return hasPA;
   };
 
   // Load user data when auth user changes
@@ -72,10 +96,12 @@ export const UserProvider = ({ children }) => {
       if (userData) {
         const effectiveIsPremium = calculateEffectivePremium(userData);
         const effectiveIsBasic = calculateEffectiveBasic(userData);
+        const effectiveIsPA = calculateEffectivePA(userData);
         const completeUserInfo = {
           ...userData,
           effectiveIsPremium,
-          effectiveIsBasic
+          effectiveIsBasic,
+          effectiveIsPA
         };
         setUserInfo(completeUserInfo);
         // Save to localStorage for offline access
@@ -143,11 +169,14 @@ export const UserProvider = ({ children }) => {
     if (userInfo) {
       const updatedInfo = { ...userInfo, ...updates };
       // Recalculate effective premium status if relevant fields changed
-      if ('isPremium' in updates) {
+      if ('isPremium' in updates || 'planType' in updates) {
         updatedInfo.effectiveIsPremium = calculateEffectivePremium(updatedInfo);
       }
       if ('isBasic' in updates) {
         updatedInfo.effectiveIsBasic = calculateEffectiveBasic(updatedInfo);
+      }
+      if ('planType' in updates) {
+        updatedInfo.effectiveIsPA = calculateEffectivePA(updatedInfo);
       }
       setUserInfo(updatedInfo);
     }
@@ -166,6 +195,8 @@ export const UserProvider = ({ children }) => {
     switch (permission) {
       case 'premium_features':
         return userInfo.effectiveIsPremium;
+      case 'personal_assistant_features':
+        return userInfo.effectiveIsPA;
       case 'admin':
         return userInfo.isAdmin || false;
       case 'edit_profile':
@@ -200,6 +231,7 @@ export const UserProvider = ({ children }) => {
     isAuthenticated: !!user,
     isPremium: userInfo?.effectiveIsPremium || false,
     isBasic: userInfo?.effectiveIsBasic || false,
+    isPersonalAssistant: userInfo?.effectiveIsPA || false,
     isAdmin: userInfo?.isAdmin || false,
     isBlocked: userInfo?.blocked || false,
 

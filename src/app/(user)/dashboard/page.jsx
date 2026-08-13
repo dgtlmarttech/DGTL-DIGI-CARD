@@ -192,18 +192,42 @@ const ProfilePage = () => {
         <div
           onClick={() => router.push('/payment')}
           className={`mb-6 rounded-xl p-4 text-center text-sm font-semibold text-white shadow-lg cursor-pointer ${
-            userInfo?.isPremium
+            userInfo?.effectiveIsPremium
               ? 'bg-gradient-to-r from-yellow-400 to-yellow-600'
               : 'bg-gradient-to-r from-blue-500 to-indigo-600'
           }`}
         >
-          {userInfo?.isPremium
+          {userInfo?.effectiveIsPremium
             ? "🎉 You're a Premium Member! Manage Your Plan"
             : '⚡ Upgrade to Premium for just ₹499/year to unlock advanced tracking and vanity URLs!'}
         </div>
 
+        {/* Personal Assistant Entry */}
+        <div className="mb-6 rounded-xl bg-white p-6 shadow-sm border border-purple-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <span className="text-purple-600">✨ Personal Assistant</span>
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              {userInfo?.effectiveIsPA 
+                ? "Your AI-powered assistant is ready. Manage tasks, meeting notes, and voice memos." 
+                : "Unlock your AI assistant to boost productivity with voice notes, meeting summaries, and more!"}
+            </p>
+          </div>
+          <button
+            onClick={() => router.push(userInfo?.effectiveIsPA ? '/personal-assistant' : '/payment')}
+            className={`whitespace-nowrap px-6 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg ${
+              userInfo?.effectiveIsPA
+                ? 'bg-purple-600 text-white hover:bg-purple-700'
+                : 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white'
+            }`}
+          >
+            {userInfo?.effectiveIsPA ? 'Open Assistant' : 'Unlock for ₹699/year'}
+          </button>
+        </div>
+
         {/* Profile Statistics (Views) - Premium Only */}
-        {userInfo?.isPremium ? (
+        {userInfo?.effectiveIsPremium ? (
           <div className="mb-6 rounded-xl bg-white p-6 shadow-sm flex items-center justify-between border-l-4 border-blue-500">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Profile Analytics</h2>

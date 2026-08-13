@@ -30,7 +30,7 @@ const PaymentPage = () => {
     updateUserInfo
   } = useUser();
 
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingPlan, setProcessingPlan] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -117,7 +117,7 @@ const PaymentPage = () => {
       return;
     }
 
-    setIsProcessing(true);
+    setProcessingPlan(planType);
     setErrorMsg('');
     toast.info('Initializing payment...', { autoClose: 2000 });
 
@@ -126,7 +126,7 @@ const PaymentPage = () => {
       const error = 'Unable to load the payment gateway. Please check your internet connection.';
       setErrorMsg(error);
       toast.error(error);
-      setIsProcessing(false);
+      setProcessingPlan(null);
       return;
     }
 
@@ -148,7 +148,7 @@ const PaymentPage = () => {
       const error = 'Failed to create payment order. Please try again.';
       setErrorMsg(error);
       toast.error(error);
-      setIsProcessing(false);
+      setProcessingPlan(null);
       return;
     }
 
@@ -206,12 +206,12 @@ const PaymentPage = () => {
           setErrorMsg(error);
           toast.error(error);
         } finally {
-          setIsProcessing(false);
+          setProcessingPlan(null);
         }
       },
       modal: {
         ondismiss: () => {
-          setIsProcessing(false);
+          setProcessingPlan(null);
           toast.info('Payment cancelled');
         }
       }
@@ -222,7 +222,7 @@ const PaymentPage = () => {
       const error = `Payment failed: ${response.error.description}`;
       setErrorMsg(error);
       toast.error('Payment failed. Please try again.');
-      setIsProcessing(false);
+      setProcessingPlan(null);
     });
     rzp1.open();
   }, [agreedToTerms, user, userInfo, updateUserInfo]);
@@ -274,7 +274,7 @@ const PaymentPage = () => {
       <SuccessView
         title="Welcome Aboard!"
         message="Your payment was successful and your plan is now active."
-        plan={userInfo?.isPremium ? 'premium' : 'basic'}
+        plan={userInfo?.effectiveIsPremium ? 'premium' : 'basic'}
       />
     );
   }
@@ -352,7 +352,7 @@ const PaymentPage = () => {
           </div>
         </div>
 
-        <div className="mt-6 space-y-4 sm:mt-8 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-6 lg:max-w-4xl lg:mx-auto">
+        <div className="mt-6 space-y-4 sm:mt-8 sm:space-y-0 sm:grid sm:grid-cols-1 lg:grid-cols-3 sm:gap-6 lg:max-w-6xl lg:mx-auto">
           {/* Basic Plan */}
           <div className="border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800 flex flex-col">
             <div className="p-6">
@@ -382,11 +382,11 @@ const PaymentPage = () => {
               </ul>
               <button
                 onClick={() => handlePayment('basic', 199)}
-                disabled={!agreedToTerms || isProcessing}
-                className={`mt-8 w-full block border border-transparent rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${agreedToTerms && !isProcessing ? 'bg-green-600 hover:bg-green-700 transform hover:scale-[1.02]' : 'bg-gray-400 cursor-not-allowed'
+                disabled={!agreedToTerms || processingPlan !== null}
+                className={`mt-8 w-full block border border-transparent rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${agreedToTerms && processingPlan === null ? 'bg-green-600 hover:bg-green-700 transform hover:scale-[1.02]' : 'bg-gray-400 cursor-not-allowed'
                   }`}
               >
-                {isProcessing ? 'Processing...' : 'Get Basic'}
+                {processingPlan === 'basic' ? 'Processing...' : 'Get Basic'}
               </button>
             </div>
           </div>
@@ -428,11 +428,55 @@ const PaymentPage = () => {
               </ul>
               <button
                 onClick={() => handlePayment('premium', 499)}
-                disabled={!agreedToTerms || isProcessing}
-                className={`mt-8 w-full block border border-transparent rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${agreedToTerms && !isProcessing ? 'bg-yellow-500 hover:bg-yellow-600 transform hover:scale-[1.02]' : 'bg-gray-400 cursor-not-allowed'
+                disabled={!agreedToTerms || processingPlan !== null}
+                className={`mt-8 w-full block border border-transparent rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${agreedToTerms && processingPlan === null ? 'bg-yellow-500 hover:bg-yellow-600 transform hover:scale-[1.02]' : 'bg-gray-400 cursor-not-allowed'
                   }`}
               >
-                {isProcessing ? 'Processing...' : 'Get Premium'}
+                {processingPlan === 'premium' ? 'Processing...' : 'Get Premium'}
+              </button>
+            </div>
+          </div>
+
+          {/* Personal Assistant Plan */}
+          <div className="border border-purple-400 dark:border-purple-600 rounded-2xl shadow-lg divide-y divide-gray-200 dark:divide-gray-700 bg-purple-50/10 dark:bg-gray-800 relative flex flex-col">
+            <div className="absolute top-0 right-0 -mt-4 mr-4 px-4 py-1 bg-purple-600 text-white text-xs font-bold uppercase tracking-wide rounded-full shadow-md flex items-center gap-1">
+              <FiStar /> SPECIAL OFFER
+            </div>
+            <div className="p-6">
+              <h2 className="text-lg leading-6 font-semibold tracking-wider text-purple-600">PERSONAL ASSISTANT</h2>
+              <p className="mt-8 flex items-baseline">
+                <span className="text-3xl font-bold text-gray-500 dark:text-gray-400 line-through mr-2">₹799</span>
+                <span className="text-5xl font-extrabold text-gray-900 dark:text-white">₹699</span>
+                <span className="text-base font-medium text-gray-500 dark:text-gray-400">/year</span>
+              </p>
+              <p className="mt-4 text-sm text-gray-500 dark:text-gray-400 italic">
+                Everything in Premium, <span className="font-semibold text-purple-600">plus AI tools.</span>
+              </p>
+            </div>
+            <div className="pt-6 pb-8 px-6 flex-1 flex flex-col">
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Everything in Premium, plus:</p>
+              <ul className="space-y-4 flex-1">
+                {[
+                  'Date-wise To-Do List',
+                  'Meeting Notes with Voice-to-Text',
+                  'Voice Notes & Transcription',
+                  'Start / Stop Voice Recording',
+                  'Personal Assistant Dashboard',
+                  'AI Summaries & Action Items'
+                ].map((feature) => (
+                  <li key={feature} className="flex">
+                    <FiCheckCircle className="flex-shrink-0 h-5 w-5 text-purple-500" />
+                    <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => handlePayment('personal_assistant', 699)}
+                disabled={!agreedToTerms || processingPlan !== null}
+                className={`mt-8 w-full block border border-transparent rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${agreedToTerms && processingPlan === null ? 'bg-purple-600 hover:bg-purple-700 transform hover:scale-[1.02]' : 'bg-gray-400 cursor-not-allowed'
+                  }`}
+              >
+                {processingPlan === 'personal_assistant' ? 'Processing...' : 'Get Personal Assistant'}
               </button>
             </div>
           </div>
