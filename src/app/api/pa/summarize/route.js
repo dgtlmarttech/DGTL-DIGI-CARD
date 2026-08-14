@@ -37,7 +37,11 @@ export async function POST(req) {
     }
     const userData = userSnap.data();
     
-    const isPA = userData.planType === 'personal_assistant';
+    let isPA = userData.planType === 'personal_assistant' || userData.premiumPlan === 'pa' || userData.hasPA === true;
+    if (isPA && userData.paExpireDate) {
+       isPA = new Date(userData.paExpireDate) > new Date();
+    }
+    
     if (!isPA) {
       return NextResponse.json({ error: 'Forbidden. Personal Assistant subscription required.' }, { status: 403 });
     }

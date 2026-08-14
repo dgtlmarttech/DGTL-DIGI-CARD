@@ -16,18 +16,24 @@ export const useUser = () => {
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [userInfo, setUserInfo] = useState(() => {
-    // Initial load from localStorage for offline support
-    if (typeof window !== 'undefined') {
-      const cached = localStorage.getItem('dgtl_user_info');
-      return cached ? JSON.parse(cached) : null;
-    }
-    return null;
-  });
+  const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState(null);
   const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('dgtl_user_info');
+      if (cached) {
+        try {
+          setUserInfo(JSON.parse(cached));
+        } catch (e) {
+          console.error("Failed to parse cached user info", e);
+        }
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Detect if running in standalone mode (PWA)

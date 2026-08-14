@@ -118,7 +118,10 @@ export default function PersonalAssistantDashboard() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-500">Plan valid until</span>
                   <span className="text-sm font-semibold text-gray-700">
-                    {userInfo?.paExpireDate ? new Date(userInfo.paExpireDate).toLocaleDateString() : 'N/A'}
+                    {(() => {
+                      const expiry = userInfo?.paExpireDate || userInfo?.planEndDate || userInfo?.expireDate || userInfo?.premiumEndDate;
+                      return expiry ? new Date(expiry.toDate?.() || expiry).toLocaleDateString() : 'N/A';
+                    })()}
                   </span>
                 </div>
               </div>
