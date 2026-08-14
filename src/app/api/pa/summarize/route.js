@@ -2,12 +2,11 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { adminAuth, adminDb } from '../../../../firebase/firebaseAdmin';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function POST(req) {
   try {
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-build',
+    });
     const { text, type, userId, idToken } = await req.json();
 
     if (!text || !userId || !idToken) {

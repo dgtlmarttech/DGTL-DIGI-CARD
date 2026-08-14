@@ -3,12 +3,11 @@ import OpenAI, { toFile } from 'openai';
 import fetch from 'node-fetch';
 import { adminAuth, adminDb } from '../../../../firebase/firebaseAdmin';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function POST(req) {
   try {
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-build',
+    });
     const formData = await req.formData();
     const audioFile = formData.get('audio');
     const userId = formData.get('userId');
