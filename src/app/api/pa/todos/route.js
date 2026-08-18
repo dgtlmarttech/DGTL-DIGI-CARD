@@ -1,0 +1,67 @@
+import { NextResponse } from 'next/server';
+import { adminAuth, adminDb } from '../../../../firebase/firebaseAdmin';
+
+export async function GET(req) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get('userId');
+    const idToken = searchParams.get('idToken');
+
+    if (!userId || !idToken) {
+      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
+    }
+
+    // Verify token
+    let decodedToken;
+    try {
+      decodedToken = await adminAuth.verifyIdToken(idToken);
+    } catch (authError) {
+      return NextResponse.json({ error: 'Unauthorized. Invalid or expired session.' }, { status: 401 });
+    }
+
+    if (decodedToken.uid !== userId) {
+      return NextResponse.json({ error: 'Unauthorized. User ID mismatch.' }, { status: 403 });
+    }
+
+    // Verify PA Subscription
+    const userSnap = await adminDb.collection('users').doc(userId).get();
+    if (!userSnap.exists) {
+      return NextResponse.json({ error: 'User not found.' }, { status: 404 });
+    }
+    const userData = userSnap.data();
+
+    let isPA = userData.planType === 'personal_assistant' || userData.premiumPlan === 'pa' || userData.hasPA === true;
+    if (isPA && userData.paExpireDate) {
+      isPA = new Date(userData.paExpireDate) > new Date();
+    }
+
+    if (!isPA) {
+      return NextResponse.json({ error: 'Forbidden. Personal Assistant subscription required.' }, { status: 403 });
+    }
+
+    // Fetch all todos for this user
+    const todosSnap = await adminDb
+      .collection('todos')
+      .where('userId', '==', userId)
+      .get();
+
+    const todos = todosSnap.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        title: data.title || '',
+        status: data.status || 'pending',
+        taskDate: data.taskDate || '',
+        createdAt: data.createdAt || '',
+      };
+    });
+
+    // Sort by createdAt ascending
+    todos.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    return NextResponse.json({ todos });
+  } catch (error) {
+    console.error('Todos API Error:', error);
+    return NextResponse.json({ error: 'Failed to fetch todos' }, { status: 500 });
+  }
+}

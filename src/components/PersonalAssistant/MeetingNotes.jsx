@@ -121,15 +121,21 @@ export default function MeetingNotes() {
         
         if (!transcribeRes.ok) throw new Error(transcribeData.error || 'Transcription failed');
 
-        // 3. Call Summarization API (OpenAI GPT)
-        const summaryRes = await fetch('/api/pa/summarize', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: transcribeData.text, type: 'meeting', userId: user.uid, idToken })
-        });
-        const summaryData = await summaryRes.json();
+        // 3. Call Summarization API (OpenAI GPT) only if there is substantial text
+        let summaryData = { summary: '', actionItems: [] };
+        
+        if (transcribeData.text && transcribeData.text.trim().length > 15) {
+          const summaryRes = await fetch('/api/pa/summarize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: transcribeData.text, type: 'meeting', userId: user.uid, idToken })
+          });
+          summaryData = await summaryRes.json();
 
-        if (!summaryRes.ok) throw new Error(summaryData.error || 'Summarization failed');
+          if (!summaryRes.ok) throw new Error(summaryData.error || 'Summarization failed');
+        } else {
+          summaryData.summary = "Transcript too short to generate a meaningful summary.";
+        }
 
         // 4. Update Firestore with AI results
         await updateDoc(doc(db, 'meetingNotes', docRef.id), {

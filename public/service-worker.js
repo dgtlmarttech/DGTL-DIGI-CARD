@@ -1,6 +1,6 @@
 // public/service-worker.js
 
-const CACHE_NAME = 'dgtl-digicard-cache-v1';
+const CACHE_NAME = 'dgtl-digicard-cache-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/favicon.ico',
@@ -85,9 +85,11 @@ self.addEventListener('fetch', (event) => {
   }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
 
-  // NAVIGATION (HTML) => network-first
+  // NAVIGATION (HTML) and Next.js RSC => network-first
   const acceptsHtml = (req.headers.get('accept') || '').includes('text/html');
-  if (req.mode === 'navigate' || acceptsHtml) {
+  const isRSC = req.headers.has('rsc') || req.headers.has('next-router-prefetch') || req.url.includes('_rsc=');
+  
+  if (req.mode === 'navigate' || acceptsHtml || isRSC) {
     event.respondWith(
       (async () => {
         try {

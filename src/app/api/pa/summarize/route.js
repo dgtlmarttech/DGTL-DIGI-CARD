@@ -50,7 +50,9 @@ export async function POST(req) {
       prompt = `
 You are a highly capable AI assistant. I will provide you with a transcript of a meeting.
 Please analyze the transcript and provide two things:
-1. A concise, professional summary of the meeting.
+1. A concise 2-3 line summary of the meeting that explicitly covers:
+   - What was discussed (main topics).
+   - What decisions were made.
 2. A list of specific action items discussed.
 
 Format your response exactly as JSON with this structure:
