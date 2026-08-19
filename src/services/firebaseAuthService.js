@@ -305,31 +305,27 @@ const emailAuthException = (code) => {
   }
 };
 
-const updateUserPaymentStatus = async (userId, paymentData, planType = 'premium') => {
+const updateUserPaymentStatus = async (userId, paymentData, planType) => {
   try {
     const userRef = doc(db, "users", userId);
 
-    // Calculate expiry date: one year from today
     const expireDate = new Date();
-    expireDate.setFullYear(expireDate.getFullYear() + 1);
-
-    if (planType === 'personal_assistant') {
-      const updatePayload = {
-        planType: planType,
-        paExpireDate: expireDate.toISOString(),
-        paPaymentData: paymentData,
-      };
-      await updateDoc(userRef, updatePayload);
+    if (planType === 'monthly') {
+      expireDate.setMonth(expireDate.getMonth() + 1);
+    } else if (planType === 'yearly') {
+      expireDate.setFullYear(expireDate.getFullYear() + 1);
     } else {
-      const updatePayload = {
-        planType: planType,
-        paymentData,
-        expireDate: expireDate.toISOString(),
-        isPremium: planType === 'premium',
-        isBasic: planType === 'basic',
-      };
-      await updateDoc(userRef, updatePayload);
+      expireDate.setFullYear(expireDate.getFullYear() + 1);
     }
+
+    const updatePayload = {
+      planType: planType,
+      paymentData,
+      expireDate: expireDate.toISOString(),
+      isPremium: true, // Legacy compatibility
+      isBasic: true,   // Legacy compatibility
+    };
+    await updateDoc(userRef, updatePayload);
 
     console.log("User payment status updated successfully");
   } catch (error) {

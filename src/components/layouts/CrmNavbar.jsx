@@ -8,7 +8,7 @@ import { auth } from '../../firebase/firebase';
 const CrmNavbar = ({ children, pageTitle }) => {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, userInfo, isAuthenticated, loading, isStandalone } = useUser();
+  const { user, userInfo, isAuthenticated, loading, isStandalone, inTrial, hasAccess } = useUser();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -167,7 +167,7 @@ const CrmNavbar = ({ children, pageTitle }) => {
                         {userInfo?.firstName || user?.displayName || 'User'}
                       </span>
                       <span className="text-xs text-slate-500 leading-tight">
-                        {userInfo?.effectiveIsPremium ? '👑 Premium' : '⚡ Basic Plan'}
+                        {inTrial ? '🎉 Free Trial' : hasAccess ? '👑 Subscribed' : '⚡ No Active Plan'}
                       </span>
                     </div>
                   </div>
@@ -266,7 +266,7 @@ const CrmNavbar = ({ children, pageTitle }) => {
                       {userInfo?.email || user?.email}
                     </span>
                     <span className="text-xs text-blue-600 font-medium">
-                      {userInfo?.effectiveIsPremium ? '👑 Premium Member' : '⚡ Basic Plan'}
+                      {inTrial ? '🎉 Free Trial Active' : hasAccess ? '👑 Subscription Active' : '⚡ No Active Plan'}
                     </span>
                   </div>
                 </div>

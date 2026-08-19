@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiArrowLeft, FiCheckCircle, FiXCircle, FiGift, FiStar, FiTag, FiLoader } from 'react-icons/fi';
+import { FiArrowLeft, FiCheckCircle, FiXCircle, FiStar, FiClock, FiCalendar } from 'react-icons/fi';
 import Link from 'next/link';
 import { useUser } from '../../../context/userContext';
 import { updateUserPaymentStatus } from '../../../services/firebaseAuthService';
@@ -18,6 +18,89 @@ const loadScript = (src) => {
   });
 };
 
+const allFeatures = [
+  'Smart digital business card',
+  'Profile photo & auto-generated URL',
+  'QR code + built-in card scanner',
+  'Networking CRM dashboard',
+  'Contact labels & notes',
+  'WhatsApp direct messaging',
+  'Custom vanity URL (yourname.dgtldigicard.com)',
+  '6+ premium card themes',
+  'Unlimited profile & detail edits',
+  'Contact management & bulk import',
+  'Advanced view & engagement analytics',
+  'Real-time profile tracking & analytics',
+  'Priority customer support',
+  'Date-wise To-Do List',
+  'Meeting Notes with Voice-to-Text',
+  'Voice Notes & Transcription',
+  'Start / Stop Voice Recording',
+  'Personal Assistant Dashboard',
+  'AI Summaries & Action Items'
+];
+
+/**
+ * Derive the real subscription state from raw userInfo fields.
+ * This intentionally does NOT use isPremium/isBasic/hasAccess from context
+ * because those are computed access flags — we need the actual plan details here.
+ */
+function getSubscriptionState(userInfo) {
+  if (!userInfo) return { type: 'loading' };
+
+  const now = new Date();
+
+  // Check for active paid plan (new Monthly/Yearly or legacy plans)
+  const expireDates = [];
+  if (userInfo.expireDate) expireDates.push(new Date(userInfo.expireDate));
+  if (userInfo.premiumEndDate) expireDates.push(new Date(userInfo.premiumEndDate));
+  if (userInfo.paExpireDate) expireDates.push(new Date(userInfo.paExpireDate));
+
+  const hasPaidPlanFlag =
+    userInfo.isPremium ||
+    userInfo.isBasic ||
+    userInfo.premiumPlan === 'premium' ||
+    userInfo.premiumPlan === 'pa' ||
+    userInfo.planType === 'monthly' ||
+    userInfo.planType === 'yearly' ||
+    userInfo.planType === 'personal_assistant' ||
+    userInfo.hasPA === true;
+
+  if (hasPaidPlanFlag) {
+    if (expireDates.length > 0) {
+      const maxExpiry = new Date(Math.max(...expireDates));
+      if (maxExpiry > now) {
+        // Active paid subscription
+        return {
+          type: 'paid',
+          planType: userInfo.planType || 'monthly',
+          expireDate: maxExpiry,
+        };
+      }
+      // Subscription has expired — fall through to trial/expired check
+    } else {
+      // Has paid flag but no expiry set (legacy data) — treat as active
+      return {
+        type: 'paid',
+        planType: userInfo.planType || 'legacy',
+        expireDate: null,
+      };
+    }
+  }
+
+  // Check trial
+  if (userInfo.createdAt) {
+    const createdAt = new Date(userInfo.createdAt);
+    const trialEnd = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+    if (trialEnd > now) {
+      const daysRemaining = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
+      return { type: 'trial', daysRemaining, trialEnd };
+    }
+  }
+
+  return { type: 'expired' };
+}
+
 const PaymentPage = () => {
   const router = useRouter();
   const {
@@ -25,20 +108,13 @@ const PaymentPage = () => {
     userInfo,
     loading: userLoading,
     isAuthenticated,
-    isPremium,
-    isBasic,
     updateUserInfo
   } = useUser();
 
   const [processingPlan, setProcessingPlan] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(null); // 'monthly' | 'yearly'
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-
-  // Coupon state
-  const [couponCode, setCouponCode] = useState('');
-  const [isRedeeming, setIsRedeeming] = useState(false);
-  const [couponSuccess, setCouponSuccess] = useState(false);
 
   useEffect(() => {
     if (!userLoading && !isAuthenticated) {
@@ -46,71 +122,12 @@ const PaymentPage = () => {
     }
   }, [isAuthenticated, userLoading, router]);
 
-  const handleRedeemCoupon = useCallback(async () => {
-    const trimmedCode = couponCode.trim();
-    if (!trimmedCode) {
-      toast.error('Please enter a coupon code.');
-      return;
-    }
-    if (!user) {
-      toast.error('User not authenticated. Please try again.');
-      return;
-    }
-
-    setIsRedeeming(true);
-    setErrorMsg('');
-
-    try {
-      // Get the user's current ID token for secure backend verification
-      const idToken = await user.getIdToken();
-
-      const res = await fetch('/api/redeem-coupon', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          couponCode: trimmedCode,
-          userId: user.uid,
-          idToken,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setErrorMsg(data.error || 'Failed to redeem coupon. Please try again.');
-        toast.error(data.error || 'Failed to redeem coupon.');
-        return;
-      }
-
-      // Update local context to reflect new subscription immediately
-      updateUserInfo({
-        isPremium: data.planType === 'premium',
-        isBasic: data.planType === 'basic',
-        planType: data.planType,
-        planStartDate: new Date().toISOString(),
-        planEndDate: data.planEndDate,
-      });
-
-      setCouponSuccess(true);
-      setPaymentSuccess(true);
-      toast.success(`🎉 Coupon applied! Welcome to ${data.planType === 'premium' ? 'Premium' : 'Basic'}!`);
-    } catch (err) {
-      console.error('Coupon redemption error:', err);
-      const errMsg = 'An unexpected error occurred. Please try again.';
-      setErrorMsg(errMsg);
-      toast.error(errMsg);
-    } finally {
-      setIsRedeeming(false);
-    }
-  }, [couponCode, user, updateUserInfo]);
-
   const handlePayment = useCallback(async (planType, amount) => {
     if (!agreedToTerms) {
       setErrorMsg('Please agree to the terms and conditions to proceed.');
       toast.error('Please agree to the terms and conditions to proceed.');
       return;
     }
-
     if (!user) {
       setErrorMsg('User not authenticated. Please try again.');
       toast.error('User not authenticated. Please try again.');
@@ -135,13 +152,8 @@ const PaymentPage = () => {
       const res = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: amount,
-          userId: user.uid,
-          userEmail: user.email
-        }),
+        body: JSON.stringify({ amount, userId: user.uid, userEmail: user.email }),
       });
-
       if (!res.ok) throw new Error('Failed to create order.');
       order = await res.json();
     } catch (e) {
@@ -156,15 +168,15 @@ const PaymentPage = () => {
       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY,
       amount: order.amount,
       currency: order.currency,
-      name: `DigiCard ${planType === 'premium' ? 'Premium' : 'Basic'}`,
-      description: `Yearly Subscription - ${planType === 'premium' ? 'Premium' : 'Basic'} Plan`,
+      name: `DigiCard ${planType === 'yearly' ? 'Yearly' : 'Monthly'}`,
+      description: `${planType === 'yearly' ? 'Yearly' : 'Monthly'} Subscription`,
       order_id: order.id,
       prefill: {
         name: `${userInfo?.firstName || ''} ${userInfo?.lastName || ''}`.trim() || user?.displayName || '',
         email: userInfo?.email || user?.email || '',
         contact: userInfo?.mobile || user?.phoneNumber || '',
       },
-      theme: { color: planType === 'premium' ? '#4c51bf' : '#10b981' },
+      theme: { color: '#4c51bf' },
       handler: async (resp) => {
         try {
           toast.info('Verifying payment...', { autoClose: 2000 });
@@ -187,19 +199,25 @@ const PaymentPage = () => {
             orderId: resp.razorpay_order_id,
             signature: resp.razorpay_signature,
             planStartDate: new Date().toISOString(),
-            planEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
           }, planType);
 
+          const newEndDate = new Date();
+          if (planType === 'monthly') {
+            newEndDate.setMonth(newEndDate.getMonth() + 1);
+          } else {
+            newEndDate.setFullYear(newEndDate.getFullYear() + 1);
+          }
+
           updateUserInfo({
-            isPremium: planType === 'premium',
-            isBasic: planType === 'basic',
-            planType: planType,
-            planStartDate: new Date(),
-            planEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+            isPremium: true,
+            isBasic: true,
+            planType,
+            planStartDate: new Date().toISOString(),
+            expireDate: newEndDate.toISOString(),
           });
 
-          setPaymentSuccess(true);
-          toast.success(`🎉 Welcome to ${planType === 'premium' ? 'Premium' : 'Basic'}! Your account is upgraded!`);
+          setPaymentSuccess(planType);
+          toast.success('🎉 Payment successful! Your plan is now active.');
         } catch (e) {
           console.error('Payment verification error:', e);
           const error = 'Payment successful, but failed to update your account. Please contact support.';
@@ -219,14 +237,14 @@ const PaymentPage = () => {
 
     const rzp1 = new window.Razorpay(options);
     rzp1.on('payment.failed', (response) => {
-      const error = `Payment failed: ${response.error.description}`;
-      setErrorMsg(error);
+      setErrorMsg(`Payment failed: ${response.error.description}`);
       toast.error('Payment failed. Please try again.');
       setProcessingPlan(null);
     });
     rzp1.open();
   }, [agreedToTerms, user, userInfo, updateUserInfo]);
 
+  // ── Loading ────────────────────────────────────────────────────────────────
   if (userLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -241,55 +259,234 @@ const PaymentPage = () => {
     );
   }
 
-  const SuccessView = ({ title, message, plan }) => (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4 font-sans">
-      <div className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center text-gray-800 dark:text-gray-200">
-        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 ${plan === 'premium' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-800/30 dark:text-yellow-300' : 'bg-green-100 text-green-600 dark:bg-green-800/30 dark:text-green-300'
-          }`}>
-          {plan === 'premium' ? <FiStar size={32} /> : <FiCheckCircle size={32} />}
-        </div>
-        <h1 className="text-3xl font-bold mb-2">{title}</h1>
-        <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">{message}</p>
-
-        {userInfo?.planEndDate && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            Your subscription is valid until {new Date(userInfo.planEndDate.toDate?.() || userInfo.planEndDate).toLocaleDateString()}
+  // ── Post-payment success screen ────────────────────────────────────────────
+  if (paymentSuccess) {
+    const isYearly = paymentSuccess === 'yearly';
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4 font-sans">
+        <div className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center text-gray-800 dark:text-gray-200">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 bg-green-100 text-green-600 dark:bg-green-800/30 dark:text-green-300">
+            <FiCheckCircle size={32} />
+          </div>
+          <h1 className="text-3xl font-bold mb-2">Payment Successful!</h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
+            You&apos;re now subscribed to the <strong>{isYearly ? 'Yearly' : 'Monthly'}</strong> plan.
           </p>
-        )}
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            {isYearly ? '₹999 / year' : '₹99 / month'} · Full access to all features
+          </p>
+          <div className="flex gap-3 mt-6">
+            <Link href="/dashboard" className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors text-center">
+              Go to Dashboard
+            </Link>
+            <Link href={`/${userInfo?.customUID || user?.uid}`} className="flex-1 px-6 py-3 border border-indigo-600 text-indigo-600 rounded-xl font-semibold hover:bg-indigo-50 transition-colors text-center">
+              View My Card
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-        <div className="flex gap-3 mt-6">
-          <Link href="/dashboard" className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors text-center">
+  // ── Derive subscription state from raw userInfo (NOT from isPremium/hasAccess) ──
+  const subState = getSubscriptionState(userInfo);
+
+  // ── Active paid subscription view (with plan info + optional upgrade) ──────
+  const renderActivePlanBanner = () => {
+    if (subState.type !== 'paid') return null;
+
+    const planLabel =
+      subState.planType === 'yearly' ? 'Yearly' :
+      subState.planType === 'monthly' ? 'Monthly' :
+      subState.planType === 'personal_assistant' ? 'Personal Assistant (Legacy)' :
+      'Premium (Legacy)';
+
+    const priceLabel =
+      subState.planType === 'yearly' ? '₹999 / year' :
+      subState.planType === 'monthly' ? '₹99 / month' : 'Legacy plan';
+
+    return (
+      <div className="max-w-2xl mx-auto mb-8 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-5">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-800/40 flex items-center justify-center text-green-600">
+            <FiCheckCircle size={20} />
+          </div>
+          <div>
+            <p className="font-semibold text-green-800 dark:text-green-300">
+              You&apos;re subscribed to {planLabel}
+            </p>
+            <p className="text-sm text-green-700 dark:text-green-400">{priceLabel} · Full access to all features</p>
+          </div>
+        </div>
+        {subState.expireDate && (
+          <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400 mt-2">
+            <FiCalendar size={14} />
+            <span>Active until: <strong>{subState.expireDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</strong></span>
+          </div>
+        )}
+        <div className="mt-4 flex gap-3">
+          <Link href="/dashboard" className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-center text-sm">
             Go to Dashboard
           </Link>
-          <Link href={`/${userInfo?.customUID || user?.uid}`} className="flex-1 px-6 py-3 border border-indigo-600 text-indigo-600 rounded-xl font-semibold hover:bg-indigo-50 transition-colors text-center">
+          <Link href={`/${userInfo?.customUID || user?.uid}`} className="flex-1 px-4 py-2 border border-indigo-600 text-indigo-600 rounded-lg font-semibold hover:bg-indigo-50 transition-colors text-center text-sm">
             View My Card
           </Link>
         </div>
       </div>
-    </div>
+    );
+  };
+
+  // ── Pricing cards (always rendered except after fresh payment) ─────────────
+  const renderPricingCards = () => (
+    <>
+      {/* Heading – only shown when not on an active paid plan */}
+      {subState.type !== 'paid' && (
+        <div className="text-center mb-8">
+          <h2 className="text-sm font-semibold text-indigo-600 tracking-wide uppercase">Pricing</h2>
+          <h1 className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
+            Simple, honest pricing
+          </h1>
+          <p className="mt-4 text-xl text-gray-500 dark:text-gray-400">
+            Choose a plan that works for you. No surprises.
+          </p>
+        </div>
+      )}
+
+      {/* Trial banner */}
+      {subState.type === 'trial' && (
+        <div className="max-w-2xl mx-auto mb-8 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 rounded-xl p-4 flex items-center justify-center gap-3">
+          <FiClock className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" size={22} />
+          <p className="text-indigo-800 dark:text-indigo-300 font-medium">
+            🎉 7 Days Free Trial Active — {subState.daysRemaining} {subState.daysRemaining === 1 ? 'day' : 'days'} remaining. Upgrade anytime to keep access.
+          </p>
+        </div>
+      )}
+
+      {/* Expired banner */}
+      {subState.type === 'expired' && (
+        <div className="max-w-2xl mx-auto mb-8 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 rounded-xl p-4 flex items-center gap-3">
+          <FiXCircle className="text-red-600 dark:text-red-400 flex-shrink-0" size={22} />
+          <p className="text-red-800 dark:text-red-300 font-medium">
+            Your 7-day free trial has ended. Please choose a plan to continue using all features.
+          </p>
+        </div>
+      )}
+
+      {/* Upgrade prompt for active paid subscribers */}
+      {subState.type === 'paid' && (
+        <div className="text-center mb-6">
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            {subState.planType === 'monthly' ? 'Upgrade to Yearly and save ~15%.' : 'Manage or renew your subscription below.'}
+          </p>
+        </div>
+      )}
+
+      {/* Plan Cards */}
+      <div className="mt-4 space-y-4 sm:space-y-0 sm:grid sm:grid-cols-1 lg:grid-cols-2 sm:gap-6 lg:max-w-4xl lg:mx-auto">
+        {/* Monthly Plan */}
+        <div className="border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800 flex flex-col">
+          <div className="p-6">
+            <h2 className="text-lg leading-6 font-semibold tracking-wider text-gray-900 dark:text-white">Monthly</h2>
+            <p className="mt-6 flex items-baseline gap-1">
+              <span className="text-5xl font-extrabold text-gray-900 dark:text-white">₹99</span>
+              <span className="text-base font-medium text-gray-500 dark:text-gray-400">/month</span>
+            </p>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Complete access to all features, billed monthly.</p>
+          </div>
+          <div className="pt-6 pb-8 px-6 flex-1 flex flex-col">
+            <ul className="space-y-3 flex-1">
+              {allFeatures.map((feature) => (
+                <li key={feature} className="flex items-start gap-2">
+                  <FiCheckCircle className="flex-shrink-0 h-4 w-4 text-indigo-500 mt-0.5" />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{feature}</span>
+                </li>
+              ))}
+            </ul>
+            <button
+              id="btn-get-monthly"
+              onClick={() => handlePayment('monthly', 99)}
+              disabled={!agreedToTerms || processingPlan !== null}
+              className={`mt-8 w-full rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${
+                agreedToTerms && processingPlan === null
+                  ? 'bg-indigo-600 hover:bg-indigo-700 transform hover:scale-[1.02]'
+                  : 'bg-gray-400 cursor-not-allowed'
+              }`}
+            >
+              {processingPlan === 'monthly' ? 'Processing...' : 'Get Monthly'}
+            </button>
+          </div>
+        </div>
+
+        {/* Yearly Plan */}
+        <div className="border-2 border-indigo-500 dark:border-indigo-400 rounded-2xl shadow-lg divide-y divide-gray-200 dark:divide-gray-700 bg-indigo-50/10 dark:bg-gray-800 relative flex flex-col lg:-translate-y-2">
+          <div className="absolute top-0 right-0 -mt-4 mr-4 px-4 py-1 bg-indigo-600 text-white text-xs font-bold uppercase tracking-wide rounded-full shadow-md flex items-center gap-1">
+            <FiStar size={10} /> BEST VALUE
+          </div>
+          <div className="p-6">
+            <h2 className="text-lg leading-6 font-semibold tracking-wider text-indigo-600 dark:text-indigo-400">Yearly</h2>
+            <p className="mt-6 flex items-baseline gap-1">
+              <span className="text-5xl font-extrabold text-gray-900 dark:text-white">₹999</span>
+              <span className="text-base font-medium text-gray-500 dark:text-gray-400">/year</span>
+            </p>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Save ~15% compared to the monthly plan.</p>
+          </div>
+          <div className="pt-6 pb-8 px-6 flex-1 flex flex-col">
+            <ul className="space-y-3 flex-1">
+              {allFeatures.map((feature) => (
+                <li key={feature} className="flex items-start gap-2">
+                  <FiCheckCircle className="flex-shrink-0 h-4 w-4 text-indigo-500 mt-0.5" />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{feature}</span>
+                </li>
+              ))}
+            </ul>
+            <button
+              id="btn-get-yearly"
+              onClick={() => handlePayment('yearly', 999)}
+              disabled={!agreedToTerms || processingPlan !== null}
+              className={`mt-8 w-full rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${
+                agreedToTerms && processingPlan === null
+                  ? 'bg-indigo-600 hover:bg-indigo-700 transform hover:scale-[1.02]'
+                  : 'bg-gray-400 cursor-not-allowed'
+              }`}
+            >
+              {processingPlan === 'yearly' ? 'Processing...' : 'Get Yearly'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Terms checkbox */}
+      <div className="mt-8 flex justify-center">
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="agree"
+            checked={agreedToTerms}
+            onChange={(e) => setAgreedToTerms(e.target.checked)}
+            className="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out border-gray-300 rounded cursor-pointer"
+          />
+          <label htmlFor="agree" className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+            I agree to the{' '}
+            <Link href="/terms" className="text-indigo-600 hover:underline">Terms & Conditions</Link>
+            {' '}and{' '}
+            <Link href="/privacy" className="text-indigo-600 hover:underline">Privacy Policy</Link>
+          </label>
+        </div>
+      </div>
+
+      {errorMsg && (
+        <div className="mt-4 flex items-center justify-center gap-2 p-3 text-sm text-red-700 bg-red-100 rounded-lg max-w-lg mx-auto">
+          <FiXCircle size={16} className="flex-shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+    </>
   );
 
-  if (paymentSuccess) {
-    return (
-      <SuccessView
-        title="Welcome Aboard!"
-        message="Your payment was successful and your plan is now active."
-        plan={userInfo?.effectiveIsPremium ? 'premium' : 'basic'}
-      />
-    );
-  }
-
-  if (isPremium) {
-    return <SuccessView title="You're Premium!" message="You are enjoying all the exclusive features of DigiCard Premium." plan="premium" />;
-  }
-
-  if (isBasic) {
-    return <SuccessView title="You're on the Basic Plan!" message="You have access to all essential networking tools." plan="basic" />;
-  }
-
+  // ── Page layout ────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <header className="flex items-center mb-8">
           <button
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -299,210 +496,11 @@ const PaymentPage = () => {
           </button>
         </header>
 
-        <div className="text-center mb-8">
-          <h2 className="text-sm font-semibold text-green-600 tracking-wide uppercase">Pricing</h2>
-          <h1 className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
-            Simple, honest pricing
-          </h1>
-          <p className="mt-4 text-xl text-gray-500 dark:text-gray-400">
-            One low yearly price. No per-contact fees, no surprises.
-          </p>
-        </div>
+        {/* Active plan info (always shown if on a paid plan) */}
+        {renderActivePlanBanner()}
 
-        {/* Coupon Redemption Section */}
-        <div className="max-w-lg mx-auto mb-10">
-          <div className="bg-white dark:bg-gray-800 border border-dashed border-indigo-300 dark:border-indigo-600 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <FiTag className="text-indigo-500" size={18} />
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Have a coupon code?</h3>
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                id="coupon-code-input"
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                onKeyDown={(e) => e.key === 'Enter' && handleRedeemCoupon()}
-                disabled={isRedeeming}
-                className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-4 py-2.5 text-sm font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-60"
-              />
-              <button
-                id="redeem-coupon-btn"
-                onClick={handleRedeemCoupon}
-                disabled={isRedeeming || !couponCode.trim()}
-                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
-              >
-                {isRedeeming ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                    </svg>
-                    Applying...
-                  </>
-                ) : (
-                  <>
-                    <FiGift size={15} />
-                    Apply
-                  </>
-                )}
-              </button>
-            </div>
-            <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">Coupon codes are case-insensitive and grant instant subscription access.</p>
-          </div>
-        </div>
-
-        <div className="mt-6 space-y-4 sm:mt-8 sm:space-y-0 sm:grid sm:grid-cols-1 lg:grid-cols-3 sm:gap-6 lg:max-w-6xl lg:mx-auto">
-          {/* Basic Plan */}
-          <div className="border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800 flex flex-col">
-            <div className="p-6">
-              <h2 className="text-lg leading-6 font-semibold tracking-wider text-green-600">BASIC</h2>
-              <p className="mt-8">
-                <span className="text-3xl font-bold text-gray-500 dark:text-gray-400 line-through mr-2">₹299</span>
-                <span className="text-5xl font-extrabold text-gray-900 dark:text-white">₹199</span>
-                <span className="text-base font-medium text-gray-500 dark:text-gray-400">/year</span>
-              </p>
-              <p className="mt-4 text-sm text-gray-500 dark:text-gray-400 italic">Everything you need to start networking.</p>
-            </div>
-            <div className="pt-6 pb-8 px-6 flex-1 flex flex-col">
-              <ul className="mt-2 space-y-4 flex-1">
-                {[
-                  'Smart digital business card',
-                  'Profile photo & auto-generated URL',
-                  'QR code + built-in card scanner',
-                  'Networking CRM dashboard',
-                  'Contact labels & notes',
-                  'WhatsApp direct messaging'
-                ].map((feature) => (
-                  <li key={feature} className="flex">
-                    <FiCheckCircle className="flex-shrink-0 h-5 w-5 text-green-500" />
-                    <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => handlePayment('basic', 199)}
-                disabled={!agreedToTerms || processingPlan !== null}
-                className={`mt-8 w-full block border border-transparent rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${agreedToTerms && processingPlan === null ? 'bg-green-600 hover:bg-green-700 transform hover:scale-[1.02]' : 'bg-gray-400 cursor-not-allowed'
-                  }`}
-              >
-                {processingPlan === 'basic' ? 'Processing...' : 'Get Basic'}
-              </button>
-            </div>
-          </div>
-
-          {/* Premium Plan */}
-          <div className="border border-yellow-400 dark:border-yellow-600 rounded-2xl shadow-lg divide-y divide-gray-200 dark:divide-gray-700 bg-orange-50/10 dark:bg-gray-800 relative flex flex-col">
-            <div className="absolute top-0 right-0 -mt-4 mr-4 px-4 py-1 bg-yellow-500 text-white text-xs font-bold uppercase tracking-wide rounded-full shadow-md flex items-center gap-1">
-              <FiStar /> MOST POPULAR
-            </div>
-            <div className="p-6">
-              <h2 className="text-lg leading-6 font-semibold tracking-wider text-yellow-600">PREMIUM</h2>
-              <p className="mt-8">
-                <span className="text-3xl font-bold text-gray-500 dark:text-gray-400 line-through mr-2">₹599</span>
-                <span className="text-5xl font-extrabold text-gray-900 dark:text-white">₹499</span>
-                <span className="text-base font-medium text-gray-500 dark:text-gray-400">/year</span>
-              </p>
-              <p className="mt-4 text-sm text-gray-500 dark:text-gray-400 italic">
-                Everything in Basic, <span className="font-semibold text-yellow-600">plus power tools.</span>
-              </p>
-            </div>
-            <div className="pt-6 pb-8 px-6 flex-1 flex flex-col">
-              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Everything in Basic, plus:</p>
-              <ul className="space-y-4 flex-1">
-                {[
-                  'Custom vanity URL (yourname.dgtldigicard.com)',
-                  '6+ premium card themes',
-                  'Unlimited profile & detail edits',
-                  'Contact management & bulk import',
-                  'Advanced view & engagement analytics',
-                  'Real-time profile tracking & analytics',
-                  'WhatsApp direct messaging',
-                  'Priority customer support'
-                ].map((feature) => (
-                  <li key={feature} className="flex">
-                    <FiCheckCircle className="flex-shrink-0 h-5 w-5 text-yellow-500" />
-                    <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => handlePayment('premium', 499)}
-                disabled={!agreedToTerms || processingPlan !== null}
-                className={`mt-8 w-full block border border-transparent rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${agreedToTerms && processingPlan === null ? 'bg-yellow-500 hover:bg-yellow-600 transform hover:scale-[1.02]' : 'bg-gray-400 cursor-not-allowed'
-                  }`}
-              >
-                {processingPlan === 'premium' ? 'Processing...' : 'Get Premium'}
-              </button>
-            </div>
-          </div>
-
-          {/* Personal Assistant Plan */}
-          <div className="border border-purple-400 dark:border-purple-600 rounded-2xl shadow-lg divide-y divide-gray-200 dark:divide-gray-700 bg-purple-50/10 dark:bg-gray-800 relative flex flex-col">
-            <div className="absolute top-0 right-0 -mt-4 mr-4 px-4 py-1 bg-purple-600 text-white text-xs font-bold uppercase tracking-wide rounded-full shadow-md flex items-center gap-1">
-              <FiStar /> SPECIAL OFFER
-            </div>
-            <div className="p-6">
-              <h2 className="text-lg leading-6 font-semibold tracking-wider text-purple-600">PERSONAL ASSISTANT</h2>
-              <p className="mt-8 flex items-baseline">
-                <span className="text-3xl font-bold text-gray-500 dark:text-gray-400 line-through mr-2">₹799</span>
-                <span className="text-5xl font-extrabold text-gray-900 dark:text-white">₹699</span>
-                <span className="text-base font-medium text-gray-500 dark:text-gray-400">/year</span>
-              </p>
-              <p className="mt-4 text-sm text-gray-500 dark:text-gray-400 italic">
-                Everything in Premium, <span className="font-semibold text-purple-600">plus AI tools.</span>
-              </p>
-            </div>
-            <div className="pt-6 pb-8 px-6 flex-1 flex flex-col">
-              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Everything in Premium, plus:</p>
-              <ul className="space-y-4 flex-1">
-                {[
-                  'Date-wise To-Do List',
-                  'Meeting Notes with Voice-to-Text',
-                  'Voice Notes & Transcription',
-                  'Start / Stop Voice Recording',
-                  'Personal Assistant Dashboard',
-                  'AI Summaries & Action Items'
-                ].map((feature) => (
-                  <li key={feature} className="flex">
-                    <FiCheckCircle className="flex-shrink-0 h-5 w-5 text-purple-500" />
-                    <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => handlePayment('personal_assistant', 699)}
-                disabled={!agreedToTerms || processingPlan !== null}
-                className={`mt-8 w-full block border border-transparent rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${agreedToTerms && processingPlan === null ? 'bg-purple-600 hover:bg-purple-700 transform hover:scale-[1.02]' : 'bg-gray-400 cursor-not-allowed'
-                  }`}
-              >
-                {processingPlan === 'personal_assistant' ? 'Processing...' : 'Get Personal Assistant'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-8 flex justify-center">
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="agree"
-              checked={agreedToTerms}
-              onChange={(e) => setAgreedToTerms(e.target.checked)}
-              className="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out border-gray-300 rounded cursor-pointer"
-            />
-            <label htmlFor="agree" className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
-              I agree to the <Link href="/terms" className="text-indigo-600 hover:underline">Terms & Conditions</Link> and <Link href="/privacy" className="text-indigo-600 hover:underline">Privacy Policy</Link>
-            </label>
-          </div>
-        </div>
-
-        {errorMsg && (
-          <div className="mt-4 flex items-center justify-center gap-2 p-3 text-sm text-red-700 bg-red-100 rounded-lg max-w-lg mx-auto">
-            <FiXCircle size={16} className="flex-shrink-0" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
+        {/* Pricing cards — always shown regardless of paid/trial/expired state */}
+        {renderPricingCards()}
       </div>
     </div>
   );

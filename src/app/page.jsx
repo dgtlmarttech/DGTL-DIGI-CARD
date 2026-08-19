@@ -118,7 +118,7 @@ function HeaderInstallButton() {
 
 export default function HomePage() {
     const router = useRouter();
-    const { user, userInfo, isAuthenticated, loading, initializing, isStandalone } = useUser();
+    const { user, userInfo, isAuthenticated, loading, initializing, isStandalone, inTrial, hasAccess } = useUser();
 
     useEffect(() => {
         // If running in standalone mode (installed PWA) and authenticated,
@@ -247,9 +247,11 @@ export default function HomePage() {
                                             Welcome back, {userInfo?.firstName || 'User'}!
                                         </h3>
                                         <p className="text-gray-600 text-sm mt-1">
-                                            {userInfo?.effectiveIsPremium
-                                                ? '👑 Premium Member'
-                                                : '⚡ Upgrade to Premium'}
+                                            {inTrial
+                                                ? '🎉 7-Day Free Trial Active'
+                                                : hasAccess
+                                                ? '👑 Subscription Active'
+                                                : '⚡ Start Your Free Trial'}
                                         </p>
                                     </div>
                                 </div>

@@ -9,7 +9,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const UserLayout = ({ children }) => {
-  const { user, loading, initializing, isAuthenticated, isPremium, isBasic } = useUser();
+  const { user, loading, initializing, isAuthenticated, hasAccess } = useUser();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -23,12 +23,13 @@ const UserLayout = ({ children }) => {
       return;
     }
     
-    // Redirect to pricing page if no subscription
-    if (!isPremium && !isBasic && pathname !== '/payment') {
+    // Redirect to pricing page only if user has no access (trial expired + no paid plan)
+    // hasAccess = true for: active paid subscription OR active 7-day free trial
+    if (!hasAccess && pathname !== '/payment') {
       router.push('/payment');
       return;
     }
-  }, [initializing, loading, isAuthenticated, isPremium, isBasic, pathname, router]);
+  }, [initializing, loading, isAuthenticated, hasAccess, pathname, router]);
 
   // Show loading spinner during auth processes
   if (initializing || loading) {

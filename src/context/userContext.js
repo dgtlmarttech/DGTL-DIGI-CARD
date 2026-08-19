@@ -27,12 +27,24 @@ export const UserProvider = ({ children }) => {
       const cached = localStorage.getItem('dgtl_user_info');
       if (cached) {
         try {
-          setUserInfo(JSON.parse(cached));
+          const cachedData = JSON.parse(cached);
+          // Re-run access calculation on cached data so trial days are accurate
+          // based on current time, not the time the cache was written.
+          const accessInfo = calculateHasAccess(cachedData);
+          setUserInfo({
+            ...cachedData,
+            effectiveIsPremium: accessInfo.hasAccess,
+            effectiveIsBasic: accessInfo.hasAccess,
+            effectiveIsPA: accessInfo.hasAccess,
+            inTrial: accessInfo.inTrial,
+            trialDaysRemaining: accessInfo.trialDaysRemaining
+          });
         } catch (e) {
           console.error("Failed to parse cached user info", e);
         }
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -46,41 +58,50 @@ export const UserProvider = ({ children }) => {
     checkStandalone();
   }, []);
 
-  const calculateEffectivePremium = (userData) => {
-    if (!userData) return false;
-    let hasPremium = userData.isPremium || userData.premiumPlan === 'premium';
-    // We optionally check standard expireDate if it's there and not manually overridden
-    if (hasPremium && (userData.expireDate || userData.premiumEndDate)) {
-       const expiry = userData.expireDate || userData.premiumEndDate;
-       hasPremium = new Date(expiry) > new Date();
+  const calculateHasAccess = (userData) => {
+    if (!userData) return { hasAccess: false, inTrial: false, trialDaysRemaining: 0 };
+
+    // 1. Check for Active Paid Plan (Monthly, Yearly, or Legacy Basic/Premium/PA)
+    let hasPaidPlan = userData.isPremium || userData.isBasic || 
+                      userData.premiumPlan === 'premium' || userData.premiumPlan === 'pa' || 
+                      userData.planType === 'monthly' || userData.planType === 'yearly' || 
+                      userData.planType === 'personal_assistant' || userData.hasPA === true;
+    
+    if (hasPaidPlan && (userData.expireDate || userData.premiumEndDate || userData.paExpireDate)) {
+       // We take the latest expiry date available if multiple exist for legacy reasons
+       const dates = [];
+       if (userData.expireDate) dates.push(new Date(userData.expireDate));
+       if (userData.premiumEndDate) dates.push(new Date(userData.premiumEndDate));
+       if (userData.paExpireDate) dates.push(new Date(userData.paExpireDate));
+       
+       const maxExpiry = new Date(Math.max(...dates));
+       hasPaidPlan = maxExpiry > new Date();
     }
 
-    let hasPA = userData.planType === 'personal_assistant' || userData.premiumPlan === 'pa' || userData.hasPA === true;
-    if (hasPA && userData.paExpireDate) {
-       hasPA = new Date(userData.paExpireDate) > new Date();
+    if (hasPaidPlan) {
+      return { hasAccess: true, inTrial: false, trialDaysRemaining: 0 };
     }
-    return hasPremium || hasPA;
+
+    // 2. Check for Active Trial (7 days from createdAt)
+    if (userData.createdAt) {
+      const createdAtDate = new Date(userData.createdAt);
+      const trialEndDate = new Date(createdAtDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const now = new Date();
+      
+      if (trialEndDate > now) {
+         const daysRemaining = Math.ceil((trialEndDate - now) / (1000 * 60 * 60 * 24));
+         return { hasAccess: true, inTrial: true, trialDaysRemaining: daysRemaining };
+      }
+    }
+
+    // If an existing free user didn't have access before, they won't have access now.
+    // However, if we need a safety net for users missing createdAt, we default to no access.
+    return { hasAccess: false, inTrial: false, trialDaysRemaining: 0 };
   };
 
-  // Helper function to calculate effective basic status (paid only)
-  const calculateEffectiveBasic = (userData) => {
-    if (!userData) return false;
-    let hasBasic = userData.isBasic;
-    if (hasBasic && userData.expireDate) {
-       hasBasic = new Date(userData.expireDate) > new Date();
-    }
-    return hasBasic;
-  };
-
-  // Helper function to calculate effective personal assistant status
-  const calculateEffectivePA = (userData) => {
-    if (!userData) return false;
-    let hasPA = userData.planType === 'personal_assistant' || userData.premiumPlan === 'pa' || userData.hasPA === true;
-    if (hasPA && userData.paExpireDate) {
-       hasPA = new Date(userData.paExpireDate) > new Date();
-    }
-    return hasPA;
-  };
+  const calculateEffectivePremium = (userData) => calculateHasAccess(userData).hasAccess;
+  const calculateEffectiveBasic = (userData) => calculateHasAccess(userData).hasAccess;
+  const calculateEffectivePA = (userData) => calculateHasAccess(userData).hasAccess;
 
   // Load user data when auth user changes
   const loadUserData = async (authUser) => {
@@ -100,14 +121,14 @@ export const UserProvider = ({ children }) => {
       const userData = await getUserData(authUser.uid);
 
       if (userData) {
-        const effectiveIsPremium = calculateEffectivePremium(userData);
-        const effectiveIsBasic = calculateEffectiveBasic(userData);
-        const effectiveIsPA = calculateEffectivePA(userData);
+        const accessInfo = calculateHasAccess(userData);
         const completeUserInfo = {
           ...userData,
-          effectiveIsPremium,
-          effectiveIsBasic,
-          effectiveIsPA
+          effectiveIsPremium: accessInfo.hasAccess,
+          effectiveIsBasic: accessInfo.hasAccess,
+          effectiveIsPA: accessInfo.hasAccess,
+          inTrial: accessInfo.inTrial,
+          trialDaysRemaining: accessInfo.trialDaysRemaining
         };
         setUserInfo(completeUserInfo);
         // Save to localStorage for offline access
@@ -174,15 +195,13 @@ export const UserProvider = ({ children }) => {
   const updateUserInfo = (updates) => {
     if (userInfo) {
       const updatedInfo = { ...userInfo, ...updates };
-      // Recalculate effective premium status if relevant fields changed
-      if ('isPremium' in updates || 'planType' in updates) {
-        updatedInfo.effectiveIsPremium = calculateEffectivePremium(updatedInfo);
-      }
-      if ('isBasic' in updates) {
-        updatedInfo.effectiveIsBasic = calculateEffectiveBasic(updatedInfo);
-      }
-      if ('planType' in updates) {
-        updatedInfo.effectiveIsPA = calculateEffectivePA(updatedInfo);
+      const accessInfo = calculateHasAccess(updatedInfo);
+      if ('isPremium' in updates || 'isBasic' in updates || 'planType' in updates) {
+        updatedInfo.effectiveIsPremium = accessInfo.hasAccess;
+        updatedInfo.effectiveIsBasic = accessInfo.hasAccess;
+        updatedInfo.effectiveIsPA = accessInfo.hasAccess;
+        updatedInfo.inTrial = accessInfo.inTrial;
+        updatedInfo.trialDaysRemaining = accessInfo.trialDaysRemaining;
       }
       setUserInfo(updatedInfo);
     }
@@ -238,6 +257,9 @@ export const UserProvider = ({ children }) => {
     isPremium: userInfo?.effectiveIsPremium || false,
     isBasic: userInfo?.effectiveIsBasic || false,
     isPersonalAssistant: userInfo?.effectiveIsPA || false,
+    inTrial: userInfo?.inTrial || false,
+    trialDaysRemaining: userInfo?.trialDaysRemaining || 0,
+    hasAccess: userInfo?.effectiveIsPremium || false,
     isAdmin: userInfo?.isAdmin || false,
     isBlocked: userInfo?.blocked || false,
 

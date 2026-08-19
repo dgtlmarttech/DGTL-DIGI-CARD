@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import CrmNavbar from '../../components/layouts/CrmNavbar'
 
 const CrmLayout = ({ children }) => {
-  const { user, loading, initializing, isAuthenticated, isPremium, isBasic } = useUser();
+  const { user, loading, initializing, isAuthenticated, hasAccess } = useUser();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -20,12 +20,13 @@ const CrmLayout = ({ children }) => {
       return;
     }
 
-    // Redirect to pricing if no subscription
-    if (!isPremium && !isBasic) {
+    // Redirect to pricing if no access (trial expired + no paid plan)
+    // hasAccess = true for: active paid subscription OR active 7-day free trial
+    if (!hasAccess) {
       router.push('/payment');
       return;
     }
-  }, [user, loading, initializing, isAuthenticated, isPremium, isBasic, router, pathname]);
+  }, [user, loading, initializing, isAuthenticated, hasAccess, router, pathname]);
 
   // Show loading while initializing or loading user data
   if (initializing || loading) {

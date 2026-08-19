@@ -36,13 +36,34 @@ export async function POST(req) {
     }
     const userData = userSnap.data();
     
-    let isPA = userData.planType === 'personal_assistant' || userData.premiumPlan === 'pa' || userData.hasPA === true;
-    if (isPA && userData.paExpireDate) {
-       isPA = new Date(userData.paExpireDate) > new Date();
+    let hasPaidPlan = userData.isPremium || userData.isBasic || 
+                      userData.premiumPlan === 'premium' || userData.premiumPlan === 'pa' || 
+                      userData.planType === 'monthly' || userData.planType === 'yearly' || 
+                      userData.planType === 'personal_assistant' || userData.hasPA === true;
+    
+    if (hasPaidPlan && (userData.expireDate || userData.premiumEndDate || userData.paExpireDate)) {
+       const dates = [];
+       if (userData.expireDate) dates.push(new Date(userData.expireDate));
+       if (userData.premiumEndDate) dates.push(new Date(userData.premiumEndDate));
+       if (userData.paExpireDate) dates.push(new Date(userData.paExpireDate));
+       
+       const maxExpiry = new Date(Math.max(...dates));
+       hasPaidPlan = maxExpiry > new Date();
     }
     
-    if (!isPA) {
-      return NextResponse.json({ error: 'Forbidden. Personal Assistant subscription required.' }, { status: 403 });
+    let inTrial = false;
+    if (userData.createdAt) {
+      const createdAtDate = new Date(userData.createdAt);
+      const trialEndDate = new Date(createdAtDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+      if (trialEndDate > new Date()) {
+         inTrial = true;
+      }
+    }
+    
+    const hasAccess = hasPaidPlan || inTrial;
+    
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Forbidden. Active subscription or trial required.' }, { status: 403 });
     }
 
     let prompt = '';

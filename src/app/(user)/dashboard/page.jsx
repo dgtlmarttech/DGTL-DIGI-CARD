@@ -24,7 +24,7 @@ function debounce(func, wait) {
 
 const ProfilePage = () => {
   const router = useRouter();
-  const { user, userInfo, updateUserInfo } = useUser();
+  const { user, userInfo, updateUserInfo, inTrial, hasAccess } = useUser();
   const [loading, setLoading] = useState(false);
   const [savingPhoto, setSavingPhoto] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
@@ -188,18 +188,22 @@ const ProfilePage = () => {
     <div className="min-h-screen bg-gray-50 flex">
       {/* Main form area */}
       <div className="flex-1 p-4 lg:pr-[440px]">
-        {/* Premium Banner */}
+        {/* Subscription / Trial Banner */}
         <div
           onClick={() => router.push('/payment')}
-          className={`mb-6 rounded-xl p-4 text-center text-sm font-semibold text-white shadow-lg cursor-pointer ${
-            userInfo?.effectiveIsPremium
-              ? 'bg-gradient-to-r from-yellow-400 to-yellow-600'
-              : 'bg-gradient-to-r from-blue-500 to-indigo-600'
+          className={`mb-6 rounded-xl p-4 text-center text-sm font-semibold text-white shadow-lg cursor-pointer transition-all hover:opacity-90 ${
+            inTrial
+              ? 'bg-gradient-to-r from-indigo-500 to-violet-600'
+              : hasAccess
+              ? 'bg-gradient-to-r from-emerald-500 to-teal-600'
+              : 'bg-gradient-to-r from-rose-500 to-red-600'
           }`}
         >
-          {userInfo?.effectiveIsPremium
-            ? "🎉 You're a Premium Member! Manage Your Plan"
-            : '⚡ Upgrade to Premium for just ₹499/year to unlock advanced tracking and vanity URLs!'}
+          {inTrial
+            ? "🎉 You're on a 7-Day Free Trial! Enjoy Full Access."
+            : hasAccess
+            ? "👑 Your Subscription is Active — Manage Your Plan"
+            : "⚡ Your trial has ended. Choose a plan to restore access."}
         </div>
 
         {/* Personal Assistant Entry */}
@@ -209,20 +213,20 @@ const ProfilePage = () => {
               <span className="text-purple-600">✨ Personal Assistant</span>
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              {userInfo?.effectiveIsPA 
-                ? "Your AI-powered assistant is ready. Manage tasks, meeting notes, and voice memos." 
-                : "Unlock your AI assistant to boost productivity with voice notes, meeting summaries, and more!"}
+              {hasAccess
+                ? "Your AI-powered assistant is ready. Manage tasks, meeting notes, and voice memos."
+                : "Start your 7-day free trial or subscribe to unlock voice notes, meeting summaries, and more!"}
             </p>
           </div>
           <button
-            onClick={() => router.push(userInfo?.effectiveIsPA ? '/personal-assistant' : '/payment')}
+            onClick={() => router.push(hasAccess ? '/personal-assistant' : '/payment')}
             className={`whitespace-nowrap px-6 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg ${
-              userInfo?.effectiveIsPA
+              hasAccess
                 ? 'bg-purple-600 text-white hover:bg-purple-700'
                 : 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white'
             }`}
           >
-            {userInfo?.effectiveIsPA ? 'Open Assistant' : 'Unlock for ₹699/year'}
+            {hasAccess ? 'Open Assistant' : 'Get Full Access'}
           </button>
         </div>
 
