@@ -173,6 +173,14 @@ const ProfilePage = () => {
       setLoading(true);
       toast.info('Saving profile...', { autoClose: 2000 });
       const dataToSave = { ...formData };
+      
+      // Prevent computed frontend properties from polluting the Firebase database
+      delete dataToSave.effectiveIsPremium;
+      delete dataToSave.effectiveIsBasic;
+      delete dataToSave.effectiveIsPA;
+      delete dataToSave.inTrial;
+      delete dataToSave.trialDaysRemaining;
+
       await updateDoc(doc(db, 'users', user.uid), dataToSave);
       updateUserInfo(dataToSave);
       toast.success('Profile updated successfully! 🎉');

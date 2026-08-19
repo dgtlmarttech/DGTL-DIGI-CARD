@@ -73,7 +73,7 @@ function getSubscriptionState(userInfo) {
         // Active paid subscription
         return {
           type: 'paid',
-          planType: userInfo.planType || 'monthly',
+          planType: userInfo.planType || userInfo.premiumPlan || 'legacy',
           expireDate: maxExpiry,
         };
       }
@@ -82,7 +82,7 @@ function getSubscriptionState(userInfo) {
       // Has paid flag but no expiry set (legacy data) — treat as active
       return {
         type: 'paid',
-        planType: userInfo.planType || 'legacy',
+        planType: userInfo.planType || userInfo.premiumPlan || 'legacy',
         expireDate: null,
       };
     }
