@@ -175,9 +175,7 @@ const ProfilePage = () => {
       const dataToSave = { ...formData };
       
       // Prevent computed frontend properties from polluting the Firebase database
-      delete dataToSave.effectiveIsPremium;
-      delete dataToSave.effectiveIsBasic;
-      delete dataToSave.effectiveIsPA;
+      delete dataToSave.hasAccess;
       delete dataToSave.inTrial;
       delete dataToSave.trialDaysRemaining;
 
@@ -195,7 +193,7 @@ const ProfilePage = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Main form area */}
-      <div className="flex-1 p-4 lg:pr-[440px]">
+      <div className="flex-1 p-4 pt-8 lg:p-8 lg:pt-10 lg:pr-[480px]">
         {/* Subscription / Trial Banner */}
         <div
           onClick={() => router.push('/payment')}
@@ -221,55 +219,31 @@ const ProfilePage = () => {
               <span className="text-purple-600">✨ Personal Assistant</span>
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              {hasAccess
-                ? "Your AI-powered assistant is ready. Manage tasks, meeting notes, and voice memos."
-                : "Start your 7-day free trial or subscribe to unlock voice notes, meeting summaries, and more!"}
+              Your AI-powered assistant is ready. Manage tasks, meeting notes, and voice memos.
             </p>
           </div>
           <button
-            onClick={() => router.push(hasAccess ? '/personal-assistant' : '/payment')}
-            className={`whitespace-nowrap px-6 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg ${
-              hasAccess
-                ? 'bg-purple-600 text-white hover:bg-purple-700'
-                : 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white'
-            }`}
+            onClick={() => router.push('/personal-assistant')}
+            className={`whitespace-nowrap px-6 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg bg-purple-600 text-white hover:bg-purple-700`}
           >
-            {hasAccess ? 'Open Assistant' : 'Get Full Access'}
+            Open Assistant
           </button>
         </div>
 
-        {/* Profile Statistics (Views) - Premium Only */}
-        {userInfo?.effectiveIsPremium ? (
-          <div className="mb-6 rounded-xl bg-white p-6 shadow-sm flex items-center justify-between border-l-4 border-blue-500">
+        {/* Profile Statistics (Views) */}
+        <div className="mb-6 rounded-xl bg-white p-6 shadow-sm flex items-center justify-between border-l-4 border-blue-500">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Profile Analytics</h2>
+            <p className="text-sm text-gray-500">Total views on your digital card</p>
+          </div>
+          <div className="flex items-center gap-3 bg-blue-50 px-4 py-3 rounded-xl border border-blue-100">
+            <span className="text-2xl">👁️</span>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Profile Analytics</h2>
-              <p className="text-sm text-gray-500">Total views on your digital card</p>
-            </div>
-            <div className="flex items-center gap-3 bg-blue-50 px-4 py-3 rounded-xl border border-blue-100">
-              <span className="text-2xl">👁️</span>
-              <div>
-                <p className="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-0.5">Total Views</p>
-                <p className="text-2xl font-bold text-blue-800 leading-none">{userInfo?.cardViews || 0}</p>
-              </div>
+              <p className="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-0.5">Total Views</p>
+              <p className="text-2xl font-bold text-blue-800 leading-none">{userInfo?.cardViews || 0}</p>
             </div>
           </div>
-        ) : (
-          <div className="mb-6 rounded-xl bg-gray-50 p-6 shadow-sm flex items-center justify-between border-l-4 border-gray-300 opacity-80">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                Profile Analytics 
-                <span className="bg-yellow-100 text-yellow-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Premium</span>
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">Upgrade to track your digital card views in real-time.</p>
-            </div>
-            <button 
-              onClick={() => router.push('/payment')} 
-              className="hidden sm:block px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-semibold hover:bg-yellow-600 transition-colors shadow-sm"
-            >
-              Unlock Analytics
-            </button>
-          </div>
-        )}
+        </div>
 
         {/* Avatar Upload */}
         <div className="mb-6 rounded-xl bg-white p-6 shadow-sm">
@@ -523,8 +497,8 @@ const ProfilePage = () => {
             {showPreview ? 'Hide Live Preview' : 'Show Live Preview'}
           </button>
           {showPreview && (
-            <div className="mt-4 mx-auto w-[375px] rounded-3xl border-8 border-gray-300 shadow-lg overflow-y-auto max-h-[600px] bg-white">
-              <DigitalCard userInfo={{ ...userInfo, ...formData }} />
+            <div className="mt-4 mx-auto w-[375px] rounded-3xl border-8 border-gray-300 shadow-lg overflow-y-auto max-h-[600px] bg-white [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <DigitalCard userInfo={{ ...userInfo, ...formData }} isPreview={true} />
             </div>
           )}
         </div>
@@ -566,16 +540,16 @@ const ProfilePage = () => {
       </div>
 
       {/* Desktop Preview Panel */}
-      <aside className="hidden lg:flex lg:flex-col lg:fixed lg:right-4 lg:top-4 lg:w-[400px] lg:h-[calc(100vh-2rem)] rounded-3xl border-8 border-gray-300 bg-white shadow-lg">
-        <header className="p-4 border-b">
+      <aside className="hidden lg:flex lg:flex-col lg:fixed lg:right-8 lg:top-24 lg:w-[420px] lg:h-[calc(100vh-7rem)] rounded-3xl border-8 border-gray-300 bg-white shadow-lg">
+        <header className="p-4">
           <h3 className="text-center text-lg font-semibold">Live Preview</h3>
         </header>
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="mx-auto w-[375px] rounded-3xl overflow-hidden">
-            <DigitalCard userInfo={{ ...userInfo, ...formData }} />
+        <div className="flex-1 overflow-y-auto p-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="mx-auto w-[375px] rounded-3xl overflow-hidden shadow-sm">
+            <DigitalCard userInfo={{ ...userInfo, ...formData }} isPreview={true} />
           </div>
         </div>
-        <footer className="p-4 border-t text-xs text-center text-gray-500">
+        <footer className="p-4 text-xs text-center text-gray-500">
           Mobile device simulation
         </footer>
       </aside>

@@ -554,11 +554,11 @@ const AffiliateListPage = () => {
                                                                     </td>
                                                                     <td className="px-4 py-3 text-sm text-gray-600">{user.email}</td>
                                                                     <td className="px-4 py-3">
-                                                                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${user.isPremium
-                                                                                ? 'bg-green-100 text-green-800'
-                                                                                : 'bg-gray-100 text-gray-800'
+                                                                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${(user.planType === 'monthly' || user.planType === 'yearly')
+                                                                                ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                                                                                : 'bg-gray-100 text-gray-700 border border-gray-200'
                                                                             }`}>
-                                                                            {user.isPremium ? (
+                                                                            {(user.planType === 'monthly' || user.planType === 'yearly') ? (
                                                                                 <>
                                                                                     <Crown className="w-3 h-3 mr-1" />
                                                                                     Premium

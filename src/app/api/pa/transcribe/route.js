@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import OpenAI, { toFile } from 'openai';
 import fetch from 'node-fetch';
 import { adminAuth, adminDb } from '../../../../firebase/firebaseAdmin';
+import { deductMeetingUsage } from '../../../../utils/meetingUsage';
 
 export async function POST(req) {
   try {
@@ -12,6 +13,7 @@ export async function POST(req) {
     const audioFile = formData.get('audio');
     const userId = formData.get('userId');
     const idToken = formData.get('idToken');
+    const duration = parseInt(formData.get('duration') || '0', 10);
 
     if (!audioFile || !userId || !idToken) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
@@ -40,10 +42,12 @@ export async function POST(req) {
     }
     const userData = userSnap.data();
     
-    let hasPaidPlan = userData.isPremium || userData.isBasic || 
-                      userData.premiumPlan === 'premium' || userData.premiumPlan === 'pa' || 
-                      userData.planType === 'monthly' || userData.planType === 'yearly' || 
-                      userData.planType === 'personal_assistant' || userData.hasPA === true;
+    const hasVerifiedPayment = !!(userData.paymentData?.paymentId || userData.paymentId);
+
+    let hasPaidPlan = false;
+    if (hasVerifiedPayment) {
+      hasPaidPlan = userData.planType === 'monthly' || userData.planType === 'yearly';
+    }
     
     if (hasPaidPlan && (userData.expireDate || userData.premiumEndDate || userData.paExpireDate)) {
        const dates = [];
@@ -68,6 +72,15 @@ export async function POST(req) {
     
     if (!hasAccess) {
       return NextResponse.json({ error: 'Forbidden. Active subscription or trial required.' }, { status: 403 });
+    }
+
+    // Deduct usage quota atomically
+    if (duration > 0) {
+      const deductionResult = await deductMeetingUsage(userId, duration);
+      if (!deductionResult.success) {
+        return NextResponse.json({ error: deductionResult.error }, { status: 403 });
+      }
+      console.log(`Deducted ${deductionResult.actualDeducted}s for user ${userId}. Remaining: ${deductionResult.remainingSeconds}s`);
     }
 
     // Convert File to Buffer

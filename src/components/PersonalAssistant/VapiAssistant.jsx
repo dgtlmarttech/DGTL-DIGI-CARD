@@ -1,52 +1,120 @@
-import React, { useEffect, useState, useRef } from 'react';
-import Vapi from '@vapi-ai/web';
-import { FiMic, FiSquare } from 'react-icons/fi';
+import React, { useState, useRef, useEffect } from 'react';
+import { FiMic, FiSquare, FiVolume2 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { useUser } from '../../context/userContext';
 
-export default function VapiAssistant() {
+export default function VoiceAssistant() {
   const { user } = useUser();
-  const [callStatus, setCallStatus] = useState('inactive'); // inactive, starting, active
-  const vapiRef = useRef(null);
+  const [status, setStatus] = useState('idle'); // idle, listening, processing, speaking
+  const [transcript, setTranscript] = useState('');
+  
+  const statusRef = useRef('idle');
+  const transcriptRef = useRef('');
+  const recognitionRef = useRef(null);
+  const synthRef = useRef(null);
+  const manualCancelRef = useRef(false);
+  const hasGreetedRef = useRef(false);
+  const silenceTimerRef = useRef(null);
+
+  const updateStatus = (newStatus) => {
+    setStatus(newStatus);
+    statusRef.current = newStatus;
+  };
+
+  const updateTranscript = (newTranscript) => {
+    setTranscript(newTranscript);
+    transcriptRef.current = newTranscript;
+  };
 
   useEffect(() => {
-    // Initialize Vapi with the Public Key
-    const publicKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || 'your-vapi-public-key-here';
+    // Initialize Speech Synthesis
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      synthRef.current = window.speechSynthesis;
+    }
 
-    if (!vapiRef.current && publicKey !== 'your-vapi-public-key-here') {
-      try {
-        const vapi = new Vapi(publicKey);
-        vapiRef.current = vapi;
+    // Initialize Speech Recognition
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true; // Use continuous so it doesn't cut off early
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
 
-        vapi.on('call-start', () => {
-          setCallStatus('active');
-        });
+        recognition.onstart = () => {
+          updateStatus('listening');
+          updateTranscript('');
+        };
 
-        vapi.on('call-end', () => {
-          setCallStatus('inactive');
-        });
+        recognition.onresult = (event) => {
+          const current = event.resultIndex;
+          const transcriptText = Array.from(event.results)
+            .map(res => res[0].transcript)
+            .join('');
+            
+          updateTranscript(transcriptText);
 
-        vapi.on('error', (e) => {
-          console.error(e);
-          setCallStatus('inactive');
-          toast.error('Voice Assistant encountered an error.');
-        });
-      } catch (error) {
-        console.error('Vapi initialization error:', error);
+          // Reset silence timer on every new word
+          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+          silenceTimerRef.current = setTimeout(() => {
+            if (statusRef.current === 'listening') {
+              if (recognitionRef.current) {
+                recognitionRef.current.manualStop = true;
+                recognitionRef.current.stop();
+              }
+              const finalTxt = transcriptRef.current.trim();
+              if (finalTxt) {
+                processTranscriptText(finalTxt);
+              } else {
+                updateStatus('idle');
+              }
+            }
+          }, 3000); // 3 seconds of silence = user is done talking
+        };
+
+        recognition.onerror = (event) => {
+          console.error('Speech recognition error', event.error);
+          updateStatus('idle');
+          if (event.error !== 'aborted' && event.error !== 'no-speech') {
+            toast.error(`Microphone error: ${event.error}`);
+          }
+        };
+
+        recognition.onend = () => {
+          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+          
+          if (recognitionRef.current?.manualStop) {
+            recognitionRef.current.manualStop = false;
+            return; 
+          }
+          
+          if (statusRef.current === 'listening') {
+             const finalTxt = transcriptRef.current.trim();
+             if (finalTxt) {
+               processTranscriptText(finalTxt);
+             } else {
+               updateStatus('idle');
+             }
+          }
+        };
+
+        recognitionRef.current = recognition;
+      } else {
+        console.warn('Speech Recognition API not supported in this browser.');
       }
     }
 
     return () => {
-      if (vapiRef.current) {
-        vapiRef.current.stop();
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+      if (synthRef.current) {
+        synthRef.current.cancel();
       }
     };
   }, []);
 
-  /**
-   * Fetches the user's todos from the secure API route and
-   * returns a structured string with pending/completed sections.
-   */
   const fetchTodosContext = async () => {
     if (!user) return null;
     try {
@@ -64,123 +132,210 @@ export default function VapiAssistant() {
       }
 
       const today = new Date().toISOString().split('T')[0];
-
       const pending = todos.filter(t => t.status === 'pending');
       const completed = todos.filter(t => t.status === 'completed');
 
       const formatTask = (t, i) => {
         const dateLabel = t.taskDate === today ? ' (today)' : t.taskDate ? ` (${t.taskDate})` : '';
-        return `  ${i + 1}. "${t.title}"${dateLabel}`;
+        const timeLabel = t.taskTime ? ` at ${t.taskTime}` : '';
+        const recLabel = t.recurrence && t.recurrence !== 'none' ? ` [Repeats ${t.recurrence}]` : '';
+        return `  ${i + 1}. [ID: ${t.id}] "${t.title}"${dateLabel}${timeLabel}${recLabel}`;
       };
 
       const pendingToday = pending.filter(t => t.taskDate === today);
-      const pendingSection =
-        pending.length === 0
-          ? '  (none)'
-          : pending.map(formatTask).join('\n');
-
-      const completedSection =
-        completed.length === 0
-          ? '  (none)'
-          : completed.map(formatTask).join('\n');
-
-      const todayPendingNote =
-        pendingToday.length > 0
+      const pendingSection = pending.length === 0 ? '  (none)' : pending.map(formatTask).join('\n');
+      const completedSection = completed.length === 0 ? '  (none)' : completed.map(formatTask).join('\n');
+      
+      const todayPendingNote = pendingToday.length > 0 
           ? `\n⚠️ REMINDER: ${pendingToday.length} task(s) due TODAY are still pending: ${pendingToday.map(t => `"${t.title}"`).join(', ')}`
           : '';
+          
+      // Format Meetings Context
+      const meetings = data.meetings || [];
+      let meetingsSection = '';
+      if (meetings.length > 0) {
+        meetingsSection = '\n\nRECENT MEETINGS:\n' + meetings.map((m, i) => {
+           const dateStr = new Date(m.createdAt).toLocaleDateString();
+           let txt = `${i+1}. ${m.title} (${dateStr})\n   Summary: ${m.summary || 'None'}`;
+           if (m.actionItems && m.actionItems.length > 0) {
+             txt += `\n   Follow-ups/Tasks: ${m.actionItems.join(', ')}`;
+           }
+           return txt;
+        }).join('\n\n');
+      }
 
-      return `PENDING TASKS (${pending.length}):\n${pendingSection}\n\nCOMPLETED TASKS (${completed.length}):\n${completedSection}${todayPendingNote}`;
+      return `PENDING TASKS (${pending.length}):\n${pendingSection}\n\nCOMPLETED TASKS (${completed.length}):\n${completedSection}${todayPendingNote}${meetingsSection}`;
     } catch (err) {
-      console.error('Failed to fetch todos for assistant context:', err);
+      console.error('Failed to fetch todos:', err);
       return null;
     }
   };
 
+  const startListening = () => {
+    if (!recognitionRef.current) {
+      toast.error('Voice recognition is not supported in this browser. Please use Chrome.');
+      return;
+    }
+    
+    if (synthRef.current) synthRef.current.cancel(); 
+    updateTranscript('');
+    
+    try {
+      recognitionRef.current.start();
+    } catch (err) {
+      console.error('Recognition start error', err);
+    }
+  };
 
-  const toggleCall = async () => {
-    if (!vapiRef.current) {
-      toast.error('Voice Assistant is not configured properly.');
+  const processTranscriptText = async (finalText) => {
+    if (!finalText) {
+      updateStatus('idle');
       return;
     }
 
-    if (callStatus === 'inactive') {
-      setCallStatus('starting');
-      try {
-        const assistantId = process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID || 'your-assistant-id';
-        const today = new Date().toLocaleDateString('en-IN', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        });
+    updateStatus('processing');
 
-        // Fetch live todo data to inject as template variables
-        const todosContext = await fetchTodosContext();
+    try {
+      const context = await fetchTodosContext();
+      const idToken = await user.getIdToken();
 
-        // Use Vapi's variableValues to inject dynamic data into the assistant's system prompt.
-        // The Vapi dashboard system prompt must contain {{todoList}} and {{currentDate}} placeholders.
-        await vapiRef.current.start(assistantId, {
-          variableValues: {
-            todoList: todosContext || 'No tasks available.',
-            currentDate: today,
-          },
-        });
-      } catch (error) {
-        console.error('Error starting Vapi call:', error);
-        setCallStatus('inactive');
-        toast.error('Could not start Voice Assistant');
+      const res = await fetch('/api/pa/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: finalText, context, idToken })
+      });
+
+      if (!res.ok) throw new Error('API failed');
+      const data = await res.json();
+      
+      speakResponse(data.reply);
+    } catch (error) {
+      console.error('Chat processing error:', error);
+      toast.error('Failed to get a response.');
+      updateStatus('idle');
+    }
+  };
+
+  const stopListeningAndProcess = () => {
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    if (recognitionRef.current) {
+      recognitionRef.current.manualStop = true;
+      recognitionRef.current.stop();
+    }
+    processTranscriptText(transcriptRef.current.trim());
+  };
+
+  const speakResponse = (text, isGreeting = false) => {
+    manualCancelRef.current = false;
+    if (!synthRef.current) {
+      if (isGreeting) startListening();
+      else updateStatus('idle');
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    
+    const voices = synthRef.current.getVoices();
+    const englishVoice = voices.find(v => v.lang.startsWith('en-') && v.name.includes('Google'));
+    if (englishVoice) {
+      utterance.voice = englishVoice;
+    }
+
+    utterance.onstart = () => {
+      updateStatus('speaking');
+    };
+
+    utterance.onend = () => {
+      if (manualCancelRef.current) return;
+      
+      if (isGreeting) {
+        startListening();
+      } else {
+        updateStatus('idle');
+        updateTranscript('');
       }
-    } else {
-      vapiRef.current.stop();
+    };
+
+    utterance.onerror = (e) => {
+      console.warn('Speech synthesis stopped or errored', e);
+      updateStatus('idle');
+    };
+
+    synthRef.current.speak(utterance);
+  };
+
+  const toggleVoice = () => {
+    if (status === 'idle') {
+      if (!hasGreetedRef.current) {
+        hasGreetedRef.current = true;
+        speakResponse("Hi, I am your AI assistant. How can I help you?", true);
+      } else {
+        startListening();
+      }
+    } else if (status === 'listening') {
+      stopListeningAndProcess();
+    } else if (status === 'speaking') {
+      manualCancelRef.current = true;
+      if (synthRef.current) synthRef.current.cancel();
+      updateStatus('idle');
     }
   };
 
   return (
     <div className="bg-gradient-to-br from-indigo-900 to-purple-900 rounded-2xl shadow-lg p-6 text-white h-full flex flex-col items-center justify-center text-center relative overflow-hidden">
-      {/* Decorative background circles */}
       <div className="absolute top-0 left-0 w-32 h-32 bg-white opacity-5 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
       <div className="absolute bottom-0 right-0 w-48 h-48 bg-purple-500 opacity-20 rounded-full translate-x-1/3 translate-y-1/3 blur-xl"></div>
 
       <div className="relative z-10 w-full flex flex-col items-center">
         <h2 className="text-xl font-bold mb-2">Voice Assistant</h2>
-        <p className="text-indigo-200 text-sm mb-8 px-4">
-          Need help? Tap to talk to your AI assistant. It can answer questions about your tasks, schedule, and more.
+        <p className="text-indigo-200 text-sm mb-6 px-4">
+          Need help? Tap to talk to your AI assistant. It can answer questions about your tasks.
         </p>
 
         <button
-          onClick={toggleCall}
+          onClick={toggleVoice}
           className={`relative flex items-center justify-center w-24 h-24 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 ${
-            callStatus === 'active'
+            status === 'listening'
               ? 'bg-red-500 shadow-red-500/50'
-              : callStatus === 'starting'
+              : status === 'processing'
               ? 'bg-indigo-400'
+              : status === 'speaking'
+              ? 'bg-green-500 shadow-green-500/50'
               : 'bg-indigo-500 shadow-indigo-500/50 hover:bg-indigo-400'
           }`}
         >
-          {callStatus === 'active' && (
+          {status === 'listening' && (
             <div className="absolute inset-0 rounded-full border-4 border-red-400 animate-ping opacity-75"></div>
           )}
+          {status === 'speaking' && (
+            <div className="absolute inset-0 rounded-full border-4 border-green-400 animate-pulse opacity-75"></div>
+          )}
 
-          {callStatus === 'active' ? (
+          {status === 'listening' ? (
             <FiSquare size={32} />
-          ) : callStatus === 'starting' ? (
+          ) : status === 'processing' ? (
             <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+          ) : status === 'speaking' ? (
+            <FiVolume2 size={36} />
           ) : (
             <FiMic size={36} />
           )}
         </button>
 
         <p className="mt-6 text-sm font-semibold tracking-wider uppercase text-indigo-200">
-          {callStatus === 'active'
-            ? 'Listening...'
-            : callStatus === 'starting'
-            ? 'Loading your tasks...'
+          {status === 'listening'
+            ? 'Listening (Tap to Stop)...'
+            : status === 'processing'
+            ? 'Thinking...'
+            : status === 'speaking'
+            ? 'Speaking (Tap to Stop)...'
             : 'Tap to Speak'}
         </p>
 
-        {callStatus === 'starting' && (
-          <p className="mt-2 text-xs text-indigo-300 animate-pulse">
-            Syncing your To-Do list...
+        {transcript && status === 'listening' && (
+          <p className="mt-4 text-xs text-indigo-100 italic px-2 bg-black/20 py-2 rounded-lg max-w-full truncate">
+            "{transcript}"
           </p>
         )}
       </div>

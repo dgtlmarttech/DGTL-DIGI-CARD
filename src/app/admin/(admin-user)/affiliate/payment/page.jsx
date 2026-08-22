@@ -37,7 +37,7 @@ const AffiliatePaymentPage = () => {
 
   const calculateOverallEarnings = async (aff) => {
     const referred = await getReferredUsers(aff.referralCode);
-    const premiumCount = referred.filter(user => user.isPremium).length;
+    const premiumCount = referred.filter(user => user.planType === 'monthly' || user.planType === 'yearly').length;
     return premiumCount * 100;
   };
 
@@ -89,7 +89,7 @@ const AffiliatePaymentPage = () => {
         }
         return true;
       });
-      const count = filtered.filter(user => user.isPremium).length;
+      const count = filtered.filter(user => user.planType === 'monthly' || user.planType === 'yearly').length;
       const earned = count * 100;
       setPeriodEarnings(earned);
     } catch (error) {

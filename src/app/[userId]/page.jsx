@@ -116,7 +116,7 @@ export default function LiveCardPage() {
     const renderCard = () => {
         const data = pageUserInfo;
         if (!data) return null;
-        const style = data.effectiveIsPremium ? data.cardStyle || "default" : "default";
+        const style = data.hasAccess ? data.cardStyle || "default" : "default";
         const props = { userInfo: data };
         switch (style) {
             case "style1": return <ContactCard {...props} />;
@@ -147,30 +147,36 @@ export default function LiveCardPage() {
                 </title>
             </Head>
 
-            <div className={`min-h-screen ${pageUserInfo.effectiveIsPremium ? "bg-gradient-to-br from-purple-50 to-blue-50" : "bg-gray-50"}`}>
+            <div className={`min-h-screen ${pageUserInfo.hasAccess ? "bg-gradient-to-br from-purple-50 to-blue-50" : "bg-gray-50"}`}>
 
-                {isCurrentUser(userId) && !isStandalone && (
-                    <div className={`fixed ${buttonTopClass} right-4 z-[60] transition-all duration-300`}>
+                <div className="fixed top-4 w-full px-4 sm:px-6 md:px-8 z-[60] pointer-events-none flex justify-between items-start max-w-7xl left-1/2 -translate-x-1/2">
+                    
+                    {/* Left: Back Button (For Card Owner) */}
+                    {isCurrentUser(userId) && !isStandalone ? (
                         <button
-                            className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:cursor-pointer hover:bg-blue-700 transition-colors duration-200 shadow-lg"
                             onClick={() => router.push("/dashboard")}
+                            className="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-white/80 backdrop-blur-xl text-slate-700 rounded-full text-sm font-semibold hover:text-blue-600 hover:bg-white shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-200/60 transition-all duration-300 hover:scale-105"
                         >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
                             Dashboard
                         </button>
-                    </div>
-                )}
+                    ) : <div />}
 
-                {!isCurrentUser(userId) && !isStandalone && (
-                    <div className={`fixed ${buttonTopClass} right-4 z-[60] transition-all duration-300`}>
+                    {/* Right: Get Your Own Card (For Visitors) */}
+                    {!isCurrentUser(userId) && !isStandalone && (
                         <button
-                            className="bg-gray-200 text-gray-800 p-2 rounded-full hover:bg-gray-300 transition-colors duration-200 shadow-lg"
                             onClick={() => router.push("/signin")}
-                            aria-label="Login or Signup"
+                            className="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full text-sm font-semibold hover:shadow-[0_8px_30px_rgba(37,99,235,0.24)] transition-all duration-300 hover:scale-105"
                         >
-                            ⚙️
+                            Create your own
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+                            </svg>
                         </button>
-                    </div>
-                )}
+                    )}
+                </div>
 
                 <div className="container mx-auto">{renderCard()}</div>
             </div>

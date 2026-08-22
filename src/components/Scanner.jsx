@@ -44,7 +44,7 @@ const Scanner = ({ isActive, onScanSuccess, onScanError, onScannerStopped }) => 
           html5QrCodeRef.current = null; // Nullify the ref to ensure a fresh instance on next start
           console.log("Scanner cleared after stop failure.");
         } catch (clearError) {
-          console.error("Critical: Error clearing QR scanner after stop failure:", clearError);
+          console.warn("Critical: Error clearing QR scanner after stop failure:", clearError);
         }
       } finally {
         // Always ensure initializing state is off, scanning state is off, and parent is notified
@@ -59,7 +59,7 @@ const Scanner = ({ isActive, onScanSuccess, onScanError, onScannerStopped }) => 
         await html5QrCodeRef.current.clear();
         html5QrCodeRef.current = null; // Nullify the ref to ensure a fresh instance
       } catch (clearError) {
-        console.error("Error clearing QR scanner when not scanning:", clearError);
+        console.warn("Error clearing QR scanner when not scanning:", clearError);
       } finally {
         setIsInitializing(false);
         setIsScanningActive(false); // Set scanning active to false
@@ -79,7 +79,7 @@ const Scanner = ({ isActive, onScanSuccess, onScanError, onScannerStopped }) => 
     const qrReaderElement = document.getElementById(qrReaderId);
 
     if (!qrReaderElement) {
-      console.error('QR reader element not found for initialization.');
+      console.warn('QR reader element not found for initialization.');
       onScanError('QR reader element not found.');
       stopQrScanner(); // Call stop to reset states
       return;
@@ -186,7 +186,7 @@ const Scanner = ({ isActive, onScanSuccess, onScanError, onScannerStopped }) => 
         onScanError('No camera found on this device.');
         // The start() call itself will fail and trigger its catch block, which calls stopQrScanner.
       } else {
-        console.error('QR Scanner Runtime Error:', errorMessage);
+        console.warn('QR Scanner Runtime Error:', errorMessage);
         onScanError(`QR Scanner Error: ${errorMessage}`);
         // The start() call itself will fail and trigger its catch block, which calls stopQrScanner.
       }
@@ -216,7 +216,7 @@ const Scanner = ({ isActive, onScanSuccess, onScanError, onScannerStopped }) => 
       setIsInitializing(false); // Initialization complete
       setIsScanningActive(true); // Camera is now actively scanning
     } catch (err) {
-      console.error('Html5Qrcode.start failed:', err);
+      console.warn('Html5Qrcode.start failed:', err);
       // Handle different types of errors during camera start
       if (err.name === 'NotAllowedError') {
         setCameraPermissionStatus('denied');
@@ -273,7 +273,7 @@ const Scanner = ({ isActive, onScanSuccess, onScanError, onScannerStopped }) => 
             onScanError('No cameras found on this device.');
           }
         } catch (error) {
-          console.error('Error enumerating cameras:', error);
+          console.warn('Error enumerating cameras:', error);
           setCameraPermissionStatus('denied'); // Assume denied if enumeration fails
           onScanError(`Error enumerating cameras: ${error.message}. Please check permissions.`);
         }
@@ -299,7 +299,7 @@ const Scanner = ({ isActive, onScanSuccess, onScanError, onScannerStopped }) => 
             }
           };
         } catch (error) {
-          console.error('Error querying camera permission:', error);
+          console.warn('Error querying camera permission:', error);
           // If query fails, it might mean the browser doesn't support it or there's a security issue.
           // We'll rely on Html5Qrcode.start()'s error for denied states during render.
         }

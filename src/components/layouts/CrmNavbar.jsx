@@ -104,6 +104,17 @@ const CrmNavbar = ({ children, pageTitle }) => {
             <div className="flex justify-between h-16">
               {/* Left: Enhanced Brand */}
               <div className="flex items-center">
+                {/* Back Button */}
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="mr-3 p-2 -ml-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-blue-600 transition-all duration-200 group"
+                  title="Back to Main Dashboard"
+                >
+                  <svg className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                </button>
+
                 <div
                   className="flex-shrink-0 flex items-center cursor-pointer group"
                   onClick={() => handleNavigation('/crm')}

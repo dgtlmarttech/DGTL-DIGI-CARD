@@ -50,21 +50,23 @@ function getSubscriptionState(userInfo) {
 
   const now = new Date();
 
-  // Check for active paid plan (new Monthly/Yearly or legacy plans)
-  const expireDates = [];
-  if (userInfo.expireDate) expireDates.push(new Date(userInfo.expireDate));
-  if (userInfo.premiumEndDate) expireDates.push(new Date(userInfo.premiumEndDate));
-  if (userInfo.paExpireDate) expireDates.push(new Date(userInfo.paExpireDate));
+  // Check if the user has verified payment data
+  const hasVerifiedPayment = !!(userInfo.paymentData?.paymentId || userInfo.paymentId);
 
-  const hasPaidPlanFlag =
-    userInfo.isPremium ||
-    userInfo.isBasic ||
-    userInfo.premiumPlan === 'premium' ||
-    userInfo.premiumPlan === 'pa' ||
-    userInfo.planType === 'monthly' ||
-    userInfo.planType === 'yearly' ||
-    userInfo.planType === 'personal_assistant' ||
-    userInfo.hasPA === true;
+  let hasPaidPlanFlag = false;
+
+  // We STRICTLY require a verified payment for 'monthly' and 'yearly' plans to prevent free-trial users
+  // from being incorrectly upgraded due to data leaks or unverified states.
+  if (hasVerifiedPayment && (userInfo.planType === 'monthly' || userInfo.planType === 'yearly')) {
+    hasPaidPlanFlag = true;
+  }
+
+  // Check for active paid plan
+  const expireDates = [];
+  if (hasPaidPlanFlag) {
+    if (userInfo.expireDate) expireDates.push(new Date(userInfo.expireDate));
+    if (userInfo.premiumEndDate) expireDates.push(new Date(userInfo.premiumEndDate));
+  }
 
   if (hasPaidPlanFlag) {
     if (expireDates.length > 0) {
@@ -73,16 +75,16 @@ function getSubscriptionState(userInfo) {
         // Active paid subscription
         return {
           type: 'paid',
-          planType: userInfo.planType || userInfo.premiumPlan || 'legacy',
+          planType: userInfo.planType,
           expireDate: maxExpiry,
         };
       }
       // Subscription has expired — fall through to trial/expired check
     } else {
-      // Has paid flag but no expiry set (legacy data) — treat as active
+      // Has paid flag but no expiry set — treat as active
       return {
         type: 'paid',
-        planType: userInfo.planType || userInfo.premiumPlan || 'legacy',
+        planType: userInfo.planType,
         expireDate: null,
       };
     }
@@ -115,6 +117,7 @@ const PaymentPage = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [paymentSuccess, setPaymentSuccess] = useState(null); // 'monthly' | 'yearly'
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [billingCycle, setBillingCycle] = useState('yearly');
 
   useEffect(() => {
     if (!userLoading && !isAuthenticated) {
@@ -174,7 +177,7 @@ const PaymentPage = () => {
       prefill: {
         name: `${userInfo?.firstName || ''} ${userInfo?.lastName || ''}`.trim() || user?.displayName || '',
         email: userInfo?.email || user?.email || '',
-        contact: userInfo?.mobile || user?.phoneNumber || '',
+        contact: userInfo?.mobile || user?.phoneNumber || '+919999999999',
       },
       theme: { color: '#4c51bf' },
       handler: async (resp) => {
@@ -209,11 +212,15 @@ const PaymentPage = () => {
           }
 
           updateUserInfo({
-            isPremium: true,
-            isBasic: true,
             planType,
             planStartDate: new Date().toISOString(),
             expireDate: newEndDate.toISOString(),
+            paymentData: {
+              paymentId: resp.razorpay_payment_id,
+              orderId: resp.razorpay_order_id,
+              signature: resp.razorpay_signature,
+            },
+            paymentId: resp.razorpay_payment_id,
           });
 
           setPaymentSuccess(planType);
@@ -297,13 +304,11 @@ const PaymentPage = () => {
 
     const planLabel =
       subState.planType === 'yearly' ? 'Yearly' :
-      subState.planType === 'monthly' ? 'Monthly' :
-      subState.planType === 'personal_assistant' ? 'Personal Assistant (Legacy)' :
-      'Premium (Legacy)';
+        subState.planType === 'monthly' ? 'Monthly' : 'Unknown Plan';
 
     const priceLabel =
       subState.planType === 'yearly' ? '₹999 / year' :
-      subState.planType === 'monthly' ? '₹99 / month' : 'Legacy plan';
+        subState.planType === 'monthly' ? '₹99 / month' : '';
 
     return (
       <div className="max-w-2xl mx-auto mb-8 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-5">
@@ -381,55 +386,67 @@ const PaymentPage = () => {
         </div>
       )}
 
-      {/* Plan Cards */}
-      <div className="mt-4 space-y-4 sm:space-y-0 sm:grid sm:grid-cols-1 lg:grid-cols-2 sm:gap-6 lg:max-w-4xl lg:mx-auto">
-        {/* Monthly Plan */}
-        <div className="border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800 flex flex-col">
-          <div className="p-6">
-            <h2 className="text-lg leading-6 font-semibold tracking-wider text-gray-900 dark:text-white">Monthly</h2>
-            <p className="mt-6 flex items-baseline gap-1">
-              <span className="text-5xl font-extrabold text-gray-900 dark:text-white">₹99</span>
-              <span className="text-base font-medium text-gray-500 dark:text-gray-400">/month</span>
-            </p>
-            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Complete access to all features, billed monthly.</p>
-          </div>
-          <div className="pt-6 pb-8 px-6 flex-1 flex flex-col">
-            <ul className="space-y-3 flex-1">
-              {allFeatures.map((feature) => (
-                <li key={feature} className="flex items-start gap-2">
-                  <FiCheckCircle className="flex-shrink-0 h-4 w-4 text-indigo-500 mt-0.5" />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{feature}</span>
-                </li>
-              ))}
-            </ul>
-            <button
-              id="btn-get-monthly"
-              onClick={() => handlePayment('monthly', 99)}
-              disabled={!agreedToTerms || processingPlan !== null}
-              className={`mt-8 w-full rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${
-                agreedToTerms && processingPlan === null
-                  ? 'bg-indigo-600 hover:bg-indigo-700 transform hover:scale-[1.02]'
-                  : 'bg-gray-400 cursor-not-allowed'
+      {/* Billing Cycle Toggle */}
+      <div className="flex justify-center mb-8">
+        <div className="relative flex items-center p-1 bg-gray-100 dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
+          <button
+            onClick={() => setBillingCycle('monthly')}
+            className={`relative w-32 py-2 text-sm font-semibold rounded-full transition-all duration-200 z-10 ${billingCycle === 'monthly'
+                ? 'text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
-            >
-              {processingPlan === 'monthly' ? 'Processing...' : 'Get Monthly'}
-            </button>
-          </div>
+          >
+            Monthly
+          </button>
+          <button
+            onClick={() => setBillingCycle('yearly')}
+            className={`relative w-32 py-2 text-sm font-semibold rounded-full transition-all duration-200 z-10 ${billingCycle === 'yearly'
+                ? 'text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+          >
+            Yearly
+          </button>
+          {/* Animated Toggle Background */}
+          <div
+            className={`absolute top-1 bottom-1 w-32 bg-white dark:bg-gray-700 rounded-full shadow transition-transform duration-300 ease-in-out ${billingCycle === 'yearly' ? 'translate-x-full' : 'translate-x-0'
+              }`}
+          ></div>
         </div>
+      </div>
 
-        {/* Yearly Plan */}
-        <div className="border-2 border-indigo-500 dark:border-indigo-400 rounded-2xl shadow-lg divide-y divide-gray-200 dark:divide-gray-700 bg-indigo-50/10 dark:bg-gray-800 relative flex flex-col lg:-translate-y-2">
-          <div className="absolute top-0 right-0 -mt-4 mr-4 px-4 py-1 bg-indigo-600 text-white text-xs font-bold uppercase tracking-wide rounded-full shadow-md flex items-center gap-1">
-            <FiStar size={10} /> BEST VALUE
-          </div>
+      {/* Plan Card */}
+      <div className="mt-4 lg:max-w-lg lg:mx-auto">
+        <div className={`border-2 rounded-2xl shadow-lg divide-y divide-gray-200 dark:divide-gray-700 flex flex-col relative transition-all duration-300 ${billingCycle === 'yearly'
+            ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50/10 dark:bg-gray-800'
+            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+          }`}>
+          {billingCycle === 'yearly' && (
+            <div className="absolute top-0 right-0 -mt-4 mr-4 px-4 py-1 bg-indigo-600 text-white text-xs font-bold uppercase tracking-wide rounded-full shadow-md flex items-center gap-1">
+              <FiStar size={10} /> BEST VALUE
+            </div>
+          )}
+
           <div className="p-6">
-            <h2 className="text-lg leading-6 font-semibold tracking-wider text-indigo-600 dark:text-indigo-400">Yearly</h2>
+            <h2 className={`text-lg leading-6 font-semibold tracking-wider ${billingCycle === 'yearly' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-900 dark:text-white'
+              }`}>
+              {billingCycle === 'monthly' ? 'Monthly' : 'Yearly'}
+            </h2>
             <p className="mt-6 flex items-baseline gap-1">
-              <span className="text-5xl font-extrabold text-gray-900 dark:text-white">₹999</span>
-              <span className="text-base font-medium text-gray-500 dark:text-gray-400">/year</span>
+              <span className="text-5xl font-extrabold text-gray-900 dark:text-white">
+                {billingCycle === 'monthly' ? '₹99' : '₹999'}
+              </span>
+              <span className="text-base font-medium text-gray-500 dark:text-gray-400">
+                {billingCycle === 'monthly' ? '/month' : '/year'}
+              </span>
             </p>
-            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Save ~15% compared to the monthly plan.</p>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+              {billingCycle === 'monthly'
+                ? 'Complete access to all features, billed monthly.'
+                : 'Save ~15% compared to the monthly plan.'}
+            </p>
           </div>
+
           <div className="pt-6 pb-8 px-6 flex-1 flex flex-col">
             <ul className="space-y-3 flex-1">
               {allFeatures.map((feature) => (
@@ -440,16 +457,17 @@ const PaymentPage = () => {
               ))}
             </ul>
             <button
-              id="btn-get-yearly"
-              onClick={() => handlePayment('yearly', 999)}
+              id={`btn-get-${billingCycle}`}
+              onClick={() => handlePayment(billingCycle, billingCycle === 'monthly' ? 99 : 999)}
               disabled={!agreedToTerms || processingPlan !== null}
-              className={`mt-8 w-full rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${
-                agreedToTerms && processingPlan === null
+              className={`mt-8 w-full rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${agreedToTerms && processingPlan === null
                   ? 'bg-indigo-600 hover:bg-indigo-700 transform hover:scale-[1.02]'
                   : 'bg-gray-400 cursor-not-allowed'
-              }`}
+                }`}
             >
-              {processingPlan === 'yearly' ? 'Processing...' : 'Get Yearly'}
+              {processingPlan === billingCycle
+                ? 'Processing...'
+                : `Get ${billingCycle === 'monthly' ? 'Monthly' : 'Yearly'}`}
             </button>
           </div>
         </div>

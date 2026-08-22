@@ -36,10 +36,12 @@ export async function POST(req) {
     }
     const userData = userSnap.data();
     
-    let hasPaidPlan = userData.isPremium || userData.isBasic || 
-                      userData.premiumPlan === 'premium' || userData.premiumPlan === 'pa' || 
-                      userData.planType === 'monthly' || userData.planType === 'yearly' || 
-                      userData.planType === 'personal_assistant' || userData.hasPA === true;
+    const hasVerifiedPayment = !!(userData.paymentData?.paymentId || userData.paymentId);
+
+    let hasPaidPlan = false;
+    if (hasVerifiedPayment) {
+      hasPaidPlan = userData.planType === 'monthly' || userData.planType === 'yearly';
+    }
     
     if (hasPaidPlan && (userData.expireDate || userData.premiumEndDate || userData.paExpireDate)) {
        const dates = [];
@@ -74,12 +76,12 @@ Please analyze the transcript and provide two things:
 1. A concise 2-3 line summary of the meeting that explicitly covers:
    - What was discussed (main topics).
    - What decisions were made.
-2. A list of specific action items discussed.
+2. A list of specific action items discussed. Extract the core task, the deadline (if mentioned), and the person assigned (if mentioned). Format each action item EXACTLY as a string in this format: "[Task] (Deadline: [Date/None] | Person: [Name/Unassigned])".
 
 Format your response exactly as JSON with this structure:
 {
   "summary": "String",
-  "actionItems": ["Item 1", "Item 2"]
+  "actionItems": ["String", "String"]
 }
 
 Here is the transcript:

@@ -85,7 +85,7 @@ const sampleUserInfo = {
   ]
 };
 
-const App = ({ userInfo = sampleUserInfo }) => {
+const App = ({ userInfo = sampleUserInfo, isPreview = false }) => {
   const cardColor = userInfo.cardColor || "#3b82f6";
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
@@ -208,7 +208,7 @@ const App = ({ userInfo = sampleUserInfo }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4 font-sans antialiased">
+    <div className={`${isPreview ? 'w-full' : 'min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4'} font-sans antialiased`}>
       <div className="w-full max-w-sm mx-auto bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">
         <div className="flex flex-col">
           {/* Header Section */}

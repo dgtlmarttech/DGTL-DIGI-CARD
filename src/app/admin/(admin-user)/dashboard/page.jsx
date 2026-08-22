@@ -74,13 +74,13 @@ const Home = () => {
         
         usersSnap.forEach(doc => {
           const u = doc.data();
-          const isPremium = u.isPremium === true || u.isPremium === 'true';
+          const hasPaidPlan = u.planType === 'monthly' || u.planType === 'yearly';
           const isBlocked = u.blocked === true || u.blocked === 'true';
           const hasExpired = u.expireDate && new Date(u.expireDate) <= today;
 
           // Match the exact premium filter rule from UserInfo.jsx:
           // user.isPremium && !user.blocked && (!user.expireDate || new Date(user.expireDate) > today)
-          if (isPremium && !isBlocked && !hasExpired) {
+          if (hasPaidPlan && !isBlocked && !hasExpired) {
             premiumCount++;
             if (u.paymentData) {
               paidPremiumCount++;

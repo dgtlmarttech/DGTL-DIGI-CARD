@@ -17,15 +17,15 @@ const ImportPage = () => {
   const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
-    if (!loadingUser && userInfo && !userInfo.effectiveIsPremium) {
-      toast.error('Bulk import is a Premium feature.');
+    if (!loadingUser && userInfo && !userInfo.hasAccess) {
+      toast.error('Bulk import requires an active subscription or trial.');
       router.push('/payment');
     }
   }, [userInfo, loadingUser, router]);
 
   const handleFileSelect = (e) => {
-    if (!userInfo?.effectiveIsPremium) {
-      toast.error('Bulk import is a Premium feature.');
+    if (!userInfo?.hasAccess) {
+      toast.error('Bulk import requires an active subscription or trial.');
       router.push('/payment');
       return;
     }

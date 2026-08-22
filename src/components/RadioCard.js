@@ -2,8 +2,8 @@
 import React from 'react';
 // import './RadioCard.css'; // You'll create this CSS file
 
-function RadioCard({ id, title, description, isSelected, onSelect, isPremium, canAccessPremiumFeatures }) {
-  const isDisabled = isPremium && !canAccessPremiumFeatures;
+function RadioCard({ id, title, description, isSelected, onSelect, requiresAccess, hasAccess }) {
+  const isDisabled = requiresAccess && !hasAccess;
 
   const handleClick = () => {
     if (!isDisabled) {
@@ -25,9 +25,9 @@ function RadioCard({ id, title, description, isSelected, onSelect, isPremium, ca
         <p>{description}</p>
       </div>
       {isSelected && <span className="radio-indicator"></span>} {/* Visually selected dot */}
-      {isPremium && !canAccessPremiumFeatures && (
+      {requiresAccess && !hasAccess && (
         <div className="premium-overlay">
-          <span>🔒 Premium</span>
+          <span>🔒 Locked</span>
         </div>
       )}
     </div>

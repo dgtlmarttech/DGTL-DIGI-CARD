@@ -6,7 +6,7 @@ import { doc , getDoc , updateDoc } from "firebase/firestore";
 import { storage, db } from "../firebase/firebase";
 import { FiEdit, FiImage, FiSettings, FiLogOut, FiX, FiInfo } from 'react-icons/fi';
 
-const UserSettings = ({ currentUser, onLogout, onEditProfile, onClose, isPremium, isCurrUser }) => {
+const UserSettings = ({ currentUser, onLogout, onEditProfile, onClose, hasAccess, isCurrUser }) => {
   
   // For profile image change (crop modal)
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
@@ -207,16 +207,16 @@ const UserSettings = ({ currentUser, onLogout, onEditProfile, onClose, isPremium
 
             {/* Card Style Changer */}
             <div className="relative group">
-              <div className={`w-full px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${!isPremium ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-gray-100 dark:bg-gray-700'}`}>
+              <div className={`w-full px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${!hasAccess ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-gray-100 dark:bg-gray-700'}`}>
                 <div className="flex items-center gap-3">
                   <FiSettings size={20} />
                   <span>Card Style</span>
                 </div>
                 <select 
-                  className={`bg-transparent text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-0 ${!isPremium ? 'cursor-not-allowed' : ''}`}
+                  className={`bg-transparent text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-0 ${!hasAccess ? 'cursor-not-allowed' : ''}`}
                   value={cardStyle} 
                   onChange={handleCardStyleChange} 
-                  disabled={!isPremium}
+                  disabled={!hasAccess}
                 >
                   <option value="default">Default</option>
                   <option value="style1">Radiant</option>
@@ -226,11 +226,11 @@ const UserSettings = ({ currentUser, onLogout, onEditProfile, onClose, isPremium
                   <option value="style5">Vanguard</option>
                   <option value="style6">Zenith</option>
                 </select>
-                {!isPremium && <FiInfo size={20} className="text-gray-400" />}
+                {!hasAccess && <FiInfo size={20} className="text-gray-400" />}
               </div>
-              {!isPremium && (
+              {!hasAccess && (
                 <span className="absolute left-1/2 bottom-full -translate-x-1/2 mb-2 px-3 py-1 text-xs text-white bg-gray-800 dark:bg-gray-600 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  Buy Premium to unlock this feature
+                  Active plan required to change card style
                 </span>
               )}
             </div>

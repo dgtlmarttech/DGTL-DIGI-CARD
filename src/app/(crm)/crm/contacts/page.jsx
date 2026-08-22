@@ -190,21 +190,20 @@ const ContactsPage = () => {
         
         <button
           onClick={() => {
-            if (userInfo?.effectiveIsPremium) {
+            if (userInfo?.hasAccess) {
               router.push('/crm/import');
             } else {
-              toast.error('Bulk import is a Premium feature. Please upgrade.');
+              toast.error('Bulk import requires an active subscription or trial.');
               router.push('/payment');
             }
           }}
-          className={`text-white p-4 rounded-xl transition-colors flex items-center justify-center ${userInfo?.effectiveIsPremium ? 'bg-orange-600 hover:bg-orange-700' : 'bg-gray-400 opacity-70 cursor-not-allowed'}`}
-          title={!userInfo?.effectiveIsPremium ? "Premium Feature" : ""}
+          className={`text-white p-4 rounded-xl transition-colors flex items-center justify-center ${userInfo?.hasAccess ? 'bg-orange-600 hover:bg-orange-700' : 'bg-gray-400 opacity-70 cursor-not-allowed'}`}
+          title={!userInfo?.hasAccess ? "Subscription Required" : ""}
         >
           <span className="text-2xl mr-2">📥</span>
           <div>
             <div className="font-semibold flex items-center gap-1">
               Import CSV
-              {!userInfo?.effectiveIsPremium && <span className="bg-yellow-400 text-yellow-900 text-[10px] px-1.5 py-0.5 rounded font-bold ml-1">PRO</span>}
             </div>
             <div className="text-sm opacity-90">Bulk import</div>
           </div>

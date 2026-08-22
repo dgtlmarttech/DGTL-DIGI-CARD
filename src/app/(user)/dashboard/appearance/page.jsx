@@ -12,10 +12,10 @@ import ContactCard2 from '../../../../components/template/card2';
 import ContactCard3 from '../../../../components/template/card3';
 
 const cardStylesOptions = [
-  { id: 'default', title: 'Classic', description: 'Simple & Clean', isPremium: false, preview: '📄' },
-  { id: 'style1', title: 'Radiant', description: 'Bright & Modern', isPremium: true, preview: '✨' },
-  { id: 'style2', title: 'Sleek', description: 'Minimal & Sophisticated', isPremium: true, preview: '💎' },
-  { id: 'style3', title: 'Heritage', description: 'Classic & Elegant', isPremium: true, preview: '🏛️' },
+  { id: 'default', title: 'Classic', description: 'Simple & Clean', preview: '📄' },
+  { id: 'style1', title: 'Radiant', description: 'Bright & Modern', preview: '✨' },
+  { id: 'style2', title: 'Sleek', description: 'Minimal & Sophisticated', preview: '💎' },
+  { id: 'style3', title: 'Heritage', description: 'Classic & Elegant', preview: '🏛️' },
 ];
 
 const predefinedColors = [
@@ -30,7 +30,7 @@ const Appearance = () => {
   const [cardColor, setCardColor] = useState('#1187ac');
   const [showPreview, setShowPreview] = useState(false);
 
-  const canAccessPremiumFeatures = userInfo?.effectiveIsPremium;
+
 
   useEffect(() => {
     if (userInfo) {
@@ -41,8 +41,7 @@ const Appearance = () => {
 
   const handleStyleSelect = (styleId) => {
     const option = cardStylesOptions.find(opt => opt.id === styleId);
-    if (!option.isPremium || canAccessPremiumFeatures) setSelectedStyle(styleId);
-    else toast.warn('Upgrade to Premium to unlock this style!');
+    if (option) setSelectedStyle(styleId);
   };
 
   const handleColorChange = (color) => setCardColor(color);
@@ -65,9 +64,6 @@ const Appearance = () => {
 
   const renderCard = () => {
     const cardProps = { ...userInfo, cardStyle: selectedStyle, cardColor };
-    if (!canAccessPremiumFeatures && selectedStyle !== 'default') {
-      return <DigitalCard userInfo={{ ...cardProps, cardStyle: 'default' }} />;
-    }
     switch(selectedStyle) {
       case 'style1': return <ContactCard userInfo={cardProps} />;
       case 'style2': return <ContactCard2 userInfo={cardProps} />;
@@ -80,19 +76,6 @@ const Appearance = () => {
     <div className="min-h-screen bg-gray-50 flex">
       {/* Main content/form */}
       <main className="flex-1 p-4 lg:pr-[440px]">
-        {!canAccessPremiumFeatures && (
-          <div className="mb-6 rounded-xl bg-purple-100 border border-purple-200 p-6 text-center">
-            <h3 className="mb-2 font-semibold text-purple-800">Unlock Premium Styles</h3>
-            <p className="mb-3 text-purple-700 text-sm">Access all premium themes and advanced options.</p>
-            <button
-              onClick={() => window.location.href = '/payment'}
-              className="inline-block rounded bg-purple-600 px-6 py-2 text-white hover:bg-purple-700"
-            >
-              Upgrade Now
-            </button>
-          </div>
-        )}
-
         {/* Style Selection */}
         <section className="mb-6 rounded-xl bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-gray-900">Choose Your Style</h2>
@@ -101,13 +84,9 @@ const Appearance = () => {
               <div
                 key={option.id}
                 onClick={() => handleStyleSelect(option.id)}
-                className={`relative rounded-xl border-2 p-4 cursor-pointer transition 
-                  ${selectedStyle === option.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}
-                  ${option.isPremium && !canAccessPremiumFeatures ? 'opacity-60' : ''}`}
+                className={`relative rounded-xl border-2 p-4 cursor-pointer transition-all duration-200
+                  ${selectedStyle === option.id ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'}`}
               >
-                {option.isPremium && !canAccessPremiumFeatures && (
-                  <span className="absolute -top-2 -right-2 rounded-full bg-yellow-400 px-2 text-yellow-900 text-xs font-bold">PRO</span>
-                )}
                 <div className="text-center">
                   <div className="text-3xl mb-2">{option.preview}</div>
                   <h3 className="font-semibold text-gray-900">{option.title}</h3>

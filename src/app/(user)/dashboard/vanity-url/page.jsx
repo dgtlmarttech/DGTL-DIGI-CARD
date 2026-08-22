@@ -17,7 +17,7 @@ const VanityURLPage = () => {
     const [isValid, setIsValid] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
 
-    const canAccessPremiumFeatures = userInfo?.effectiveIsPremium;
+
 
     // On mount: sync state from DB
     useEffect(() => {
@@ -94,7 +94,7 @@ const VanityURLPage = () => {
     };
 
     const saveVanityURL = async () => {
-        if (!user || !canAccessPremiumFeatures) return;
+        if (!user) return;
         if (!isValid) {
             toast.error('Please enter a valid and unique vanity URL.');
             return;
@@ -130,22 +130,6 @@ const VanityURLPage = () => {
         <div className="min-h-screen bg-gray-50 flex">
             {/* MAIN FORM */}
             <div className="flex-1 p-4 lg:pr-[440px]">
-                {/* Premium notice */}
-                {!canAccessPremiumFeatures && (
-                    <div className="mb-6 rounded-xl bg-gradient-to-r from-blue-100 to-purple-100 border border-blue-200 p-6 text-center">
-                        <div className="text-4xl mb-3">🔗</div>
-                        <h3 className="text-lg font-semibold mb-2">Premium Feature Required</h3>
-                        <p className="text-sm mb-4">
-                            Create your personalized URL like <code className="bg-white px-2 py-1 rounded text-blue-600">my.dgtldigicard.com/yourname</code>
-                        </p>
-                        <button
-                            onClick={() => router.push('/payment')}
-                            className="rounded-xl bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700"
-                        >
-                            Upgrade to Premium
-                        </button>
-                    </div>
-                )}
 
                 {/* Current URL */}
                 <div className="mb-6 rounded-xl bg-white p-6 shadow-sm text-gray-800">
@@ -170,7 +154,7 @@ const VanityURLPage = () => {
                 </div>
 
                 {/* Input Field */}
-                <div className={`mb-6 rounded-xl bg-white p-6 shadow-sm  text-gray-900 ${!canAccessPremiumFeatures && 'opacity-50 pointer-events-none'}`}>
+                <div className={`mb-6 rounded-xl bg-white p-6 shadow-sm  text-gray-900`}>
                     <h2 className="mb-4 text-lg font-semibold">Custom URL Segment</h2>
                     <div className="space-y-4">
                         <div>
@@ -183,7 +167,6 @@ const VanityURLPage = () => {
                                     value={customUID}
                                     onChange={handleInputChange}
                                     placeholder="your-name"
-                                    disabled={!canAccessPremiumFeatures}
                                     className="flex-1 px-4 py-3 text-sm focus:outline-none"
                                 />
                             </div>
@@ -207,8 +190,7 @@ const VanityURLPage = () => {
                 </div>
 
                 {/* Desktop Save Button */}
-                {canAccessPremiumFeatures && (
-                    <div className="hidden md:flex justify-end mb-6">
+                <div className="hidden md:flex justify-end mb-6">
                         <button
                             onClick={saveVanityURL}
                             disabled={loading || !customUID.trim() || !isValid}
@@ -217,11 +199,9 @@ const VanityURLPage = () => {
                             {loading ? 'Saving...' : 'Save Vanity URL'}
                         </button>
                     </div>
-                )}
 
                 {/* Mobile Preview */}
-                {canAccessPremiumFeatures && (
-                    <div className="mb-6 md:hidden">
+                <div className="mb-6 md:hidden">
                         <button
                             onClick={() => setShowPreview(!showPreview)}
                             className="w-full rounded-lg bg-gray-200 py-2 text-sm hover:bg-gray-300"
@@ -237,11 +217,9 @@ const VanityURLPage = () => {
                             </div>
                         )}
                     </div>
-                )}
 
                 {/* Mobile Save Button */}
-                {canAccessPremiumFeatures && (
-                    <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-lg md:hidden">
+                <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-lg md:hidden">
                         <button
                             onClick={saveVanityURL}
                             disabled={loading || !customUID.trim() || !isValid}
@@ -250,12 +228,10 @@ const VanityURLPage = () => {
                             {loading ? 'Saving...' : 'Save Vanity URL'}
                         </button>
                     </div>
-                )}
             </div>
 
             {/* Desktop Preview */}
-            {canAccessPremiumFeatures && (
-                <aside className="hidden lg:flex lg:flex-col lg:fixed lg:right-4 lg:top-4 lg:w-[400px] lg:h-[calc(100vh-2rem)] rounded-3xl border-8 border-gray-300 bg-white shadow-lg">
+            <aside className="hidden lg:flex lg:flex-col lg:fixed lg:right-4 lg:top-4 lg:w-[400px] lg:h-[calc(100vh-2rem)] rounded-3xl border-8 border-gray-300 bg-white shadow-lg">
                     <header className="p-4 border-b text-center">
                         <h3 className="text-lg font-semibold">Live Preview (Mobile View)</h3>
                     </header>
@@ -268,7 +244,6 @@ const VanityURLPage = () => {
                         Mobile device simulation
                     </footer>
                 </aside>
-            )}
         </div>
     );
 };

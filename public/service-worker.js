@@ -1,6 +1,6 @@
 // public/service-worker.js
 
-const CACHE_NAME = 'dgtl-digicard-cache-v2';
+const CACHE_NAME = 'dgtl-digicard-cache-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/favicon.ico',
@@ -115,48 +115,42 @@ self.addEventListener('fetch', (event) => {
           // fallback to root (index) if available
           const fallback = await caches.match('/');
           if (fallback) return fallback;
-          // else propagate the original error (browser will show network error)
-          throw err;
+          // else propagate a clean error response
+          return Response.error();
         }
       })()
     );
     return;
   }
 
-  // OTHER ASSETS -> cache-first, then network -> cache result
+  // OTHER ASSETS -> Network-first, fallback to cache
   event.respondWith(
     (async () => {
-      const cachedResponse = await caches.match(req);
-      if (cachedResponse) return cachedResponse;
-
       try {
         const networkResponse = await fetch(req);
-
+        
         // only attempt to cache same-origin, successful, non-opaque responses
         if (isCacheableRequest(req) && networkResponse && networkResponse.ok && networkResponse.type !== 'opaque') {
           try {
             const copy = networkResponse.clone();
             const cache = await caches.open(CACHE_NAME);
-            await cache.put(req, copy).catch((err) => {
-              console.warn('Failed to cache resource:', req.url, err);
-            });
-          } catch (err) {
-            console.warn('Cache put error:', err);
-          }
+            await cache.put(req, copy).catch(() => {});
+          } catch (err) {}
         }
-
+        
         return networkResponse;
       } catch (err) {
-        // network failed: if it's an image, return a cached placeholder if available
+        // network failed: fallback to cache
+        const cachedResponse = await caches.match(req);
+        if (cachedResponse) return cachedResponse;
+        
+        // if it's an image, return a placeholder
         if (req.destination === 'image') {
           const fallbackImg = await caches.match('/icons/icon-192x192.png');
           if (fallbackImg) return fallbackImg;
         }
-        // try to return any cache match as last resort
-        const fallback = await caches.match(req);
-        if (fallback) return fallback;
-        // otherwise rethrow to let browser handle it
-        throw err;
+        
+        return Response.error();
       }
     })()
   );

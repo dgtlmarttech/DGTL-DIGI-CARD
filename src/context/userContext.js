@@ -33,9 +33,7 @@ export const UserProvider = ({ children }) => {
           const accessInfo = calculateHasAccess(cachedData);
           setUserInfo({
             ...cachedData,
-            effectiveIsPremium: accessInfo.hasAccess,
-            effectiveIsBasic: accessInfo.hasAccess,
-            effectiveIsPA: accessInfo.hasAccess,
+            hasAccess: accessInfo.hasAccess,
             inTrial: accessInfo.inTrial,
             trialDaysRemaining: accessInfo.trialDaysRemaining
           });
@@ -61,18 +59,23 @@ export const UserProvider = ({ children }) => {
   const calculateHasAccess = (userData) => {
     if (!userData) return { hasAccess: false, inTrial: false, trialDaysRemaining: 0 };
 
-    // 1. Check for Active Paid Plan (Monthly, Yearly, or Legacy Basic/Premium/PA)
-    let hasPaidPlan = userData.isPremium || userData.isBasic || 
-                      userData.premiumPlan === 'premium' || userData.premiumPlan === 'pa' || 
-                      userData.planType === 'monthly' || userData.planType === 'yearly' || 
-                      userData.planType === 'personal_assistant' || userData.hasPA === true;
+    // Check if the user has verified payment data
+    const hasVerifiedPayment = !!(userData.paymentData?.paymentId || userData.paymentId);
+
+    // 1. Check for Active Paid Plan (Monthly, Yearly)
+    // We STRICTLY require a verified payment for 'monthly' and 'yearly' plans to prevent free-trial users
+    // from being incorrectly upgraded due to data leaks.
+    let hasPaidPlan = false;
     
-    if (hasPaidPlan && (userData.expireDate || userData.premiumEndDate || userData.paExpireDate)) {
+    if (hasVerifiedPayment && (userData.planType === 'monthly' || userData.planType === 'yearly')) {
+      hasPaidPlan = true;
+    }
+    
+    if (hasPaidPlan && (userData.expireDate || userData.premiumEndDate)) {
        // We take the latest expiry date available if multiple exist for legacy reasons
        const dates = [];
        if (userData.expireDate) dates.push(new Date(userData.expireDate));
        if (userData.premiumEndDate) dates.push(new Date(userData.premiumEndDate));
-       if (userData.paExpireDate) dates.push(new Date(userData.paExpireDate));
        
        const maxExpiry = new Date(Math.max(...dates));
        hasPaidPlan = maxExpiry > new Date();
@@ -82,8 +85,8 @@ export const UserProvider = ({ children }) => {
       return { hasAccess: true, inTrial: false, trialDaysRemaining: 0 };
     }
 
-    // 2. Check for Active Trial (7 days from createdAt)
-    if (userData.createdAt) {
+    // 2. Check for Active Trial (7 days from createdAt) unless trialEligible is false
+    if (userData.createdAt && userData.trialEligible !== false) {
       const createdAtDate = new Date(userData.createdAt);
       const trialEndDate = new Date(createdAtDate.getTime() + 7 * 24 * 60 * 60 * 1000);
       const now = new Date();
@@ -95,13 +98,9 @@ export const UserProvider = ({ children }) => {
     }
 
     // If an existing free user didn't have access before, they won't have access now.
-    // However, if we need a safety net for users missing createdAt, we default to no access.
     return { hasAccess: false, inTrial: false, trialDaysRemaining: 0 };
   };
 
-  const calculateEffectivePremium = (userData) => calculateHasAccess(userData).hasAccess;
-  const calculateEffectiveBasic = (userData) => calculateHasAccess(userData).hasAccess;
-  const calculateEffectivePA = (userData) => calculateHasAccess(userData).hasAccess;
 
   // Load user data when auth user changes
   const loadUserData = async (authUser) => {
@@ -122,11 +121,20 @@ export const UserProvider = ({ children }) => {
 
       if (userData) {
         const accessInfo = calculateHasAccess(userData);
+        
+        // Strip out all legacy fields so they don't accidentally get used by components or cached
+        const sanitizedData = { ...userData };
+        delete sanitizedData.isPremium;
+        delete sanitizedData.effectiveIsPremium;
+        delete sanitizedData.isBasic;
+        delete sanitizedData.effectiveIsBasic;
+        delete sanitizedData.hasPA;
+        delete sanitizedData.paExpireDate;
+        delete sanitizedData.premiumEndDate;
+
         const completeUserInfo = {
-          ...userData,
-          effectiveIsPremium: accessInfo.hasAccess,
-          effectiveIsBasic: accessInfo.hasAccess,
-          effectiveIsPA: accessInfo.hasAccess,
+          ...sanitizedData,
+          hasAccess: accessInfo.hasAccess,
           inTrial: accessInfo.inTrial,
           trialDaysRemaining: accessInfo.trialDaysRemaining
         };
@@ -196,14 +204,15 @@ export const UserProvider = ({ children }) => {
     if (userInfo) {
       const updatedInfo = { ...userInfo, ...updates };
       const accessInfo = calculateHasAccess(updatedInfo);
-      if ('isPremium' in updates || 'isBasic' in updates || 'planType' in updates) {
-        updatedInfo.effectiveIsPremium = accessInfo.hasAccess;
-        updatedInfo.effectiveIsBasic = accessInfo.hasAccess;
-        updatedInfo.effectiveIsPA = accessInfo.hasAccess;
+      if ('planType' in updates) {
+        updatedInfo.hasAccess = accessInfo.hasAccess;
         updatedInfo.inTrial = accessInfo.inTrial;
         updatedInfo.trialDaysRemaining = accessInfo.trialDaysRemaining;
       }
       setUserInfo(updatedInfo);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('dgtl_user_info', JSON.stringify(updatedInfo));
+      }
     }
   };
 
@@ -219,9 +228,8 @@ export const UserProvider = ({ children }) => {
 
     switch (permission) {
       case 'premium_features':
-        return userInfo.effectiveIsPremium;
       case 'personal_assistant_features':
-        return userInfo.effectiveIsPA;
+        return userInfo.hasAccess;
       case 'admin':
         return userInfo.isAdmin || false;
       case 'edit_profile':
@@ -254,12 +262,9 @@ export const UserProvider = ({ children }) => {
 
     // Computed properties
     isAuthenticated: !!user,
-    isPremium: userInfo?.effectiveIsPremium || false,
-    isBasic: userInfo?.effectiveIsBasic || false,
-    isPersonalAssistant: userInfo?.effectiveIsPA || false,
+    hasAccess: userInfo?.hasAccess || false,
     inTrial: userInfo?.inTrial || false,
     trialDaysRemaining: userInfo?.trialDaysRemaining || 0,
-    hasAccess: userInfo?.effectiveIsPremium || false,
     isAdmin: userInfo?.isAdmin || false,
     isBlocked: userInfo?.blocked || false,
 

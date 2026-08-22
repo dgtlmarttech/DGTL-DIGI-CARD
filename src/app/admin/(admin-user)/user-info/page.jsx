@@ -55,9 +55,10 @@ const UserInfo = () => {
   const filteredBySearch = users.filter((user) => {
     const term = searchTerm.toLowerCase();
     return (
-      user.firstName.toLowerCase().includes(term) ||
-      user.lastName.toLowerCase().includes(term) ||
-      user.mobile.toLowerCase().includes(term)
+      (user.firstName || '').toLowerCase().includes(term) ||
+      (user.lastName || '').toLowerCase().includes(term) ||
+      (user.mobile || '').toLowerCase().includes(term) ||
+      (user.email || '').toLowerCase().includes(term)
     );
   });
 
@@ -65,12 +66,13 @@ const UserInfo = () => {
 
   // Filter users by selected category
   const categoryUsers = filteredBySearch.filter((user) => {
+    const hasPaidPlan = user.planType === 'monthly' || user.planType === 'yearly';
     if (selectedCategory === "normal") {
-      return !user.isPremium && !user.blocked;
+      return !hasPaidPlan && !user.blocked;
     } else if (selectedCategory === "premium") {
-      return user.isPremium && !user.blocked && (!user.expireDate || new Date(user.expireDate) > today);
+      return hasPaidPlan && !user.blocked && (!user.expireDate || new Date(user.expireDate) > today);
     } else if (selectedCategory === "expired") {
-      return user.isPremium && !user.blocked && user.expireDate && new Date(user.expireDate) <= today;
+      return hasPaidPlan && !user.blocked && user.expireDate && new Date(user.expireDate) <= today;
     } else if (selectedCategory === "blocked") {
       return user.blocked;
     }
@@ -175,15 +177,13 @@ const UserInfo = () => {
       let status = 'Standard';
       if (user.blocked) {
         status = 'Blocked';
-      } else if (user.isPremium) {
+      } else if (user.planType === 'monthly' || user.planType === 'yearly') {
         const isExpired = user.expireDate && new Date(user.expireDate) <= today;
         status = isExpired ? 'Premium (Expired)' : 'Premium (Active)';
       }
 
-      // Determine amount paid: only if premium and has paymentData
-      let amountPaid = '₹0';
-      if (user.isPremium && user.paymentData) {
-        amountPaid = '₹99';
+      if ((user.planType === 'monthly' || user.planType === 'yearly') && user.paymentData) {
+        amountPaid = user.planType === 'yearly' ? '₹999' : '₹99';
       }
 
       // Escape quotes and double-quotes in fields to prevent invalid CSV format
@@ -227,9 +227,9 @@ const UserInfo = () => {
 
   const getUserStats = () => {
     const stats = {
-      normal: users.filter(user => !user.isPremium && !user.blocked).length,
-      premium: users.filter(user => user.isPremium && !user.blocked && (!user.expireDate || new Date(user.expireDate) > today)).length,
-      expired: users.filter(user => user.isPremium && !user.blocked && user.expireDate && new Date(user.expireDate) <= today).length,
+      normal: users.filter(user => !(user.planType === 'monthly' || user.planType === 'yearly') && !user.blocked).length,
+      premium: users.filter(user => (user.planType === 'monthly' || user.planType === 'yearly') && !user.blocked && (!user.expireDate || new Date(user.expireDate) > today)).length,
+      expired: users.filter(user => (user.planType === 'monthly' || user.planType === 'yearly') && !user.blocked && user.expireDate && new Date(user.expireDate) <= today).length,
       blocked: users.filter(user => user.blocked).length
     };
     return stats;
@@ -405,7 +405,7 @@ const UserInfo = () => {
                           <User className="w-6 h-6" />
                         )}
                       </div>
-                      {user.isPremium && (
+                      {(user.planType === 'monthly' || user.planType === 'yearly') && (
                         <div className="absolute -top-1 -right-1 w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center border-2 border-white shadow-md">
                           <Crown className="w-3 h-3 text-white" />
                         </div>

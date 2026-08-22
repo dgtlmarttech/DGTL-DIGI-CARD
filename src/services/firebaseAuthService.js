@@ -14,6 +14,7 @@ import {
   collection, doc, getDoc, getDocs, query, setDoc, where, updateDoc
 } from "firebase/firestore";
 import { auth, db } from "../firebase/firebase";
+import { createReferralCodeForUser, getReferralCodeByCode, createReferralAssociation, processSubscriptionCommission } from './referralService';
 
 // Safely access the window object only on the client side
 const getActionCodeSettings = () => {
@@ -111,6 +112,23 @@ const processGoogleUser = async (user) => {
     const safeLastName = (lastName || 'Name').toLowerCase().replace(/[^a-z0-9]/g, '');
     const customUID = `${safeFirstName}_${safeLastName}_${Math.floor(1000 + Math.random() * 9000)}`;
 
+    // Handle Referral Logic for Google Sign-in
+    let affiliateRef = "";
+    let trialEligible = true;
+    let isReferralUser = false;
+    let referredBy = "";
+    if (typeof window !== 'undefined') {
+      affiliateRef = sessionStorage.getItem('pending_referral') || "";
+    }
+    if (affiliateRef) {
+      const refCodeData = await getReferralCodeByCode(affiliateRef);
+      if (refCodeData) {
+        trialEligible = false;
+        isReferralUser = true;
+        referredBy = refCodeData.ownerUserId;
+      }
+    }
+
     await setDoc(userDocRef, {
       uid: user.uid,
       customUID: customUID,
@@ -121,18 +139,34 @@ const processGoogleUser = async (user) => {
       profilePicture: user.photoURL || "",
       authProvider: 'google',
       emailVerified: user.emailVerified,
-      affiliateRef: "",
+      affiliateRef: affiliateRef,
+      isReferralUser: isReferralUser,
+      trialEligible: trialEligible,
+      referredBy: referredBy,
       // Business fields with default empty values
       businessName: "",
       website: "",
       address: "",
       about: "",
-      //default values
-      isPremium: false,
       // Profile completion status
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
+
+    // Generate their own referral code
+    await createReferralCodeForUser(user.uid);
+
+    // Create association if referred
+    if (isReferralUser && affiliateRef) {
+      const refCodeData = await getReferralCodeByCode(affiliateRef);
+      if (refCodeData) {
+        await createReferralAssociation(refCodeData.ownerUserId, user.uid, refCodeData);
+      }
+    }
+    
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('pending_referral');
+    }
 
     try {
       await fetch('/api/send-welcome', {
@@ -162,6 +196,19 @@ const signUpUsingEmailPassword = async (data) => {
     const safeLastName = (lastName || 'Name').toLowerCase().replace(/[^a-z0-9]/g, '');
     const customUID = `${safeFirstName}_${safeLastName}_${Math.floor(1000 + Math.random() * 9000)}`;
 
+    // Handle Referral Logic for Email Sign-in
+    let trialEligible = true;
+    let isReferralUser = false;
+    let referredBy = "";
+    if (userData.affiliateRef) {
+      const refCodeData = await getReferralCodeByCode(userData.affiliateRef);
+      if (refCodeData) {
+        trialEligible = false;
+        isReferralUser = true;
+        referredBy = refCodeData.ownerUserId;
+      }
+    }
+
     const userDocRef = doc(db, "users", user.uid);
     await setDoc(userDocRef, {
       uid: user.uid,
@@ -171,17 +218,29 @@ const signUpUsingEmailPassword = async (data) => {
       email: data.email,
       mobile: userData.mobile || "",
       affiliateRef: userData.affiliateRef || "",
+      isReferralUser: isReferralUser,
+      trialEligible: trialEligible,
+      referredBy: referredBy,
       // Business fields with default empty values
       businessName: userData.businessName || "",
       website: userData.website || "",
       address: userData.address || "",
       about: userData.about || "",
-      //default values
-      isPremium: false,
       // Profile completion status
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
+
+    // Generate their own referral code
+    await createReferralCodeForUser(user.uid);
+
+    // Create association if referred
+    if (isReferralUser && userData.affiliateRef) {
+      const refCodeData = await getReferralCodeByCode(userData.affiliateRef);
+      if (refCodeData) {
+        await createReferralAssociation(refCodeData.ownerUserId, user.uid, refCodeData);
+      }
+    }
 
 
   } catch (e) {
@@ -322,10 +381,18 @@ const updateUserPaymentStatus = async (userId, paymentData, planType) => {
       planType: planType,
       paymentData,
       expireDate: expireDate.toISOString(),
-      isPremium: true, // Legacy compatibility
-      isBasic: true,   // Legacy compatibility
     };
     await updateDoc(userRef, updatePayload);
+
+    // Process Commission if applicable
+    if (planType === 'monthly' || planType === 'yearly') {
+      const amount = planType === 'yearly' ? 999 : 99;
+      // Using paymentId or orderId as unique identifier
+      const orderId = paymentData.orderId || paymentData.paymentId;
+      if (orderId) {
+        await processSubscriptionCommission(userId, orderId, planType, amount);
+      }
+    }
 
     console.log("User payment status updated successfully");
   } catch (error) {

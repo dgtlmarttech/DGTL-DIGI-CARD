@@ -12,9 +12,10 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
  * - Cleans up the Firestore listener on unmount
  */
 export function useTaskReminder(user) {
-  const [pendingTodayTasks, setPendingTodayTasks] = useState([]);
+  const [pendingTasks, setPendingTasks] = useState([]);
   const [dismissed, setDismissed] = useState(false);
   const notificationFiredRef = useRef(false);
+  const notifiedTasksRef = useRef(new Set());
 
   useEffect(() => {
     if (!user) return;
@@ -34,15 +35,15 @@ export function useTaskReminder(user) {
         const allTodos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         // Re-filter every time — completed tasks are excluded automatically
-        const todayPending = allTodos.filter(
-          t => t.taskDate === today && t.status === 'pending'
+        const allPending = allTodos.filter(
+          t => t.status === 'pending'
         );
 
-        setPendingTodayTasks(todayPending);
+        setPendingTasks(allPending);
 
         // Fire browser notification only ONCE per session (first time we see pending tasks)
         if (
-          todayPending.length > 0 &&
+          allPending.length > 0 &&
           !notificationFiredRef.current &&
           !sessionStorage.getItem(sessionKey)
         ) {
@@ -52,12 +53,12 @@ export function useTaskReminder(user) {
           if (typeof window !== 'undefined' && 'Notification' in window) {
             Notification.requestPermission().then(permission => {
               if (permission === 'granted') {
-                const taskNames = todayPending.map(t => `• ${t.title}`).join('\n');
+                const taskNames = allPending.map(t => `• ${t.title}`).join('\n');
                 new Notification('📋 Pending Tasks Reminder', {
                   body:
-                    todayPending.length === 1
-                      ? `You still have a pending task today:\n${taskNames}`
-                      : `You have ${todayPending.length} pending tasks today:\n${taskNames}`,
+                    allPending.length === 1
+                      ? `You have a pending task:\n${taskNames}`
+                      : `You have ${allPending.length} pending tasks:\n${taskNames}`,
                   icon: '/icons/icon-192x192.png',
                   tag: `reminder-${user.uid}-${today}`, // Deduplicate notifications
                 });
@@ -71,16 +72,56 @@ export function useTaskReminder(user) {
       }
     );
 
+    // Exact time notification interval checker
+    const intervalId = setInterval(() => {
+      if (typeof window === 'undefined' || !('Notification' in window)) return;
+      
+      setPendingTasks(currentTasks => {
+        const now = new Date();
+        const currentHHMM = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+        const currentDate = now.toISOString().split('T')[0];
+        
+        currentTasks.forEach(task => {
+          if (task.taskDate === currentDate && task.taskTime === currentHHMM) {
+            const notifyKey = `${task.id}_${currentDate}_${currentHHMM}`;
+            if (!notifiedTasksRef.current.has(notifyKey)) {
+              notifiedTasksRef.current.add(notifyKey);
+              
+              const fireNotification = () => {
+                new Notification(`⏰ Reminder: ${task.title}`, {
+                  body: `Scheduled for ${task.taskTime}`,
+                  icon: '/icons/icon-192x192.png',
+                  tag: notifyKey
+                });
+              };
+
+              if (Notification.permission === 'granted') {
+                fireNotification();
+              } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission().then(permission => {
+                  if (permission === 'granted') fireNotification();
+                });
+              }
+            }
+          }
+        });
+        return currentTasks;
+      });
+    }, 30000); // Check every 30 seconds
+
     // Cleanup listener when component unmounts or user changes
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      clearInterval(intervalId);
+    };
   }, [user]);
 
   const dismiss = () => setDismissed(true);
 
   return {
     // Return empty when manually dismissed; otherwise always reflects live Firestore state
-    pendingTodayTasks: dismissed ? [] : pendingTodayTasks,
-    hasPendingReminder: !dismissed && pendingTodayTasks.length > 0,
+    pendingTasks: dismissed ? [] : pendingTasks,
+    hasPendingReminder: !dismissed && pendingTasks.length > 0,
     dismiss,
   };
 }

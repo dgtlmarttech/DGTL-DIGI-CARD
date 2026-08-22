@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../../context/userContext';
 import { db } from '../../firebase/firebase';
-import { collection, addDoc, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
-import { FiCheckCircle, FiCircle, FiTrash2, FiPlus, FiCalendar, FiX } from 'react-icons/fi';
+import { collection, addDoc, query, where, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { FiCheckCircle, FiCircle, FiTrash2, FiPlus, FiCalendar, FiX, FiClock, FiRepeat } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 
 export default function TodoList() {
@@ -19,38 +19,35 @@ export default function TodoList() {
   
   const [loading, setLoading] = useState(true);
 
-  const fetchTasks = async (start, end) => {
+  useEffect(() => {
     if (!user) return;
+    
     setLoading(true);
-    try {
-      // Local filtering for date range to avoid missing index errors in Firestore
-      const q = query(
-        collection(db, 'todos'),
-        where('userId', '==', user.uid)
-      );
-      const querySnapshot = await getDocs(q);
-      let fetchedTasks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const q = query(
+      collection(db, 'todos'),
+      where('userId', '==', user.uid)
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      let fetchedTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
       fetchedTasks = fetchedTasks.filter(task => {
         let valid = true;
-        if (start) valid = valid && task.taskDate >= start;
-        if (end) valid = valid && task.taskDate <= end;
+        if (startDate) valid = valid && task.taskDate >= startDate;
+        if (endDate) valid = valid && task.taskDate <= endDate;
         return valid;
       });
       
-      // Sort in JS instead of compound index to avoid requiring index creation
       fetchedTasks.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
       setTasks(fetchedTasks);
-    } catch (error) {
+      setLoading(false);
+    }, (error) => {
       console.error('Error fetching tasks:', error);
       toast.error('Failed to load tasks');
-    } finally {
       setLoading(false);
-    }
-  };
+    });
 
-  useEffect(() => {
-    fetchTasks(startDate, endDate);
+    return () => unsubscribe();
   }, [startDate, endDate, user]);
 
   const addTask = async (e) => {
@@ -75,10 +72,37 @@ export default function TodoList() {
     }
   };
 
+  const getNextRecurrenceDate = (currentDateStr, recurrence) => {
+    const date = new Date(currentDateStr || new Date().toISOString().split('T')[0]);
+    if (recurrence === 'daily') date.setDate(date.getDate() + 1);
+    else if (recurrence === 'weekly') date.setDate(date.getDate() + 7);
+    else if (recurrence === 'monthly') date.setMonth(date.getMonth() + 1);
+    return date.toISOString().split('T')[0];
+  };
+
   const toggleTask = async (id, currentStatus) => {
+    const task = tasks.find(t => t.id === id);
     const newStatus = currentStatus === 'pending' ? 'completed' : 'pending';
     try {
       await updateDoc(doc(db, 'todos', id), { status: newStatus });
+      
+      // If completing a recurring task, clone it to the next recurrence date
+      if (newStatus === 'completed' && task && task.recurrence && task.recurrence !== 'none') {
+        const nextDate = getNextRecurrenceDate(task.taskDate, task.recurrence);
+        const newTaskObj = {
+          userId: user.uid,
+          title: task.title,
+          taskDate: nextDate,
+          taskTime: task.taskTime || '',
+          recurrence: task.recurrence,
+          status: 'pending',
+          createdAt: new Date().toISOString()
+        };
+        await addDoc(collection(db, 'todos'), newTaskObj);
+        // Note: the onSnapshot listener will automatically pull in the new task
+      }
+      
+      // Local optimistic update for the current task
       setTasks(tasks.map(t => t.id === id ? { ...t, status: newStatus } : t));
     } catch (error) {
       console.error('Error toggling task:', error);
@@ -197,6 +221,21 @@ export default function TodoList() {
                 <span className={`flex-1 text-sm ${task.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
                   {task.title}
                 </span>
+                {task.taskTime && (
+                  <span className="flex items-center gap-1 text-xs text-blue-500 font-medium px-2 flex-shrink-0 bg-blue-50 rounded-md py-0.5">
+                    <FiClock size={12} /> {task.taskTime}
+                  </span>
+                )}
+                {task.recurrence && task.recurrence !== 'none' && (
+                  <span className="flex items-center gap-1 text-xs text-purple-500 font-medium px-2 flex-shrink-0" title={`Repeats ${task.recurrence}`}>
+                    <FiRepeat size={12} />
+                  </span>
+                )}
+                {task.taskDate && (
+                  <span className="text-xs text-gray-400 font-medium px-2 flex-shrink-0">
+                    {new Date(task.taskDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </span>
+                )}
                 <button onClick={() => deleteTask(task.id)} className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none flex-shrink-0">
                   <FiTrash2 size={16} />
                 </button>
