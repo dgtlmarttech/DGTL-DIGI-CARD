@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiArrowLeft, FiCheckCircle, FiXCircle, FiStar, FiClock, FiCalendar, FiShield, FiHeadphones } from 'react-icons/fi';
+import { FiArrowLeft, FiCheckCircle, FiXCircle, FiStar, FiClock, FiCalendar } from 'react-icons/fi';
 import Link from 'next/link';
 import { useUser } from '../../../context/userContext';
 import { updateUserPaymentStatus } from '../../../services/firebaseAuthService';
@@ -177,7 +177,7 @@ const PaymentPage = () => {
       prefill: {
         name: `${userInfo?.firstName || ''} ${userInfo?.lastName || ''}`.trim() || user?.displayName || '',
         email: userInfo?.email || user?.email || '',
-        contact: userInfo?.mobile || user?.phoneNumber || '+919999999999',
+        contact: userInfo?.mobile || user?.phoneNumber || '',
       },
       theme: { color: '#4c51bf' },
       handler: async (resp) => {
@@ -341,205 +341,179 @@ const PaymentPage = () => {
     );
   };
 
-  // ── Pricing UI (Figma Layout) ─────────────
+  // ── Pricing cards (always rendered except after fresh payment) ─────────────
   const renderPricingCards = () => (
-    <div className="flex flex-col lg:flex-row gap-12 lg:gap-8 justify-between max-w-6xl mx-auto items-start">
-      
-      {/* Left Column: Banners & Header */}
-      <div className="flex-1 lg:max-w-xl flex flex-col w-full">
-        {/* Trial banner */}
-        {subState.type === 'trial' && (
-          <div className="mb-8 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 rounded-xl p-4 flex items-start sm:items-center gap-3 self-start max-w-lg">
-            <FiClock className="text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5 sm:mt-0" size={20} />
-            <p className="text-indigo-800 dark:text-indigo-300 font-medium text-sm leading-snug">
-              🎉 7 Days Free Trial Active — {subState.daysRemaining} {subState.daysRemaining === 1 ? 'day' : 'days'} remaining. Upgrade anytime to keep access.
-            </p>
-          </div>
-        )}
-
-        {/* Expired banner */}
-        {subState.type === 'expired' && (
-          <div className="mb-8 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 rounded-xl p-4 flex items-center gap-3 self-start max-w-lg">
-            <FiXCircle className="text-red-600 dark:text-red-400 flex-shrink-0" size={20} />
-            <p className="text-red-800 dark:text-red-300 font-medium text-sm">
-              Your 7-day free trial has ended. Please choose a plan to continue using all features.
-            </p>
-          </div>
-        )}
-
-        <div className="text-left mb-10">
-          {subState.type !== 'paid' ? (
-            <>
-              <h2 className="text-xs font-bold text-indigo-600 tracking-[0.15em] uppercase mb-2">Pricing</h2>
-              <h1 className="text-4xl sm:text-5xl font-extrabold text-[#111827] dark:text-white tracking-tight mb-4 leading-tight">
-                Simple, honest pricing
-              </h1>
-              <p className="text-lg text-gray-500 dark:text-gray-400 font-medium">
-                Choose a plan that works for you. No surprises.
-              </p>
-            </>
-          ) : (
-            <div>
-              <h2 className="text-xs font-bold text-indigo-600 tracking-[0.15em] uppercase mb-2">Your Plan</h2>
-              <h1 className="text-4xl sm:text-5xl font-extrabold text-[#111827] dark:text-white tracking-tight mb-4 leading-tight">
-                Manage Subscription
-              </h1>
-              <p className="text-lg text-gray-500 dark:text-gray-400 font-medium">
-                {subState.planType === 'monthly' ? 'Upgrade to Yearly and save ~15%.' : 'Renew your subscription below.'}
-              </p>
-            </div>
-          )}
+    <>
+      {/* Heading – only shown when not on an active paid plan */}
+      {subState.type !== 'paid' && (
+        <div className="text-center mb-8">
+          <h2 className="text-sm font-semibold text-indigo-600 tracking-wide uppercase">Pricing</h2>
+          <h1 className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
+            Simple, honest pricing
+          </h1>
+          <p className="mt-4 text-xl text-gray-500 dark:text-gray-400">
+            Choose a plan that works for you. No surprises.
+          </p>
         </div>
+      )}
 
-        {/* Feature Highlights (Figma style) */}
-        <div className="space-y-8 mt-2 max-w-md hidden lg:block">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0">
-              <FiShield className="text-indigo-600" size={20} />
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-900 text-base mb-1">No hidden charges</h3>
-              <p className="text-sm text-gray-500">What you see is what you pay.</p>
-            </div>
-          </div>
-          
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0">
-              <FiXCircle className="text-indigo-600" size={20} />
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-900 text-base mb-1">Cancel anytime</h3>
-              <p className="text-sm text-gray-500">You're in control. Downgrade or cancel anytime.</p>
-            </div>
-          </div>
-          
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0">
-              <FiHeadphones className="text-indigo-600" size={20} />
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-900 text-base mb-1">Priority support</h3>
-              <p className="text-sm text-gray-500">Get help when you need it.</p>
-            </div>
-          </div>
+      {/* Trial banner */}
+      {subState.type === 'trial' && (
+        <div className="max-w-2xl mx-auto mb-8 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 rounded-xl p-4 flex items-center justify-center gap-3">
+          <FiClock className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" size={22} />
+          <p className="text-indigo-800 dark:text-indigo-300 font-medium">
+            🎉 7 Days Free Trial Active — {subState.daysRemaining} {subState.daysRemaining === 1 ? 'day' : 'days'} remaining. Upgrade anytime to keep access.
+          </p>
+        </div>
+      )}
+
+      {/* Expired banner */}
+      {subState.type === 'expired' && (
+        <div className="max-w-2xl mx-auto mb-8 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 rounded-xl p-4 flex items-center gap-3">
+          <FiXCircle className="text-red-600 dark:text-red-400 flex-shrink-0" size={22} />
+          <p className="text-red-800 dark:text-red-300 font-medium">
+            Your 7-day free trial has ended. Please choose a plan to continue using all features.
+          </p>
+        </div>
+      )}
+
+      {/* Upgrade prompt for active paid subscribers */}
+      {subState.type === 'paid' && (
+        <div className="text-center mb-6">
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            {subState.planType === 'monthly' ? 'Upgrade to Yearly and save ~15%.' : 'Manage or renew your subscription below.'}
+          </p>
+        </div>
+      )}
+
+      {/* Billing Cycle Toggle */}
+      <div className="flex justify-center mb-8">
+        <div className="relative flex items-center p-1 bg-gray-100 dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
+          <button
+            onClick={() => setBillingCycle('monthly')}
+            className={`relative w-32 py-2 text-sm font-semibold rounded-full transition-all duration-200 z-10 ${billingCycle === 'monthly'
+                ? 'text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+          >
+            Monthly
+          </button>
+          <button
+            onClick={() => setBillingCycle('yearly')}
+            className={`relative w-32 py-2 text-sm font-semibold rounded-full transition-all duration-200 z-10 ${billingCycle === 'yearly'
+                ? 'text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+          >
+            Yearly
+          </button>
+          {/* Animated Toggle Background */}
+          <div
+            className={`absolute top-1 bottom-1 w-32 bg-white dark:bg-gray-700 rounded-full shadow transition-transform duration-300 ease-in-out ${billingCycle === 'yearly' ? 'translate-x-full' : 'translate-x-0'
+              }`}
+          ></div>
         </div>
       </div>
 
-      {/* Right Column: Toggle & Card */}
-      <div className="flex-1 lg:max-w-md w-full flex flex-col lg:items-end">
-        {/* Billing Cycle Toggle */}
-        <div className="flex w-full lg:w-auto lg:justify-end mb-6">
-          <div className="relative flex items-center p-1 bg-gray-50 dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 w-full lg:w-[260px]">
-            <button
-              onClick={() => setBillingCycle('monthly')}
-              className={`relative w-1/2 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 z-10 ${billingCycle === 'monthly'
-                  ? 'text-gray-900 dark:text-white shadow-sm bg-white border border-gray-100'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900'
-                }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingCycle('yearly')}
-              className={`relative w-1/2 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 z-10 ${billingCycle === 'yearly'
-                  ? 'text-gray-900 dark:text-white shadow-sm bg-white border border-gray-100'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900'
-                }`}
-            >
-              Yearly
-            </button>
-            {/* Animated Toggle Background (fallback if needed, though explicit bg classes added above) */}
-          </div>
-        </div>
-
-        {/* Plan Card */}
-        <div className={`w-full border-2 rounded-2xl shadow-sm bg-white dark:bg-gray-800 relative transition-all duration-300 ${
-          billingCycle === 'yearly' ? 'border-indigo-500' : 'border-gray-200'
-        }`}>
+      {/* Plan Card */}
+      <div className="mt-4 lg:max-w-lg lg:mx-auto">
+        <div className={`border-2 rounded-2xl shadow-lg divide-y divide-gray-200 dark:divide-gray-700 flex flex-col relative transition-all duration-300 ${billingCycle === 'yearly'
+            ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50/10 dark:bg-gray-800'
+            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+          }`}>
           {billingCycle === 'yearly' && (
-            <div className="absolute top-0 right-4 -translate-y-1/2 px-3 py-1 bg-indigo-600 text-white text-[11px] font-bold uppercase tracking-wider rounded-full flex items-center gap-1 shadow-sm">
+            <div className="absolute top-0 right-0 -mt-4 mr-4 px-4 py-1 bg-indigo-600 text-white text-xs font-bold uppercase tracking-wide rounded-full shadow-md flex items-center gap-1">
               <FiStar size={10} /> BEST VALUE
             </div>
           )}
 
-          <div className="p-8 pb-0">
-            <h2 className="text-xl font-bold text-indigo-600 mb-4">
+          <div className="p-6">
+            <h2 className={`text-lg leading-6 font-semibold tracking-wider ${billingCycle === 'yearly' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-900 dark:text-white'
+              }`}>
               {billingCycle === 'monthly' ? 'Monthly' : 'Yearly'}
             </h2>
-            <div className="flex items-end gap-1 mb-2">
-              <span className="text-5xl font-extrabold text-[#111827] dark:text-white tracking-tight">
+            <p className="mt-6 flex items-baseline gap-1">
+              <span className="text-5xl font-extrabold text-gray-900 dark:text-white">
                 {billingCycle === 'monthly' ? '₹99' : '₹999'}
               </span>
-              <span className="text-sm font-semibold text-gray-400 mb-1.5">
+              <span className="text-base font-medium text-gray-500 dark:text-gray-400">
                 {billingCycle === 'monthly' ? '/month' : '/year'}
               </span>
-            </div>
-            <p className="text-sm text-gray-500 mb-8 font-medium">
+            </p>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
               {billingCycle === 'monthly'
-                ? 'Complete access to all features.'
+                ? 'Complete access to all features, billed monthly.'
                 : 'Save ~15% compared to the monthly plan.'}
             </p>
           </div>
 
-          <div className="px-8 border-t border-gray-100 dark:border-gray-700/50 pt-6 pb-8">
-            <ul className="space-y-4 mb-8">
+          <div className="pt-6 pb-8 px-6 flex-1 flex flex-col">
+            <ul className="space-y-3 flex-1">
               {allFeatures.map((feature) => (
-                <li key={feature} className="flex items-start gap-3">
-                  <FiCheckCircle className="flex-shrink-0 h-5 w-5 text-indigo-500" strokeWidth={2.5} />
-                  <span className="text-sm text-gray-600 font-medium">{feature}</span>
+                <li key={feature} className="flex items-start gap-2">
+                  <FiCheckCircle className="flex-shrink-0 h-4 w-4 text-indigo-500 mt-0.5" />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{feature}</span>
                 </li>
               ))}
             </ul>
-            
             <button
               id={`btn-get-${billingCycle}`}
               onClick={() => handlePayment(billingCycle, billingCycle === 'monthly' ? 99 : 999)}
               disabled={!agreedToTerms || processingPlan !== null}
-              className={`w-full rounded-xl py-4 text-center text-sm font-bold text-white transition-all duration-200 ${agreedToTerms && processingPlan === null
-                  ? 'bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-lg'
-                  : 'bg-gray-300 cursor-not-allowed'
+              className={`mt-8 w-full rounded-md py-3 px-5 text-center text-sm font-semibold text-white shadow-md transition-all duration-200 ${agreedToTerms && processingPlan === null
+                  ? 'bg-indigo-600 hover:bg-indigo-700 transform hover:scale-[1.02]'
+                  : 'bg-gray-400 cursor-not-allowed'
                 }`}
             >
               {processingPlan === billingCycle
                 ? 'Processing...'
-                : 'Get Started'}
+                : `Get ${billingCycle === 'monthly' ? 'Monthly' : 'Yearly'}`}
             </button>
-            <p className="text-center text-xs text-gray-400 mt-4 font-medium flex items-center justify-center gap-1.5">
-               <FiCheckCircle size={12} /> 7-day free trial • Cancel anytime
-            </p>
           </div>
         </div>
-
-        {/* Terms checkbox under the card */}
-        <div className="mt-6 flex justify-center w-full">
-          <div className="flex items-start gap-2">
-            <input
-              type="checkbox"
-              id="agree"
-              checked={agreedToTerms}
-              onChange={(e) => setAgreedToTerms(e.target.checked)}
-              className="mt-1 h-4 w-4 text-indigo-600 border-gray-300 rounded cursor-pointer"
-            />
-            <label htmlFor="agree" className="text-xs text-gray-500 cursor-pointer select-none leading-relaxed">
-              I agree to the <Link href="/terms" className="text-indigo-600 font-medium">Terms</Link> and <Link href="/privacy" className="text-indigo-600 font-medium">Privacy Policy</Link>
-            </label>
-          </div>
-        </div>
-        
-        {errorMsg && (
-          <div className="mt-4 flex items-center justify-center gap-2 p-3 text-sm text-red-700 bg-red-50 rounded-lg w-full">
-            <FiXCircle size={16} className="flex-shrink-0" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
       </div>
-    </div>
+
+      {/* Terms checkbox */}
+      <div className="mt-8 flex justify-center">
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="agree"
+            checked={agreedToTerms}
+            onChange={(e) => setAgreedToTerms(e.target.checked)}
+            className="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out border-gray-300 rounded cursor-pointer"
+          />
+          <label htmlFor="agree" className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+            I agree to the{' '}
+            <Link href="/terms" className="text-indigo-600 hover:underline">Terms & Conditions</Link>
+            {' '}and{' '}
+            <Link href="/privacy" className="text-indigo-600 hover:underline">Privacy Policy</Link>
+          </label>
+        </div>
+      </div>
+
+      {errorMsg && (
+        <div className="mt-4 flex items-center justify-center gap-2 p-3 text-sm text-red-700 bg-red-100 rounded-lg max-w-lg mx-auto">
+          <FiXCircle size={16} className="flex-shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+    </>
   );
 
   // ── Page layout ────────────────────────────────────────────────────────────
   return (
-    <div className="w-full bg-gray-50 dark:bg-gray-900 font-sans pb-24">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-5xl mx-auto">
+        <header className="flex items-center mb-8">
+          <button
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            onClick={() => router.back()}
+          >
+            <FiArrowLeft size={24} />
+          </button>
+        </header>
+
         {/* Active plan info (always shown if on a paid plan) */}
         {renderActivePlanBanner()}
 

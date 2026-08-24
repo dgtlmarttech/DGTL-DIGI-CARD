@@ -26,8 +26,7 @@ const AdminLayout = ({ children }) => {
           
           const idTokenResult = await currentUser.getIdTokenResult();
           
-          // TEMPORARILY BYPASSED FOR TESTING
-          if (true || idTokenResult.claims.admin) {
+          if (idTokenResult.claims.admin) {
             setIsAdmin(true);
           } else {
             setIsAdmin(false);

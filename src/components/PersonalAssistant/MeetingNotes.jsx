@@ -282,7 +282,7 @@ export default function MeetingNotes() {
         order_id: order.id,
         prefill: {
           email: user.email || '',
-          contact: user.phoneNumber || '+919999999999',
+          contact: user.phoneNumber || '9876543210',
         },
         theme: { color: '#4c51bf' },
         handler: async (resp) => {
