@@ -191,9 +191,9 @@ const ProfilePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="flex w-full">
       {/* Main form area */}
-      <div className="flex-1 p-4 pt-8 lg:p-8 lg:pt-10 xl:pr-[480px]">
+      <div className="flex-1 w-full xl:pr-[450px] pb-24 xl:pb-4">
         {/* Subscription / Trial Banner */}
         <div
           onClick={() => router.push('/payment')}
@@ -540,7 +540,7 @@ const ProfilePage = () => {
       </div>
 
       {/* Desktop Preview Panel */}
-      <aside className="hidden xl:flex xl:flex-col xl:fixed xl:right-8 xl:top-24 xl:w-[420px] xl:h-[calc(100vh-7rem)] rounded-3xl border-8 border-gray-300 bg-white shadow-lg z-30">
+      <aside className="hidden xl:flex xl:flex-col xl:fixed xl:right-8 xl:top-[104px] xl:w-[420px] xl:h-[calc(100vh-8.5rem)] rounded-3xl border-8 border-gray-300 bg-white shadow-lg z-30">
         <header className="p-4">
           <h3 className="text-center text-lg font-semibold">Live Preview</h3>
         </header>

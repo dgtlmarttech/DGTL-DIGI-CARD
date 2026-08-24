@@ -73,9 +73,9 @@ const Appearance = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="flex w-full">
       {/* Main content/form */}
-      <main className="flex-1 p-4 pt-8 lg:p-8 lg:pt-10 xl:pr-[480px]">
+      <main className="flex-1 w-full xl:pr-[450px] pb-24 xl:pb-4">
         {/* Style Selection */}
         <section className="mb-6 rounded-xl bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-gray-900">Choose Your Style</h2>
@@ -184,7 +184,7 @@ const Appearance = () => {
       </main>
 
       {/* Desktop Live Preview */}
-      <aside className="hidden xl:flex xl:flex-col xl:fixed xl:right-8 xl:top-24 xl:w-[420px] xl:h-[calc(100vh-7rem)] rounded-3xl border-8 border-gray-300 bg-white shadow-lg z-30">
+      <aside className="hidden xl:flex xl:flex-col xl:fixed xl:right-8 xl:top-[104px] xl:w-[420px] xl:h-[calc(100vh-8.5rem)] rounded-3xl border-8 border-gray-300 bg-white shadow-lg z-30">
         <header className="p-4">
           <h3 className="text-center text-lg font-semibold">Live Preview</h3>
         </header>

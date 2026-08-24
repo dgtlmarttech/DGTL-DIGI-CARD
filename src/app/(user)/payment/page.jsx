@@ -538,7 +538,7 @@ const PaymentPage = () => {
 
   // ── Page layout ────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8 font-sans">
+    <div className="w-full bg-gray-50 dark:bg-gray-900 font-sans pb-24">
       <div className="max-w-5xl mx-auto">
         {/* Active plan info (always shown if on a paid plan) */}
         {renderActivePlanBanner()}
