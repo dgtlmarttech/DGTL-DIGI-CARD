@@ -18,7 +18,8 @@ import {
   MoreVertical, 
   Bell, 
   Menu, 
-  HeadphonesIcon 
+  HeadphonesIcon,
+  ChevronLeft
 } from 'lucide-react';
 import { useTaskReminder } from '../../hooks/useTaskReminder';
 
@@ -346,7 +347,7 @@ const DashboardLayout = ({ children, pageTitle }) => {
               }}
               className="p-1.5 text-slate-500 hover:bg-slate-200/50 rounded-lg transition-colors"
             >
-              <Menu className="w-[22px] h-[22px]" />
+              {sidebarCollapsed ? <Menu className="w-[22px] h-[22px]" /> : <ChevronLeft className="w-[22px] h-[22px]" />}
             </button>
             <h1 className="text-xl font-bold text-slate-900 hidden sm:block">
               {currentTitle}
