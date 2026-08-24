@@ -193,7 +193,7 @@ const ProfilePage = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Main form area */}
-      <div className="flex-1 p-4 pt-8 lg:p-8 lg:pt-10 lg:pr-[480px]">
+      <div className="flex-1 p-4 pt-8 lg:p-8 lg:pt-10 xl:pr-[480px]">
         {/* Subscription / Trial Banner */}
         <div
           onClick={() => router.push('/payment')}
@@ -489,7 +489,7 @@ const ProfilePage = () => {
           </div>
 
         {/* Mobile Preview Toggle */}
-        <div className="mb-6 md:hidden">
+        <div className="mb-6 xl:hidden">
           <button
             onClick={() => setShowPreview(!showPreview)}
             className="w-full rounded-lg bg-gray-200 py-2 text-sm"
@@ -497,7 +497,7 @@ const ProfilePage = () => {
             {showPreview ? 'Hide Live Preview' : 'Show Live Preview'}
           </button>
           {showPreview && (
-            <div className="mt-4 mx-auto w-[375px] rounded-3xl border-8 border-gray-300 shadow-lg overflow-y-auto max-h-[600px] bg-white [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="mt-4 mx-auto w-full max-w-[375px] rounded-3xl border-8 border-gray-300 shadow-lg overflow-y-auto max-h-[600px] bg-white [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <DigitalCard userInfo={{ ...userInfo, ...formData }} isPreview={true} />
             </div>
           )}
@@ -521,7 +521,7 @@ const ProfilePage = () => {
         </div>
 
         {/* Mobile Save Button (fixed at bottom) */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg md:hidden z-40">
+        <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg xl:hidden z-40">
           <button
             onClick={saveProfile}
             disabled={loading}
@@ -540,12 +540,12 @@ const ProfilePage = () => {
       </div>
 
       {/* Desktop Preview Panel */}
-      <aside className="hidden lg:flex lg:flex-col lg:fixed lg:right-8 lg:top-24 lg:w-[420px] lg:h-[calc(100vh-7rem)] rounded-3xl border-8 border-gray-300 bg-white shadow-lg">
+      <aside className="hidden xl:flex xl:flex-col xl:fixed xl:right-8 xl:top-24 xl:w-[420px] xl:h-[calc(100vh-7rem)] rounded-3xl border-8 border-gray-300 bg-white shadow-lg z-30">
         <header className="p-4">
           <h3 className="text-center text-lg font-semibold">Live Preview</h3>
         </header>
         <div className="flex-1 overflow-y-auto p-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          <div className="mx-auto w-[375px] rounded-3xl overflow-hidden shadow-sm">
+          <div className="mx-auto w-full max-w-[375px] rounded-3xl overflow-hidden shadow-sm">
             <DigitalCard userInfo={{ ...userInfo, ...formData }} isPreview={true} />
           </div>
         </div>

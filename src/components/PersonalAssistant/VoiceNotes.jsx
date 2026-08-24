@@ -150,8 +150,8 @@ export default function VoiceNotes() {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-800">Voice Notes</h2>
+      <div className="flex flex-wrap items-center justify-between mb-6 gap-4">
+        <h2 className="text-xl font-bold text-gray-800 whitespace-nowrap">Voice Notes</h2>
         
         {/* Main Recording Button */}
         <div className="flex items-center gap-3">

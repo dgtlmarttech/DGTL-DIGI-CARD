@@ -65,17 +65,17 @@ const Appearance = () => {
   const renderCard = () => {
     const cardProps = { ...userInfo, cardStyle: selectedStyle, cardColor };
     switch(selectedStyle) {
-      case 'style1': return <ContactCard userInfo={cardProps} />;
-      case 'style2': return <ContactCard2 userInfo={cardProps} />;
-      case 'style3': return <ContactCard3 userInfo={cardProps} />;
-      default: return <DigitalCard userInfo={cardProps} />;
+      case 'style1': return <ContactCard userInfo={cardProps} isPreview={true} />;
+      case 'style2': return <ContactCard2 userInfo={cardProps} isPreview={true} />;
+      case 'style3': return <ContactCard3 userInfo={cardProps} isPreview={true} />;
+      default: return <DigitalCard userInfo={cardProps} isPreview={true} />;
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Main content/form */}
-      <main className="flex-1 p-4 lg:pr-[440px]">
+      <main className="flex-1 p-4 pt-8 lg:p-8 lg:pt-10 xl:pr-[480px]">
         {/* Style Selection */}
         <section className="mb-6 rounded-xl bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-gray-900">Choose Your Style</h2>
@@ -157,25 +157,22 @@ const Appearance = () => {
         </div>
 
         {/* Mobile Preview Toggle */}
-        <section className="mb-6 md:hidden">
+        <section className="mb-6 xl:hidden">
           <button
             onClick={() => setShowPreview(!showPreview)}
-            className="w-full rounded-lg bg-gray-200 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300"
+            className="w-full rounded-lg bg-gray-200 py-2 text-sm"
           >
             {showPreview ? 'Hide Live Preview' : 'Show Live Preview'}
           </button>
           {showPreview && (
-            <div
-              className="mt-4 mx-auto w-[375px] rounded-3xl border-8 border-gray-300 shadow-lg overflow-y-auto max-h-[600px] bg-white"
-              style={{ boxShadow: '0 0 15px rgba(0,0,0,0.18)' }}
-            >
+            <div className="mt-4 mx-auto w-full max-w-[375px] rounded-3xl border-8 border-gray-300 shadow-lg overflow-y-auto max-h-[600px] bg-white [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {renderCard()}
             </div>
           )}
         </section>
 
         {/* Mobile Save Button */}
-        <section className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg md:hidden">
+        <section className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg xl:hidden z-40">
           <button
             onClick={saveAppearance}
             disabled={loading}
@@ -187,16 +184,16 @@ const Appearance = () => {
       </main>
 
       {/* Desktop Live Preview */}
-      <aside className="hidden lg:flex flex-col fixed right-4 top-4 h-[calc(100vh-2rem)] w-[400px] rounded-3xl border-8 border-gray-300 bg-white shadow-lg">
-        <header className="p-4 border-b">
-          <h2 className="text-center text-lg font-semibold text-gray-900">Live Preview (Mobile View)</h2>
+      <aside className="hidden xl:flex xl:flex-col xl:fixed xl:right-8 xl:top-24 xl:w-[420px] xl:h-[calc(100vh-7rem)] rounded-3xl border-8 border-gray-300 bg-white shadow-lg z-30">
+        <header className="p-4">
+          <h3 className="text-center text-lg font-semibold">Live Preview</h3>
         </header>
-        <section className="flex-grow overflow-y-auto p-4">
-          <div className="mx-auto w-[375px] rounded-3xl overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="mx-auto w-full max-w-[375px] rounded-3xl overflow-hidden shadow-sm">
             {renderCard()}
           </div>
-        </section>
-        <footer className="p-4 border-t text-center text-xs text-gray-500">
+        </div>
+        <footer className="p-4 text-xs text-center text-gray-500">
           Mobile device simulation
         </footer>
       </aside>

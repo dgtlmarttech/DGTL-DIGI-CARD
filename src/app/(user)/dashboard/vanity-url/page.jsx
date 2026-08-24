@@ -129,7 +129,7 @@ const VanityURLPage = () => {
     return (
         <div className="min-h-screen bg-gray-50 flex">
             {/* MAIN FORM */}
-            <div className="flex-1 p-4 lg:pr-[440px]">
+            <div className="flex-1 p-4 pt-8 lg:p-8 lg:pt-10 xl:pr-[480px]">
 
                 {/* Current URL */}
                 <div className="mb-6 rounded-xl bg-white p-6 shadow-sm text-gray-800">
@@ -201,25 +201,22 @@ const VanityURLPage = () => {
                     </div>
 
                 {/* Mobile Preview */}
-                <div className="mb-6 md:hidden">
-                        <button
-                            onClick={() => setShowPreview(!showPreview)}
-                            className="w-full rounded-lg bg-gray-200 py-2 text-sm hover:bg-gray-300"
-                        >
-                            {showPreview ? 'Hide Live Preview' : 'Show Live Preview'}
-                        </button>
-                        {showPreview && (
-                            <div
-                                className="mt-4 mx-auto w-[375px] rounded-3xl border-8 border-gray-300 shadow-lg overflow-y-auto max-h-[600px] bg-white"
-                                style={{ boxShadow: '0 0 15px rgba(0,0,0,0.18)' }}
-                            >
-                                <DigitalCard userInfo={userInfo} />
-                            </div>
-                        )}
-                    </div>
+                <div className="mb-6 xl:hidden">
+                    <button
+                        onClick={() => setShowPreview(!showPreview)}
+                        className="w-full rounded-lg bg-gray-200 py-2 text-sm"
+                    >
+                        {showPreview ? 'Hide Live Preview' : 'Show Live Preview'}
+                    </button>
+                    {showPreview && (
+                        <div className="mt-4 mx-auto w-full max-w-[375px] rounded-3xl border-8 border-gray-300 shadow-lg overflow-y-auto max-h-[600px] bg-white [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                            <DigitalCard userInfo={userInfo} isPreview={true} />
+                        </div>
+                    )}
+                </div>
 
                 {/* Mobile Save Button */}
-                <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-lg md:hidden">
+                <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-lg xl:hidden z-40">
                         <button
                             onClick={saveVanityURL}
                             disabled={loading || !customUID.trim() || !isValid}
@@ -231,19 +228,19 @@ const VanityURLPage = () => {
             </div>
 
             {/* Desktop Preview */}
-            <aside className="hidden lg:flex lg:flex-col lg:fixed lg:right-4 lg:top-4 lg:w-[400px] lg:h-[calc(100vh-2rem)] rounded-3xl border-8 border-gray-300 bg-white shadow-lg">
-                    <header className="p-4 border-b text-center">
-                        <h3 className="text-lg font-semibold">Live Preview (Mobile View)</h3>
-                    </header>
-                    <section className="flex-1 overflow-y-auto p-4">
-                        <div className="mx-auto w-[375px] rounded-3xl overflow-hidden">
-                            <DigitalCard userInfo={userInfo} />
-                        </div>
-                    </section>
-                    <footer className="p-4 border-t text-xs text-center text-gray-500">
-                        Mobile device simulation
-                    </footer>
-                </aside>
+            <aside className="hidden xl:flex xl:flex-col xl:fixed xl:right-8 xl:top-24 xl:w-[420px] xl:h-[calc(100vh-7rem)] rounded-3xl border-8 border-gray-300 bg-white shadow-lg z-30">
+                <header className="p-4">
+                    <h3 className="text-center text-lg font-semibold">Live Preview</h3>
+                </header>
+                <div className="flex-1 overflow-y-auto p-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    <div className="mx-auto w-full max-w-[375px] rounded-3xl overflow-hidden shadow-sm">
+                        <DigitalCard userInfo={userInfo} isPreview={true} />
+                    </div>
+                </div>
+                <footer className="p-4 text-xs text-center text-gray-500">
+                    Mobile device simulation
+                </footer>
+            </aside>
         </div>
     );
 };

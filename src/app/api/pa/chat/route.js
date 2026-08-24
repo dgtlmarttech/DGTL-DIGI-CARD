@@ -37,6 +37,26 @@ const tools = [
         required: ["taskId"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "add_meeting_note",
+      description: "Create a short meeting note or summary dictated by the user.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "A brief title for the meeting (e.g. 'Meeting with Rahul')" },
+          summary: { type: "string", description: "The transcribed summary or notes about the meeting." },
+          actionItems: { 
+            type: "array", 
+            items: { type: "string" },
+            description: "A list of follow-ups or action items extracted from the note, if any."
+          }
+        },
+        required: ["title", "summary"]
+      }
+    }
   }
 ];
 
@@ -65,17 +85,18 @@ export async function POST(req) {
     const isoToday = new Date().toISOString().split('T')[0];
 
     const systemPrompt = `You are a helpful, professional AI Voice Assistant for a user's digital dashboard.
-You help them manage their schedule and to-do lists. Keep your answers brief, conversational, and easy to understand when spoken aloud. 
+You help them manage their schedule, to-do lists, and meetings. Keep your answers brief, conversational, and easy to understand when spoken aloud. 
 Do not use markdown formatting (like **bold** or bullet points) since your output will be read by a text-to-speech engine.
 
 If the user asks to add a task or reminder, use the add_task tool. If they mention a specific time (like "4 PM"), convert it to HH:mm format for the time argument. If they say "every day", "weekly", etc., set the recurrence argument appropriately. If they ask to mark a task as completed or done, find the matching ID from the context and use the complete_task tool. 
-If the user asks about their meetings, follow-ups, or notes, use the "RECENT MEETINGS" section in your context to answer them accurately.
+If the user asks about their meetings, follow-ups, or notes, use the "RECENT MEETINGS" section in your context to answer them accurately. If they ask you to extract tasks from a meeting, look at the Action Items in the RECENT MEETINGS context and call the add_task tool for each one.
+If the user dictates a short meeting note, use the add_meeting_note tool to save it.
 Always confidently confirm what you did to the user.
 
 Today's date is: ${today} (YYYY-MM-DD: ${isoToday})
 
-User's To-Do List Data (with IDs):
-${context || 'No tasks available.'}
+User's Dashboard Data (To-Dos and Meetings):
+${context || 'No data available.'}
 `;
 
     let messages = [
@@ -144,6 +165,26 @@ ${context || 'No tasks available.'}
               content: "Failed: Task ID not found or unauthorized."
             });
           }
+        } else if (toolCall.function.name === 'add_meeting_note') {
+          const args = JSON.parse(toolCall.function.arguments);
+          
+          await adminDb.collection('meetingNotes').add({
+            userId: decodedToken.uid,
+            title: args.title,
+            summary: args.summary,
+            transcript: args.summary, // using summary as transcript for short voice notes
+            actionItems: args.actionItems || [],
+            createdAt: new Date().toISOString(),
+            meetingDate: new Date().toISOString(),
+            duration: 0
+          });
+
+          messages.push({
+            tool_call_id: toolCall.id,
+            role: "tool",
+            name: "add_meeting_note",
+            content: "Meeting note added successfully."
+          });
         }
       }
       

@@ -129,9 +129,9 @@ export default function TodoList() {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-full flex flex-col">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-        <h2 className="text-xl font-bold text-gray-800">Date-wise To-Do</h2>
-        <div className="flex flex-col sm:flex-row items-center gap-3 bg-gray-50 p-2 rounded-lg relative">
+      <div className="flex flex-wrap items-center justify-between mb-6 gap-4">
+        <h2 className="text-xl font-bold text-gray-800 whitespace-nowrap">Date-wise To-Do</h2>
+        <div className="flex flex-wrap items-center gap-3 bg-gray-50 p-2 rounded-lg relative">
           <div className="flex items-center gap-2 px-2 text-sm font-medium text-gray-700">
             <FiCalendar className="text-purple-500" />
             <input 

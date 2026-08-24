@@ -67,9 +67,9 @@ export default function PersonalAssistantDashboard() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-160px)] min-h-[600px]">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 xl:h-[calc(100vh-160px)] min-h-[600px]">
           {/* Main Content Area (2/3 width on desktop) */}
-          <div className="lg:col-span-2 flex flex-col h-full">
+          <div className="xl:col-span-2 flex flex-col h-full">
             {/* Tabs */}
             <div className="flex bg-white rounded-xl shadow-sm p-1 mb-6 border border-gray-100">
               <button
@@ -104,7 +104,7 @@ export default function PersonalAssistantDashboard() {
           </div>
 
           {/* Right Sidebar (1/3 width on desktop) */}
-          <div className="flex flex-col gap-6 h-fit">
+          <div className="flex flex-col gap-6 h-fit w-full max-w-sm mx-auto xl:max-w-none xl:mx-0">
             <div className="h-[400px]">
               <VapiAssistant />
             </div>
