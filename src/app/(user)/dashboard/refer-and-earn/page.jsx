@@ -160,6 +160,17 @@ const ReferAndEarnPage = () => {
                 </div>
               </div>
             </div>
+
+            {/* Terms and Conditions */}
+            <div className="mt-6 text-sm text-blue-100 flex flex-col gap-1.5 bg-black/10 p-4 rounded-xl border border-white/10">
+              <p className="font-semibold text-white/90 flex items-center gap-2">
+                <span className="text-yellow-400">⚠️</span> Terms & Conditions
+              </p>
+              <ul className="list-disc list-inside opacity-90 text-xs space-y-1 ml-1">
+                <li>Minimum threshold for commission payout is <strong className="text-white">₹500</strong>.</li>
+                <li>Commission payments are processed on a <strong className="text-white">Monthly</strong> basis.</li>
+              </ul>
+            </div>
           </div>
 
           <div className="hidden lg:flex flex-col items-center justify-center shrink-0 w-64">

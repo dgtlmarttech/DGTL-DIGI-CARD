@@ -1,13 +1,14 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { db } from '../../../../firebase/firebase';
-import { collection, getDocs, query, orderBy, updateDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, getDoc, query, orderBy, updateDoc, doc, where } from 'firebase/firestore';
 import { toast } from 'react-toastify';
-import { FiDollarSign, FiCheckCircle, FiXCircle, FiClock, FiRefreshCw } from 'react-icons/fi';
+import { FiDollarSign, FiCheckCircle, FiXCircle, FiClock, FiRefreshCw, FiSearch } from 'react-icons/fi';
 
 export default function AdminCommissionsPage() {
   const [commissions, setCommissions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchCommissions();
@@ -26,21 +27,45 @@ export default function AdminCommissionsPage() {
         // Fetch Referrer Info
         let referrerName = 'Unknown';
         let referrerPhone = '';
-        const userQ = query(collection(db, 'users'), require('firebase/firestore').where('uid', '==', data.referrerUserId));
-        const userSnap = await getDocs(userQ);
-        if (!userSnap.empty) {
-          const u = userSnap.docs[0].data();
-          referrerName = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email;
-          referrerPhone = u.mobile || '';
+        if (data.referrerUserId) {
+          const userSnap = await getDoc(doc(db, 'users', data.referrerUserId));
+          if (userSnap.exists()) {
+            const u = userSnap.data();
+            referrerName = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email;
+            referrerPhone = u.mobile || '';
+          } else {
+            const userQ = query(collection(db, 'users'), where('uid', '==', data.referrerUserId));
+            const userQS = await getDocs(userQ);
+            if (!userQS.empty) {
+              const u = userQS.docs[0].data();
+              referrerName = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email;
+              referrerPhone = u.mobile || '';
+            } else {
+              const affSnap = await getDoc(doc(db, 'affiliates', data.referrerUserId));
+              if (affSnap.exists()) {
+                const a = affSnap.data();
+                referrerName = a.full_name || a.email || 'Affiliate';
+                referrerPhone = a.phone || '';
+              }
+            }
+          }
         }
         
         // Fetch Referred Info
         let referredName = 'Unknown';
-        const refUserQ = query(collection(db, 'users'), require('firebase/firestore').where('uid', '==', data.referredUserId));
-        const refUserSnap = await getDocs(refUserQ);
-        if (!refUserSnap.empty) {
-          const ru = refUserSnap.docs[0].data();
-          referredName = `${ru.firstName || ''} ${ru.lastName || ''}`.trim() || ru.email;
+        if (data.referredUserId) {
+          const refUserSnap = await getDoc(doc(db, 'users', data.referredUserId));
+          if (refUserSnap.exists()) {
+            const ru = refUserSnap.data();
+            referredName = `${ru.firstName || ''} ${ru.lastName || ''}`.trim() || ru.email;
+          } else {
+            const refUserQ = query(collection(db, 'users'), where('uid', '==', data.referredUserId));
+            const refUserQS = await getDocs(refUserQ);
+            if (!refUserQS.empty) {
+              const ru = refUserQS.docs[0].data();
+              referredName = `${ru.firstName || ''} ${ru.lastName || ''}`.trim() || ru.email;
+            }
+          }
         }
 
         commData.push({
@@ -98,9 +123,21 @@ export default function AdminCommissionsPage() {
           <h1 className="text-2xl font-bold text-slate-800">Commissions Ledger</h1>
           <p className="text-slate-500">Track and payout referral commissions.</p>
         </div>
-        <button onClick={fetchCommissions} className="flex items-center text-slate-600 hover:text-blue-600 bg-white border px-3 py-2 rounded-lg text-sm">
-          <FiRefreshCw className="mr-2" /> Refresh
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Search name or phone..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-blue-500 w-64"
+            />
+          </div>
+          <button onClick={fetchCommissions} className="flex items-center text-slate-600 hover:text-blue-600 bg-white border border-slate-200 px-3 py-2 rounded-lg text-sm transition-colors">
+            <FiRefreshCw className="mr-2" /> Refresh
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -118,9 +155,21 @@ export default function AdminCommissionsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {commissions.length === 0 ? (
-                <tr><td colSpan="7" className="text-center py-8 text-slate-500">No commissions recorded yet.</td></tr>
-              ) : commissions.map((comm) => (
+              {(() => {
+                const filteredCommissions = commissions.filter(comm => {
+                  const term = searchTerm.toLowerCase();
+                  return (
+                    (comm.referrerName && comm.referrerName.toLowerCase().includes(term)) ||
+                    (comm.referredName && comm.referredName.toLowerCase().includes(term)) ||
+                    (comm.referrerPhone && comm.referrerPhone.includes(term))
+                  );
+                });
+
+                if (filteredCommissions.length === 0) {
+                  return <tr><td colSpan="7" className="text-center py-8 text-slate-500">No commissions found.</td></tr>;
+                }
+                
+                return filteredCommissions.map((comm) => (
                 <tr key={comm.id} className="hover:bg-slate-50/50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     {new Date(comm.createdAt).toLocaleDateString()}<br/>
@@ -146,7 +195,8 @@ export default function AdminCommissionsPage() {
                     )}
                   </td>
                 </tr>
-              ))}
+                ));
+              })()}
             </tbody>
           </table>
         </div>

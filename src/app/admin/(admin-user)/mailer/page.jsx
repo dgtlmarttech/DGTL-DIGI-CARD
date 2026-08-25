@@ -34,10 +34,10 @@ const MailerControl = () => {
 
   // Email template types
   const templateTypes = [
-    { value: 'premium_2_days_before_discount', label: 'Premium - 2 Days Before (Discount)', category: 'Premium' },
-    { value: 'premium_2_days_after_discount', label: 'Premium - 2 Days After (Discount)', category: 'Premium' },
-    { value: 'premium_10_days_after_discount', label: 'Premium - 10 Days After (Discount)', category: 'Premium' },
-    { value: 'premium_10_days_before_discount', label: 'Premium - 10 Days Before (Discount)', category: 'Premium' }
+    { value: 'premium_2_days_before_discount', label: 'Paid Plan - 2 Days Before (Discount)', category: 'Paid Plan' },
+    { value: 'premium_2_days_after_discount', label: 'Paid Plan - 2 Days After (Discount)', category: 'Paid Plan' },
+    { value: 'premium_10_days_after_discount', label: 'Paid Plan - 10 Days After (Discount)', category: 'Paid Plan' },
+    { value: 'premium_10_days_before_discount', label: 'Paid Plan - 10 Days Before (Discount)', category: 'Paid Plan' }
   ];
 
   const handleTestMailChange = (field, value) => {
@@ -288,10 +288,10 @@ const MailerControl = () => {
                   <div>
                     <h3 className="font-semibold text-blue-900 mb-2">Automated Email Campaign</h3>
                     <p className="text-blue-800 mb-4">
-                      This will manually trigger the automated mailer system to send scheduled emails based on user premium statuses.
+                      This will manually trigger the automated mailer system to send scheduled emails based on user paid plan statuses.
                     </p>
                     <ul className="list-disc list-inside space-y-1 text-blue-800 text-sm">
-                      <li>Premium renewal reminders (2 days before, 2 days after, 10 days after)</li>
+                      <li>Paid plan renewal reminders (2 days before, 2 days after, 10 days after)</li>
                       <li>Discount offers for eligible users</li>
                       <li>Duplicate prevention - won't send the same email twice</li>
                     </ul>
@@ -363,10 +363,10 @@ const MailerControl = () => {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center space-x-2">
                 <Crown className="w-5 h-5 text-purple-600" />
-                <span>Premium Templates</span>
+                <span>Paid Plan Templates</span>
               </h3>
               <div className="space-y-2">
-                {templateTypes.filter(t => t.category === 'Premium').map((template) => (
+                {templateTypes.filter(t => t.category === 'Paid Plan').map((template) => (
                   <div key={template.value} className="p-3 bg-purple-50 rounded-lg border border-purple-200">
                     <p className="text-sm font-medium text-purple-900">{template.label}</p>
                   </div>

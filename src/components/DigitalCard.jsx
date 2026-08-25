@@ -452,7 +452,7 @@ const App = ({ userInfo = sampleUserInfo, isPreview = false }) => {
                 className="w-full px-6 py-3 font-semibold text-white rounded-full transition-shadow hover:shadow-lg"
                 style={{ backgroundColor: cardColor }}
               >
-                Download .vcf File
+                Download Contact
               </button>
 
               <p className="mt-4 text-sm text-gray-300">

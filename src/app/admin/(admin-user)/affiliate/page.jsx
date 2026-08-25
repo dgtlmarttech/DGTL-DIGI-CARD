@@ -561,7 +561,7 @@ const AffiliateListPage = () => {
                                                                             {(user.planType === 'monthly' || user.planType === 'yearly') ? (
                                                                                 <>
                                                                                     <Crown className="w-3 h-3 mr-1" />
-                                                                                    Premium
+                                                                                    Paid Subscriber
                                                                                 </>
                                                                             ) : (
                                                                                 'Standard'

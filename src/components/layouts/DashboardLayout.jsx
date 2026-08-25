@@ -63,7 +63,7 @@ const DashboardLayout = ({ children, pageTitle }) => {
       href: '/payment',
       icon: <Crown className="w-[18px] h-[18px]" />,
     },
-    { name: 'View Card', href: `/${userInfo?.customUID || user?.uid}`, icon: <Eye className="w-[18px] h-[18px]" /> },
+    { name: 'View Card', href: '/dashboard/view-card', icon: <Eye className="w-[18px] h-[18px]" /> },
     { name: 'CRM', href: '/crm', icon: <BarChart2 className="w-[18px] h-[18px]" /> },
     { name: 'Refer & Earn', href: '/dashboard/refer-and-earn', icon: <DollarSign className="w-[18px] h-[18px]" /> },
   ];
@@ -345,9 +345,14 @@ const DashboardLayout = ({ children, pageTitle }) => {
                   setSidebarCollapsed(!sidebarCollapsed);
                 }
               }}
-              className="p-1.5 text-slate-500 hover:bg-slate-200/50 rounded-lg transition-colors"
+              className="p-1.5 text-slate-500 hover:bg-slate-200/50 rounded-lg transition-colors flex items-center justify-center"
             >
-              {sidebarCollapsed ? <Menu className="w-[22px] h-[22px]" /> : <ChevronLeft className="w-[22px] h-[22px]" />}
+              <Menu className="w-[22px] h-[22px] md:hidden" />
+              {sidebarCollapsed ? (
+                <Menu className="w-[22px] h-[22px] hidden md:block" />
+              ) : (
+                <ChevronLeft className="w-[22px] h-[22px] hidden md:block" />
+              )}
             </button>
             <h1 className="text-xl font-bold text-slate-900 hidden sm:block">
               {currentTitle}

@@ -221,7 +221,7 @@ const SignUp = () => {
           }),
         }).catch((err) => console.error('Welcome email error:', err));
 
-        router.push("/dashboard");
+        router.push('/dashboard/view-card');
       }
     } catch (error) {
       setErrorMessage(error.message);
@@ -234,7 +234,7 @@ const SignUp = () => {
     setLoading(true);
     try {
       await signInWithGoogle();
-      router.push('/dashboard');
+      router.push('/dashboard/view-card');
     } catch (error) {
       setErrorMessage(error.message);
     } finally {
@@ -376,6 +376,17 @@ const SignUp = () => {
                         placeholder="9876543210"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-bold text-gray-700 block mb-1">Referral Code (Optional)</label>
+                    <input
+                      type="text"
+                      value={referralCode}
+                      onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                      placeholder="e.g. DGTLB0756"
+                    />
                   </div>
 
                   <button

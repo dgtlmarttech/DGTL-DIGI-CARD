@@ -11,7 +11,11 @@ import {
   Activity,
   BarChart3,
   DollarSign,
-  Loader2
+  Loader2,
+  Calendar,
+  Filter,
+  Info,
+  ChevronDown
 } from 'lucide-react';
 import { db } from '../../../../firebase/firebase';
 import { collection, getDocs, query, limit, orderBy } from 'firebase/firestore';
@@ -51,53 +55,39 @@ const Home = () => {
   const [stats, setStats] = useState({
     totalRevenue: '₹0',
     activeUsers: '0',
-    premiumUsers: '0',
+    paidUsers: '0',
     activeAffiliates: '0',
     totalEmailsSent: '0',
     activeAds: 'Manual Banner'
   });
   const [recentActivities, setRecentActivities] = useState([]);
 
+  // Filter States
+  const [dateFilter, setDateFilter] = useState('all'); // 'all', '24h', '1m', '1y', 'custom'
+  const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
+  const [isCustomRangeOpen, setIsCustomRangeOpen] = useState(false);
+  const [rawData, setRawData] = useState({ users: [], affiliates: [], emailLogs: [], activeAdsValue: 'Manual Banner' });
+
   useEffect(() => {
     async function loadDashboardData() {
       setLoading(true);
       try {
-        const today = new Date();
-
         // 1. Fetch Users
         const usersSnap = await getDocs(collection(db, 'users'));
-        const totalUsers = usersSnap.size;
-        
-        let premiumCount = 0;
-        let paidPremiumCount = 0;
         const fetchedUsers = [];
         
         usersSnap.forEach(doc => {
           const u = doc.data();
-          const hasPaidPlan = u.planType === 'monthly' || u.planType === 'yearly';
-          const isBlocked = u.blocked === true || u.blocked === 'true';
-          const hasExpired = u.expireDate && new Date(u.expireDate) <= today;
-
-          // Match the exact premium filter rule from UserInfo.jsx:
-          // user.isPremium && !user.blocked && (!user.expireDate || new Date(user.expireDate) > today)
-          if (hasPaidPlan && !isBlocked && !hasExpired) {
-            premiumCount++;
-            if (u.paymentData) {
-              paidPremiumCount++;
-            }
-          }
-
           fetchedUsers.push({
             id: doc.id,
             ...u,
-            parsedDate: parseDate(u.createdAt)
+            parsedDate: parseDate(u.createdAt),
+            planStartDateParsed: parseDate(u.planStartDate || u.createdAt) // For accurate revenue timeline
           });
         });
 
         // 2. Fetch Affiliates
         const affiliatesSnap = await getDocs(collection(db, 'affiliates'));
-        const totalAffiliates = affiliatesSnap.size;
-        
         const fetchedAffiliates = [];
         affiliatesSnap.forEach(doc => {
           const aff = doc.data();
@@ -110,10 +100,8 @@ const Home = () => {
 
         // 3. Fetch Email Logs safely
         const fetchedEmailLogs = [];
-        let totalEmailsSent = 0;
         try {
           const emailLogsSnap = await getDocs(collection(db, 'emailLogs'));
-          totalEmailsSent = emailLogsSnap.size;
           emailLogsSnap.forEach(doc => {
             const log = doc.data();
             fetchedEmailLogs.push({
@@ -132,78 +120,19 @@ const Home = () => {
           const settingsSnap = await getDocs(collection(db, 'settings'));
           settingsSnap.forEach(doc => {
             if (doc.id === 'adBannerSettings') {
-              const data = doc.data();
-              activeAdsValue = data.type === 'google' ? 'Google AdSense' : 'Manual Banner';
+              activeAdsValue = doc.data().type === 'google' ? 'Google AdSense' : 'Manual Banner';
             }
           });
         } catch (err) {
           console.warn('Error loading settings:', err);
         }
 
-        // Set Live Stats
-        setStats({
-          totalRevenue: `₹${(paidPremiumCount * 99).toLocaleString()}`,
-          activeUsers: totalUsers.toLocaleString(),
-          premiumUsers: premiumCount.toLocaleString(),
-          activeAffiliates: totalAffiliates.toLocaleString(),
-          totalEmailsSent: totalEmailsSent.toLocaleString(),
-          activeAds: activeAdsValue
+        setRawData({
+          users: fetchedUsers,
+          affiliates: fetchedAffiliates,
+          emailLogs: fetchedEmailLogs,
+          activeAdsValue
         });
-
-        // 5. Combine and Sort Activities
-        const activities = [];
-
-        // Add user signups to activities
-        fetchedUsers.forEach(u => {
-          if (u.createdAt) {
-            activities.push({
-              id: `user-${u.id}`,
-              type: 'user',
-              title: 'New user registration',
-              description: `${u.firstName || 'A new user'} ${u.lastName || ''} (${u.email || u.mobile || 'No Email'}) joined the platform`,
-              date: u.parsedDate,
-              icon: Users,
-              bgColor: 'bg-blue-50',
-              iconColor: 'text-blue-600'
-            });
-          }
-        });
-
-        // Add affiliate signups to activities
-        fetchedAffiliates.forEach(aff => {
-          if (aff.createdAt) {
-            activities.push({
-              id: `aff-${aff.id}`,
-              type: 'affiliate',
-              title: 'New affiliate registered',
-              description: `${aff.full_name || 'An affiliate'} registered (Code: ${aff.referralCode || 'Pending'})`,
-              date: aff.parsedDate,
-              icon: Link2,
-              bgColor: 'bg-amber-50',
-              iconColor: 'text-amber-600'
-            });
-          }
-        });
-
-        // Add email logs to activities
-        fetchedEmailLogs.forEach(log => {
-          activities.push({
-            id: `email-${log.id}`,
-            type: 'email',
-            title: log.subject ? `Email sent: ${log.subject}` : 'Email campaign sent',
-            description: `Delivered to ${log.userName || log.to || 'user'} (${log.to})`,
-            date: log.parsedDate,
-            icon: Mail,
-            bgColor: 'bg-purple-50',
-            iconColor: 'text-purple-600'
-          });
-        });
-
-        // Sort combined list descending
-        activities.sort((a, b) => b.date.getTime() - a.date.getTime());
-
-        // Keep top 6 items
-        setRecentActivities(activities.slice(0, 6));
 
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -214,6 +143,129 @@ const Home = () => {
 
     loadDashboardData();
   }, []);
+
+  // Filtering Logic Effect
+  useEffect(() => {
+    if (!rawData.users.length && !rawData.affiliates.length && !rawData.emailLogs.length) return;
+
+    const today = new Date();
+    let startDate = new Date(0); // Default to all time
+    let endDate = new Date();
+
+    if (dateFilter === '24h') {
+      startDate = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+    } else if (dateFilter === '1m') {
+      startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+    } else if (dateFilter === '1y') {
+      startDate = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+    } else if (dateFilter === 'custom' && customDateRange.start && customDateRange.end) {
+      startDate = new Date(customDateRange.start);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(customDateRange.end);
+      endDate.setHours(23, 59, 59, 999);
+    }
+
+    let activeUsersCount = 0;
+    let paidCount = 0;
+    let totalRevenueAmount = 0;
+
+    // Process Users
+    rawData.users.forEach(u => {
+      // User registered in this period
+      if (u.parsedDate >= startDate && u.parsedDate <= endDate) {
+        activeUsersCount++;
+      }
+
+      // Check if user is a paid subscriber and started in this period
+      const hasPaidPlan = u.planType === 'monthly' || u.planType === 'yearly';
+      const isBlocked = u.blocked === true || u.blocked === 'true';
+      const hasExpired = u.expireDate && new Date(u.expireDate) <= today;
+
+      if (hasPaidPlan && !isBlocked && !hasExpired && u.paymentData) {
+        if (u.planStartDateParsed >= startDate && u.planStartDateParsed <= endDate) {
+          paidCount++;
+          totalRevenueAmount += (u.planType === 'yearly' ? 999 : 99);
+        }
+      }
+    });
+
+    // Process Affiliates
+    let affiliatesCount = 0;
+    rawData.affiliates.forEach(aff => {
+      if (aff.parsedDate >= startDate && aff.parsedDate <= endDate) {
+        affiliatesCount++;
+      }
+    });
+
+    // Process Email Logs
+    let emailsSentCount = 0;
+    rawData.emailLogs.forEach(log => {
+      if (log.parsedDate >= startDate && log.parsedDate <= endDate) {
+        emailsSentCount++;
+      }
+    });
+
+    setStats({
+      totalRevenue: `₹${totalRevenueAmount.toLocaleString()}`,
+      activeUsers: activeUsersCount.toLocaleString(),
+      paidUsers: paidCount.toLocaleString(),
+      activeAffiliates: affiliatesCount.toLocaleString(),
+      totalEmailsSent: emailsSentCount.toLocaleString(),
+      activeAds: rawData.activeAdsValue
+    });
+
+    // Rebuild Recent Activities timeline based on filter
+    const activities = [];
+    
+    rawData.users.forEach(u => {
+      if (u.parsedDate >= startDate && u.parsedDate <= endDate) {
+        activities.push({
+          id: `user-${u.id}`,
+          type: 'user',
+          title: 'New user registration',
+          description: `${u.firstName || 'A new user'} ${u.lastName || ''} (${u.email || u.mobile || 'No Email'}) joined the platform`,
+          date: u.parsedDate,
+          icon: Users,
+          bgColor: 'bg-blue-50',
+          iconColor: 'text-blue-600'
+        });
+      }
+    });
+
+    rawData.affiliates.forEach(aff => {
+      if (aff.parsedDate >= startDate && aff.parsedDate <= endDate) {
+        activities.push({
+          id: `aff-${aff.id}`,
+          type: 'affiliate',
+          title: 'New affiliate registered',
+          description: `${aff.full_name || 'An affiliate'} registered (Code: ${aff.referralCode || 'Pending'})`,
+          date: aff.parsedDate,
+          icon: Link2,
+          bgColor: 'bg-amber-50',
+          iconColor: 'text-amber-600'
+        });
+      }
+    });
+
+    rawData.emailLogs.forEach(log => {
+      if (log.parsedDate >= startDate && log.parsedDate <= endDate) {
+        activities.push({
+          id: `email-${log.id}`,
+          type: 'email',
+          title: log.subject ? `Email sent: ${log.subject}` : 'Email campaign sent',
+          description: `Delivered to ${log.userName || log.to || 'user'} (${log.to})`,
+          date: log.parsedDate,
+          icon: Mail,
+          bgColor: 'bg-purple-50',
+          iconColor: 'text-purple-600'
+        });
+      }
+    });
+
+    activities.sort((a, b) => b.date.getTime() - a.date.getTime());
+    setRecentActivities(activities.slice(0, 6));
+
+  }, [dateFilter, customDateRange, rawData]);
 
   const handleCardClick = (href) => {
     router.push(href);
@@ -244,53 +296,49 @@ const Home = () => {
       id: 'banner-ad',
       href: '/admin/ad-control',
       icon: Megaphone,
-      title: 'Banner Ad Control',
-      description: 'Control banner ads with two options: manually upload an image and link or use Google AdSense for automated advertising.',
+      title: stats.activeAds,
+      subtitle: 'Currently running',
       stats: { label: 'Active Ads', value: stats.activeAds },
-      color: 'from-blue-500 to-blue-600',
-      bgColor: 'bg-blue-50',
-      iconColor: 'text-blue-600',
-      borderColor: 'border-blue-200',
-      hoverColor: 'hover:border-blue-300'
+      bgColor: 'bg-indigo-100',
+      iconColor: 'text-indigo-600',
+      borderColor: 'border-indigo-200',
+      buttonText: 'Manage Ads'
     },
     {
       id: 'user-management',
       href: '/admin/user-info',
       icon: Users,
-      title: 'User Management',
-      description: 'Comprehensive user management with four categories: Standard-tier, Premium, Expired Premium, and Blocked users.',
+      title: stats.activeUsers,
+      subtitle: 'Across all time',
       stats: { label: 'Total Users', value: stats.activeUsers },
-      color: 'from-green-500 to-green-600',
-      bgColor: 'bg-green-50',
+      bgColor: 'bg-green-100',
       iconColor: 'text-green-600',
       borderColor: 'border-green-200',
-      hoverColor: 'hover:border-green-300'
+      buttonText: 'View Users'
     },
     {
       id: 'email-center',
       href: '/admin/mailer',
       icon: Mail,
-      title: 'Email Center',
-      description: 'Advanced email management system with customizable templates, automated campaigns, and detailed analytics.',
+      title: stats.totalEmailsSent,
+      subtitle: 'Total campaigns',
       stats: { label: 'Emails Sent', value: stats.totalEmailsSent },
-      color: 'from-purple-500 to-purple-600',
-      bgColor: 'bg-purple-50',
+      bgColor: 'bg-purple-100',
       iconColor: 'text-purple-600',
       borderColor: 'border-purple-200',
-      hoverColor: 'hover:border-purple-300'
+      buttonText: 'Manage Emails'
     },
     {
       id: 'affiliate-program',
       href: '/admin/affiliate',
       icon: Link2,
-      title: 'Affiliate Program',
-      description: 'Complete affiliate management with performance tracking, commission calculations, and automated payments.',
+      title: stats.activeAffAffiliates || stats.activeAffiliates,
+      subtitle: 'Total affiliates',
       stats: { label: 'Active Affiliates', value: stats.activeAffAffiliates || stats.activeAffiliates },
-      color: 'from-amber-500 to-amber-600',
-      bgColor: 'bg-amber-50',
+      bgColor: 'bg-amber-100',
       iconColor: 'text-amber-600',
       borderColor: 'border-amber-200',
-      hoverColor: 'hover:border-amber-300'
+      buttonText: 'View Affiliates'
     }
   ];
 
@@ -300,28 +348,32 @@ const Home = () => {
       value: stats.totalRevenue,
       change: 'Calculated live',
       icon: DollarSign,
-      trend: 'up'
+      bgColor: 'bg-purple-100',
+      iconColor: 'text-purple-600'
     },
     {
       title: 'Active Users',
       value: stats.activeUsers,
       change: 'Registered in system',
       icon: Users,
-      trend: 'up'
+      bgColor: 'bg-green-100',
+      iconColor: 'text-green-600'
     },
     {
-      title: 'Premium Users',
-      value: stats.premiumUsers,
-      change: 'Paid subscription',
+      title: 'Paid Subscribers',
+      value: stats.paidUsers,
+      change: 'Active monthly/yearly',
       icon: TrendingUp,
-      trend: 'up'
+      bgColor: 'bg-blue-100',
+      iconColor: 'text-blue-600'
     },
     {
       title: 'Affiliates',
       value: stats.activeAffiliates,
       change: 'Partners onboard',
       icon: Link2,
-      trend: 'up'
+      bgColor: 'bg-amber-100',
+      iconColor: 'text-amber-600'
     }
   ];
 
@@ -329,13 +381,79 @@ const Home = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto p-6 space-y-8">
         {/* Header Section */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
-            Admin Dashboard Overview
+        <div className="space-y-2">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900">
+            Dashboard Overview
           </h1>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+          <p className="text-base text-slate-500 max-w-2xl">
             Manage your website efficiently with these powerful administration tools and real-time insights
           </p>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 px-2">
+            <Calendar className="w-5 h-5 text-slate-700" />
+            <span className="font-bold text-slate-800">Filter By Date</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 relative">
+            {['all', '24h', '1m', '1y'].map((f) => (
+              <button
+                key={f}
+                onClick={() => { setDateFilter(f); setIsCustomRangeOpen(false); }}
+                className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${dateFilter === f ? 'bg-indigo-500 text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
+              >
+                {f === 'all' && 'All Time'}
+                {f === '24h' && 'Last 24 Hours'}
+                {f === '1m' && 'Last 1 Month'}
+                {f === '1y' && 'Last 1 Year'}
+              </button>
+            ))}
+            
+            {/* Custom Range Popover */}
+            <div className="relative">
+              <button
+                onClick={() => setIsCustomRangeOpen(!isCustomRangeOpen)}
+                className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-all ${dateFilter === 'custom' || isCustomRangeOpen ? 'bg-indigo-50 text-indigo-600 border border-indigo-200' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
+              >
+                <Calendar className="w-4 h-4" />
+                Custom Range
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              
+              {isCustomRangeOpen && (
+                <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-100 p-5 z-50">
+                  <h4 className="text-sm font-bold text-slate-800 mb-4">Select Date Range</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs font-semibold text-slate-500 block mb-1">Start Date</label>
+                      <input 
+                        type="date" 
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        value={customDateRange.start}
+                        onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-500 block mb-1">End Date</label>
+                      <input 
+                        type="date" 
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        value={customDateRange.end}
+                        onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
+                      />
+                    </div>
+                    <button 
+                      onClick={() => { setDateFilter('custom'); setIsCustomRangeOpen(false); }}
+                      className="w-full py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-lg transition-colors"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Quick Stats */}
@@ -343,23 +461,24 @@ const Home = () => {
           {quickStats.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <div key={index} className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">{stat.title}</p>
-                    <p className="text-2xl font-bold text-slate-900 mt-1">
-                      {loading ? (
-                        <span className="inline-block w-16 h-6 bg-slate-100 rounded animate-pulse"></span>
-                      ) : (
-                        stat.value
-                      )}
-                    </p>
-                    <p className="text-xs text-slate-500 font-medium mt-1">
+              <div key={index} className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex items-start gap-4">
+                <div className={`w-14 h-14 ${stat.bgColor} rounded-2xl flex items-center justify-center flex-shrink-0`}>
+                  <Icon className={`w-7 h-7 ${stat.iconColor}`} />
+                </div>
+                <div className="flex-1 min-w-0 pt-1">
+                  <p className="text-sm font-semibold text-slate-500 leading-tight mb-1">{stat.title}</p>
+                  <p className="text-2xl font-black text-slate-900 leading-none">
+                    {loading ? (
+                      <span className="inline-block w-16 h-6 bg-slate-100 rounded animate-pulse"></span>
+                    ) : (
+                      stat.value
+                    )}
+                  </p>
+                  <div className="flex items-center gap-1 mt-2">
+                    <p className="text-xs text-slate-400 font-medium leading-tight">
                       {stat.change}
                     </p>
-                  </div>
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-                    <Icon className="w-6 h-6 text-white" />
+                    <Info className="w-3 h-3 text-slate-400 flex-shrink-0" />
                   </div>
                 </div>
               </div>
@@ -368,54 +487,38 @@ const Home = () => {
         </div>
 
         {/* Feature Cards Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {featureCards.map((feature) => {
             const Icon = feature.icon;
             return (
               <div
                 key={feature.id}
-                className={`
-                  group relative bg-white rounded-3xl p-8 shadow-lg border-2 
-                  ${feature.borderColor} ${feature.hoverColor} 
-                  hover:shadow-2xl transition-all duration-300 cursor-pointer
-                  transform hover:-translate-y-1
-                `}
-                onClick={() => handleCardClick(feature.href)}
+                className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6"
               >
-                {/* Background Gradient */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-5 rounded-3xl`}></div>
-                
-                {/* Content */}
-                <div className="relative z-10">
-                  <div className="flex items-start justify-between mb-6">
-                    <div className={`w-16 h-16 ${feature.bgColor} rounded-2xl flex items-center justify-center`}>
-                      <Icon className={`w-8 h-8 ${feature.iconColor}`} />
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-slate-600">{feature.stats.label}</p>
-                      <p className="text-2xl font-bold text-slate-900">
-                        {loading ? (
-                          <span className="inline-block w-12 h-6 bg-slate-100 rounded animate-pulse"></span>
-                        ) : (
-                          feature.stats.value
-                        )}
-                      </p>
-                    </div>
+                <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-4 sm:gap-6 w-full">
+                  <div className={`w-16 h-16 ${feature.bgColor} rounded-2xl flex items-center justify-center flex-shrink-0`}>
+                    <Icon className={`w-8 h-8 ${feature.iconColor}`} />
                   </div>
-
-                  <h2 className="text-2xl font-bold text-slate-900 mb-3">
-                    {feature.title}
-                  </h2>
-                  
-                  <p className="text-slate-600 mb-6 leading-relaxed">
-                    {feature.description}
-                  </p>
-
-                  <div className="flex items-center text-slate-700 group-hover:text-blue-600 transition-colors duration-200">
-                    <span className="font-medium">Manage Now</span>
-                    <ArrowRight className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-slate-500">{feature.stats.label}</p>
+                    <h2 className="text-2xl font-black text-slate-900 mt-0.5 mb-1">
+                      {loading && feature.id !== 'banner-ad' ? (
+                        <span className="inline-block w-16 h-6 bg-slate-100 rounded animate-pulse"></span>
+                      ) : (
+                        feature.title
+                      )}
+                    </h2>
+                    <p className="text-sm text-slate-500 font-medium">
+                      {feature.subtitle}
+                    </p>
                   </div>
                 </div>
+                <button 
+                  onClick={() => handleCardClick(feature.href)}
+                  className={`w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-bold border ${feature.iconColor} ${feature.borderColor} bg-white hover:${feature.bgColor} transition-colors whitespace-nowrap`}
+                >
+                  {feature.buttonText}
+                </button>
               </div>
             );
           })}

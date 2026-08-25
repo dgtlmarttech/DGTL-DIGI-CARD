@@ -74,7 +74,7 @@ export async function POST() {
 
       // Trial emails have been removed as the free trial is replaced with a direct 99 rs payment.
 
-      // Premium emails (with discount variants)
+      // Paid Plan emails (with discount variants)
       if ((user.planType === 'monthly' || user.planType === 'yearly') && user.expireDate) {
         const premiumExp = user.expireDate.toDate ? user.expireDate.toDate() : new Date(user.expireDate);
 

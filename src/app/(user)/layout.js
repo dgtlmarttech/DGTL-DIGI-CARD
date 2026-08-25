@@ -68,6 +68,8 @@ function getPageTitleFromPath(pathname) {
   if (pathname.startsWith('/dashboard/appearance')) return 'Card Styles';
   if (pathname.startsWith('/dashboard/vanity-url')) return 'Vanity URL';
   if (pathname === '/dashboard') return 'Profile';
+  if (pathname.startsWith('/dashboard/view-card')) return 'Live Preview';
+  if (pathname.startsWith('/dashboard/refer-and-earn')) return 'Refer & Earn';
   if (pathname.startsWith('/payment')) return 'Payment';
   if (pathname.startsWith('/crm')) return 'CRM';
 

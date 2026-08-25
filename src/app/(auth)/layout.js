@@ -20,7 +20,7 @@ const AuthLayout = ({ children }) => {
         if (user) {
           // User is authenticated (verified via OTP during signup)
           setIsUser(true);
-          router.push('/dashboard');
+          router.push('/dashboard/view-card');
         } else {
           // No user is signed in
           setIsUser(false);

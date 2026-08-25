@@ -7,6 +7,8 @@ export default function VoiceAssistant() {
   const { user } = useUser();
   const [status, setStatus] = useState('idle'); // idle, listening, processing, speaking
   const [transcript, setTranscript] = useState('');
+  const [isSupported, setIsSupported] = useState(true);
+  const [textInput, setTextInput] = useState('');
   
   const statusRef = useRef('idle');
   const transcriptRef = useRef('');
@@ -36,6 +38,7 @@ export default function VoiceAssistant() {
     if (typeof window !== 'undefined') {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SpeechRecognition) {
+        setIsSupported(true);
         const recognition = new SpeechRecognition();
         recognition.continuous = true; // Use continuous so it doesn't cut off early
         recognition.interimResults = true;
@@ -69,12 +72,14 @@ export default function VoiceAssistant() {
                 updateStatus('idle');
               }
             }
-          }, 3000); // 3 seconds of silence = user is done talking
+          }, 2500); // 2.5 seconds of silence = user is done talking
         };
 
         recognition.onerror = (event) => {
           console.error('Speech recognition error', event.error);
-          updateStatus('idle');
+          if (statusRef.current !== 'processing') {
+            updateStatus('idle');
+          }
           if (event.error !== 'aborted' && event.error !== 'no-speech') {
             toast.error(`Microphone error: ${event.error}`);
           }
@@ -100,6 +105,7 @@ export default function VoiceAssistant() {
 
         recognitionRef.current = recognition;
       } else {
+        setIsSupported(false);
         console.warn('Speech Recognition API not supported in this browser.');
       }
     }
@@ -275,11 +281,19 @@ export default function VoiceAssistant() {
       }
     } else if (status === 'listening') {
       stopListeningAndProcess();
-    } else if (status === 'speaking') {
+    } else if (status === 'speaking' || status === 'processing') {
       manualCancelRef.current = true;
       if (synthRef.current) synthRef.current.cancel();
       updateStatus('idle');
+      updateTranscript('');
     }
+  };
+
+  const handleTextSubmit = (e) => {
+    e.preventDefault();
+    if (!textInput.trim()) return;
+    processTranscriptText(textInput.trim());
+    setTextInput('');
   };
 
   return (
@@ -293,50 +307,80 @@ export default function VoiceAssistant() {
           Need help? Tap to talk to your AI assistant. It can answer questions about your tasks.
         </p>
 
-        <button
-          onClick={toggleVoice}
-          className={`relative flex items-center justify-center w-24 h-24 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 ${
-            status === 'listening'
-              ? 'bg-red-500 shadow-red-500/50'
-              : status === 'processing'
-              ? 'bg-indigo-400'
-              : status === 'speaking'
-              ? 'bg-green-500 shadow-green-500/50'
-              : 'bg-indigo-500 shadow-indigo-500/50 hover:bg-indigo-400'
-          }`}
-        >
-          {status === 'listening' && (
-            <div className="absolute inset-0 rounded-full border-4 border-red-400 animate-ping opacity-75"></div>
-          )}
-          {status === 'speaking' && (
-            <div className="absolute inset-0 rounded-full border-4 border-green-400 animate-pulse opacity-75"></div>
-          )}
+        {!isSupported ? (
+          <div className="w-full max-w-sm bg-white/10 p-4 rounded-xl backdrop-blur-sm border border-white/20">
+            <p className="text-indigo-100 text-sm mb-4 font-medium">
+              Your browser doesn't support voice recognition. You can still type your request below:
+            </p>
+            <form onSubmit={handleTextSubmit} className="flex gap-2">
+              <input
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                placeholder="Ask your assistant..."
+                className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+                disabled={status === 'processing'}
+              />
+              <button
+                type="submit"
+                disabled={status === 'processing' || !textInput.trim()}
+                className="bg-indigo-500 hover:bg-indigo-400 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 text-sm"
+              >
+                Send
+              </button>
+            </form>
+            {status === 'processing' && (
+              <p className="mt-3 text-sm font-semibold text-indigo-200 animate-pulse">Thinking...</p>
+            )}
+          </div>
+        ) : (
+          <>
+            <button
+              onClick={toggleVoice}
+              className={`relative flex items-center justify-center w-24 h-24 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 ${
+                status === 'listening'
+                  ? 'bg-red-500 shadow-red-500/50'
+                  : status === 'processing'
+                  ? 'bg-indigo-400'
+                  : status === 'speaking'
+                  ? 'bg-green-500 shadow-green-500/50'
+                  : 'bg-indigo-500 shadow-indigo-500/50 hover:bg-indigo-400'
+              }`}
+            >
+              {status === 'listening' && (
+                <div className="absolute inset-0 rounded-full border-4 border-red-400 animate-ping opacity-75"></div>
+              )}
+              {status === 'speaking' && (
+                <div className="absolute inset-0 rounded-full border-4 border-green-400 animate-pulse opacity-75"></div>
+              )}
 
-          {status === 'listening' ? (
-            <FiSquare size={32} />
-          ) : status === 'processing' ? (
-            <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-          ) : status === 'speaking' ? (
-            <FiVolume2 size={36} />
-          ) : (
-            <FiMic size={36} />
-          )}
-        </button>
+              {status === 'listening' ? (
+                <FiSquare size={32} />
+              ) : status === 'processing' ? (
+                <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : status === 'speaking' ? (
+                <FiVolume2 size={36} />
+              ) : (
+                <FiMic size={36} />
+              )}
+            </button>
 
-        <p className="mt-6 text-sm font-semibold tracking-wider uppercase text-indigo-200">
-          {status === 'listening'
-            ? 'Listening (Tap to Stop)...'
-            : status === 'processing'
-            ? 'Thinking...'
-            : status === 'speaking'
-            ? 'Speaking (Tap to Stop)...'
-            : 'Tap to Speak'}
-        </p>
+            <p className="mt-6 text-sm font-semibold tracking-wider uppercase text-indigo-200">
+              {status === 'listening'
+                ? 'Listening (Tap to Stop)...'
+                : status === 'processing'
+                ? 'Thinking...'
+                : status === 'speaking'
+                ? 'Speaking (Tap to Stop)...'
+                : 'Tap to Speak'}
+            </p>
 
-        {transcript && status === 'listening' && (
-          <p className="mt-4 text-xs text-indigo-100 italic px-2 bg-black/20 py-2 rounded-lg max-w-full truncate">
-            "{transcript}"
-          </p>
+            {transcript && status === 'listening' && (
+              <p className="mt-4 text-xs text-indigo-100 italic px-2 bg-black/20 py-2 rounded-lg max-w-full truncate">
+                "{transcript}"
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>

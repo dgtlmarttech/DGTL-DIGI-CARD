@@ -35,7 +35,7 @@ const SignIn = () => {
                 setLoading(true);
                 const user = await handleRedirectResult();
                 if (user) {
-                    router.push('/dashboard');
+                    router.push('/dashboard/view-card');
                 }
             } catch (err) {
                 setErrorMessage(err.message);
@@ -56,7 +56,7 @@ const SignIn = () => {
         try {
             await signInUsingEmailPassword(data.email, data.password);
 
-            router.push('/dashboard');
+            router.push('/dashboard/view-card');
         } catch (err) {
             setErrorMessage(err.message);
         } finally {
@@ -73,7 +73,7 @@ const SignIn = () => {
 
             // If we get a result (popup worked), redirect to dashboard
             if (result) {
-                router.push('/dashboard');
+                router.push('/dashboard/view-card');
             }
             // If no result, it means redirect was triggered, so don't set loading to false
             // The useEffect will handle the redirect result

@@ -151,18 +151,8 @@ export default function LiveCardPage() {
 
                 <div className="fixed top-4 w-full px-4 sm:px-6 md:px-8 z-[60] pointer-events-none flex justify-between items-start max-w-7xl left-1/2 -translate-x-1/2">
                     
-                    {/* Left: Back Button (For Card Owner) */}
-                    {isCurrentUser(userId) && !isStandalone ? (
-                        <button
-                            onClick={() => router.push("/dashboard")}
-                            className="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-white/80 backdrop-blur-xl text-slate-700 rounded-full text-sm font-semibold hover:text-blue-600 hover:bg-white shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-200/60 transition-all duration-300 hover:scale-105"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                            </svg>
-                            Dashboard
-                        </button>
-                    ) : <div />}
+                    {/* Left side empty space to keep right button aligned */}
+                    <div />
 
                     {/* Right: Get Your Own Card (For Visitors) */}
                     {!isCurrentUser(userId) && !isStandalone && (

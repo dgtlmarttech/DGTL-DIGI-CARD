@@ -58,19 +58,19 @@ const VanityURLPage = () => {
             setIsValid(false);
             return false;
         }
-        // ✅ Allow letters, numbers, hyphen, underscore
-        if (!/^[a-z0-9-_]+$/.test(value)) {
-            setValidationMessage('Only lowercase letters, numbers, hyphens and underscores allowed');
+        // ✅ Allow letters, numbers, hyphen
+        if (!/^[a-z0-9-]+$/.test(value)) {
+            setValidationMessage('Only lowercase letters, numbers, and hyphens allowed');
             setIsValid(false);
             return false;
         }
-        if (value.startsWith('-') || value.endsWith('-') || value.startsWith('_') || value.endsWith('_')) {
-            setValidationMessage('URL cannot start or end with a hyphen or underscore');
+        if (value.startsWith('-') || value.endsWith('-')) {
+            setValidationMessage('URL cannot start or end with a hyphen');
             setIsValid(false);
             return false;
         }
-        if (value.includes('--') || value.includes('__') || value.includes('_-') || value.includes('-_')) {
-            setValidationMessage('URL cannot contain consecutive symbols (like --, __, _-, -_)');
+        if (value.includes('--')) {
+            setValidationMessage('URL cannot contain consecutive hyphens (--)');
             setIsValid(false);
             return false;
         }
@@ -88,7 +88,7 @@ const VanityURLPage = () => {
     };
 
     const handleInputChange = async (e) => {
-        const value = e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, '');
+        const value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
         setCustomUID(value);
         await runValidation(value);
     };

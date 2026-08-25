@@ -24,33 +24,11 @@ const navItems = [
     description: 'Overview & analytics'
   },
   { 
-    href: '/admin/ad-control', 
-    icon: Megaphone, 
-    label: 'Ad Control',
-    description: 'Manage advertisements'
-  },
-  { 
     href: '/admin/user-info', 
     icon: Users, 
     label: 'User Management',
     description: 'User profiles & data'
   },
-  { 
-    href: '/admin/mailer', 
-    icon: Mail, 
-    label: 'Email Center',
-    description: 'Send & manage emails'
-  },
-  {
-    href: '/admin/deletion-requests',
-    icon: Trash2,
-    label: 'Account Deletions',
-    description: 'Manage deletion requests'
-  }
-];
-
-// Referrals & Commissions section
-const referralItems = [
   { 
     href: '/admin/referrals', 
     icon: Gift, 
@@ -62,6 +40,25 @@ const referralItems = [
     icon: DollarSign, 
     label: 'Commissions',
     description: 'Process payouts'
+  },
+  {
+    href: '/admin/deletion-requests',
+    icon: Trash2,
+    label: 'Account Deletions',
+    description: 'Manage deletion requests'
+  },
+
+  { 
+    href: '/admin/ad-control', 
+    icon: Megaphone, 
+    label: 'Ad Control',
+    description: 'Manage advertisements'
+  },
+  { 
+    href: '/admin/mailer', 
+    icon: Mail, 
+    label: 'Email Center',
+    description: 'Send & manage emails'
   }
 ];
 
@@ -140,7 +137,7 @@ const Sidebar = ({ onLogout, isCollapsed, setIsCollapsed }) => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-6 space-y-6 overflow-y-auto">
+      <nav className="flex-1 px-3 py-6 space-y-6 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Main Navigation */}
         <div>
           {!isCollapsed && (
@@ -178,60 +175,6 @@ const Sidebar = ({ onLogout, isCollapsed, setIsCollapsed }) => {
                     )}
                     {active && (
                       <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-blue-400 rounded-r-full"></div>
-                    )}
-                  </button>
-                  
-                  {/* Tooltip for collapsed state */}
-                  {isCollapsed && (
-                    <div className="absolute left-full ml-3 top-1/2 transform -translate-y-1/2 bg-slate-800 text-white px-3 py-2 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
-                      <div className="font-medium">{item.label}</div>
-                      <div className="text-xs text-slate-400">{item.description}</div>
-                      <div className="absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full border-4 border-transparent border-r-slate-800"></div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Referrals Section */}
-        <div>
-          {!isCollapsed && (
-            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-3 mt-4">
-              Referrals
-            </h3>
-          )}
-          <div className="space-y-2">
-            {referralItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.href);
-              
-              return (
-                <div key={item.href} className="relative group">
-                  <button
-                    className={`
-                      relative flex items-center w-full p-3 rounded-xl 
-                      transition-all duration-200 
-                      ${active 
-                        ? 'bg-emerald-600/20 text-emerald-300 shadow-lg shadow-emerald-600/10' 
-                        : 'hover:bg-slate-700/50 text-slate-300 hover:text-white'
-                      }
-                      ${isCollapsed ? 'justify-center' : ''}
-                    `}
-                    onClick={() => router.push(item.href)}
-                  >
-                    <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-emerald-400' : ''}`} />
-                    {!isCollapsed && (
-                      <div className="ml-3 text-left flex-1 min-w-0">
-                        <div className="text-sm font-medium truncate">{item.label}</div>
-                        <div className="text-xs text-slate-400 group-hover:text-slate-300 truncate">
-                          {item.description}
-                        </div>
-                      </div>
-                    )}
-                    {active && (
-                      <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-emerald-400 rounded-r-full"></div>
                     )}
                   </button>
                   
