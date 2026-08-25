@@ -9,35 +9,35 @@ export default function TodoList() {
   const { user } = useUser();
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState('');
-  
+
   // Date Range State
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
-  
-  // Tab State
+
+  // Tab State  stateeeeee
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'pending', 'completed'
-  
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-    
+
     setLoading(true);
     const q = query(
       collection(db, 'todos'),
       where('userId', '==', user.uid)
     );
-    
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       let fetchedTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
+
       fetchedTasks = fetchedTasks.filter(task => {
         let valid = true;
         if (startDate) valid = valid && task.taskDate >= startDate;
         if (endDate) valid = valid && task.taskDate <= endDate;
         return valid;
       });
-      
+
       fetchedTasks.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
       setTasks(fetchedTasks);
       setLoading(false);
@@ -85,7 +85,7 @@ export default function TodoList() {
     const newStatus = currentStatus === 'pending' ? 'completed' : 'pending';
     try {
       await updateDoc(doc(db, 'todos', id), { status: newStatus });
-      
+
       // If completing a recurring task, clone it to the next recurrence date
       if (newStatus === 'completed' && task && task.recurrence && task.recurrence !== 'none') {
         const nextDate = getNextRecurrenceDate(task.taskDate, task.recurrence);
@@ -101,7 +101,7 @@ export default function TodoList() {
         await addDoc(collection(db, 'todos'), newTaskObj);
         // Note: the onSnapshot listener will automatically pull in the new task
       }
-      
+
       // Local optimistic update for the current task
       setTasks(tasks.map(t => t.id === id ? { ...t, status: newStatus } : t));
     } catch (error) {
@@ -134,9 +134,9 @@ export default function TodoList() {
         <div className="flex flex-wrap items-center gap-3 bg-gray-50 p-2 rounded-lg relative">
           <div className="flex items-center gap-2 px-2 text-sm font-medium text-gray-700">
             <FiCalendar className="text-purple-500" />
-            <input 
-              type="date" 
-              value={startDate} 
+            <input
+              type="date"
+              value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               className="bg-transparent outline-none border-none cursor-pointer max-w-[120px]"
             />
@@ -144,15 +144,15 @@ export default function TodoList() {
           <span className="text-gray-400">to</span>
           <div className="flex items-center gap-2 px-2 text-sm font-medium text-gray-700">
             <FiCalendar className="text-purple-500" />
-            <input 
-              type="date" 
-              value={endDate} 
+            <input
+              type="date"
+              value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               className="bg-transparent outline-none border-none cursor-pointer max-w-[120px]"
             />
           </div>
           {(startDate || endDate) && (
-            <button 
+            <button
               onClick={() => { setStartDate(''); setEndDate(''); }}
               className="ml-1 p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none flex items-center justify-center"
               title="Clear Dates"
@@ -189,9 +189,9 @@ export default function TodoList() {
       </div>
 
       <form onSubmit={addTask} className="flex gap-2 mb-6">
-        <input 
-          type="text" 
-          value={newTask} 
+        <input
+          type="text"
+          value={newTask}
           onChange={(e) => setNewTask(e.target.value)}
           placeholder="What needs to be done?"
           className="flex-1 rounded-lg border text-gray-900 border-gray-300 px-4 py-2.5 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-20"
