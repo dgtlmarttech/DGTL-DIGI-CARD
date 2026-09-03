@@ -96,19 +96,12 @@ const DashboardLayout = ({ children, pageTitle }) => {
         }`}
       >
         {/* Brand */}
-        <div className="h-[72px] flex items-center justify-between px-5 border-b border-slate-100 flex-shrink-0">
+        <div className="h-[88px] flex items-center pl-8 pr-6 border-b border-slate-100 flex-shrink-0 w-full">
           <div 
-            className={`flex items-center cursor-pointer group overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'w-10' : 'w-full'}`}
+            className={`flex items-center cursor-pointer group overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'w-12 justify-center' : 'w-full justify-start'}`}
             onClick={() => router.push('/dashboard')}
           >
-            <div className="flex-shrink-0 h-9 w-9 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-              D
-            </div>
-            {!sidebarCollapsed && (
-              <span className="ml-3 font-bold text-[19px] text-slate-900 whitespace-nowrap">
-                DigiCard
-              </span>
-            )}
+            <img src="/dgtlmart-logo.png" alt="DigiCard Logo" className={`h-[72px] w-auto object-contain ${sidebarCollapsed ? 'w-12 object-left' : ''}`} />
           </div>
         </div>
         
@@ -244,10 +237,9 @@ const DashboardLayout = ({ children, pageTitle }) => {
       <aside className={`md:hidden fixed top-0 left-0 h-screen w-[280px] bg-white z-50 transform transition-transform duration-300 ease-in-out flex flex-col shadow-2xl ${
         mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        <div className="h-[72px] flex items-center justify-between px-5 border-b border-slate-100 flex-shrink-0">
-          <div className="flex items-center">
-            <div className="h-9 w-9 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">D</div>
-            <span className="ml-3 font-bold text-[19px] text-slate-900">DigiCard</span>
+        <div className="h-[84px] flex items-center justify-between px-5 border-b border-slate-100 flex-shrink-0">
+          <div className="flex items-center cursor-pointer" onClick={() => { router.push('/dashboard'); setMobileMenuOpen(false); }}>
+            <img src="/dgtlmart-logo.png" alt="DigiCard Logo" className="h-[60px] object-contain" />
           </div>
           <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-400 hover:text-slate-700 rounded-lg">
              <Menu className="w-5 h-5" />
