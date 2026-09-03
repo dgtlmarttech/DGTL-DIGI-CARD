@@ -41,8 +41,12 @@ const DashboardLayout = ({ children, pageTitle }) => {
   }, [loading, isAuthenticated, router]);
 
   // Enforce Paywall: Redirect to payment if no active plan
+  // Exception: /dashboard/refer-and-earn is always accessible regardless of subscription status
   useEffect(() => {
-    if (!loading && isAuthenticated && userInfo !== undefined && pathname && !pathname.startsWith('/payment')) {
+    const isAllowedWithoutAccess =
+      pathname?.startsWith('/payment') ||
+      pathname?.startsWith('/dashboard/refer-and-earn');
+    if (!loading && isAuthenticated && userInfo !== undefined && pathname && !isAllowedWithoutAccess) {
       if (userInfo === null || !userInfo?.hasAccess) {
         router.push('/payment');
       }
@@ -116,7 +120,10 @@ const DashboardLayout = ({ children, pageTitle }) => {
               <button
                 key={item.name}
                 onClick={() => {
-                  if (!userInfo?.hasAccess && !item.href.startsWith('/payment')) {
+                  const isAllowed =
+                    item.href.startsWith('/payment') ||
+                    item.href.startsWith('/dashboard/refer-and-earn');
+                  if (!userInfo?.hasAccess && !isAllowed) {
                     toast.error('Please subscribe to a plan to access this feature.');
                     return;
                   }
@@ -254,7 +261,10 @@ const DashboardLayout = ({ children, pageTitle }) => {
               <button
                 key={item.name}
                 onClick={() => {
-                  if (!userInfo?.hasAccess && !item.href.startsWith('/payment')) {
+                  const isAllowed =
+                    item.href.startsWith('/payment') ||
+                    item.href.startsWith('/dashboard/refer-and-earn');
+                  if (!userInfo?.hasAccess && !isAllowed) {
                     toast.error('Please subscribe to a plan to access this feature.');
                     setMobileMenuOpen(false);
                     return;

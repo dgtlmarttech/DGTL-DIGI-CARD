@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useUser } from '../../../../context/userContext';
 import { getUserReferralStats } from '../../../../services/referralService';
 import { toast } from 'react-toastify';
-import { FiCopy, FiShare2, FiDollarSign, FiUsers, FiAward, FiLink } from 'react-icons/fi';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { FiCopy, FiShare2, FiDollarSign, FiUsers, FiAward, FiLink, FiEdit3, FiSave } from 'react-icons/fi';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../../../firebase/firebase';
 
 const ReferAndEarnPage = () => {
@@ -13,6 +13,17 @@ const ReferAndEarnPage = () => {
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+
+  // Bank Details State
+  const [bankDetails, setBankDetails] = useState({
+    accountName: '',
+    accountNumber: '',
+    ifscCode: '',
+    bankName: ''
+  });
+  const [isEditingBank, setIsEditingBank] = useState(false);
+  const [isSavingBank, setIsSavingBank] = useState(false);
+  const [hasBankDetails, setHasBankDetails] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -23,7 +34,25 @@ const ReferAndEarnPage = () => {
         setLoading(false);
       }
     };
+
+    const fetchBankDetails = async () => {
+      if (user?.uid) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists() && userDoc.data().bankDetails) {
+            setBankDetails(userDoc.data().bankDetails);
+            setHasBankDetails(true);
+          } else {
+            setIsEditingBank(true);
+          }
+        } catch (error) {
+          console.error("Error fetching bank details:", error);
+        }
+      }
+    };
+
     fetchStats();
+    fetchBankDetails();
   }, [user]);
 
   useEffect(() => {
@@ -77,9 +106,8 @@ const ReferAndEarnPage = () => {
 
   const copyToClipboard = () => {
     if (stats?.code) {
-      const link = `${window.location.origin}/signup?ref=${stats.code}`;
-      navigator.clipboard.writeText(link);
-      toast.success('Referral link copied to clipboard!');
+      navigator.clipboard.writeText(stats.code);
+      toast.success('Referral code copied to clipboard!');
     }
   };
 
@@ -99,6 +127,63 @@ const ReferAndEarnPage = () => {
       } else {
         copyToClipboard();
       }
+    }
+  };
+
+  const handleBankDetailsChange = (e) => {
+    const { name, value } = e.target;
+    setBankDetails(prev => ({ ...prev, [name]: value }));
+  };
+
+  const saveBankDetails = async (e) => {
+    e.preventDefault();
+    const { accountName, accountNumber, ifscCode, bankName } = bankDetails;
+
+    if (!accountName || !accountNumber || !ifscCode || !bankName) {
+      toast.error("Please fill in all bank details.");
+      return;
+    }
+
+    // Validation
+    const nameRegex = /^[a-zA-Z\s]+$/;
+    const accountRegex = /^\d{9,18}$/;
+    const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/i;
+
+    if (!nameRegex.test(accountName.trim())) {
+      toast.error("Account Holder Name can only contain letters and spaces.");
+      return;
+    }
+    if (!nameRegex.test(bankName.trim())) {
+      toast.error("Bank Name can only contain letters and spaces.");
+      return;
+    }
+    if (!accountRegex.test(accountNumber.trim())) {
+      toast.error("Account Number must be between 9 to 18 digits.");
+      return;
+    }
+    if (!ifscRegex.test(ifscCode.trim())) {
+      toast.error("Please enter a valid IFSC code (e.g. HDFC0001234).");
+      return;
+    }
+    
+    setIsSavingBank(true);
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        bankDetails: {
+          accountName: bankDetails.accountName,
+          accountNumber: bankDetails.accountNumber,
+          ifscCode: bankDetails.ifscCode.toUpperCase(),
+          bankName: bankDetails.bankName
+        }
+      });
+      setHasBankDetails(true);
+      setIsEditingBank(false);
+      toast.success("Bank details saved successfully!");
+    } catch (error) {
+      console.error("Error saving bank details:", error);
+      toast.error("Failed to save bank details.");
+    } finally {
+      setIsSavingBank(false);
     }
   };
 
@@ -218,6 +303,118 @@ const ReferAndEarnPage = () => {
             <h3 className="text-3xl font-bold text-slate-800">₹{stats?.paidCommission || 0}</h3>
             <p className="text-xs text-slate-400 mt-1">Successfully paid out</p>
           </div>
+        </div>
+      </div>
+
+      {/* Bank Details Section */}
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden mt-8">
+        <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+          <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+            Payout Bank Details
+          </h2>
+          {hasBankDetails && !isEditingBank && (
+            <button 
+              onClick={() => setIsEditingBank(true)}
+              className="text-sm flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-medium"
+            >
+              <FiEdit3 /> Edit Details
+            </button>
+          )}
+        </div>
+        
+        <div className="p-6">
+          {isEditingBank ? (
+            <form onSubmit={saveBankDetails} className="space-y-4 max-w-2xl">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Account Holder Name</label>
+                  <input 
+                    type="text" 
+                    name="accountName"
+                    value={bankDetails.accountName}
+                    onChange={handleBankDetailsChange}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-800"
+                    placeholder="Enter full name on account"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Bank Name</label>
+                  <input 
+                    type="text" 
+                    name="bankName"
+                    value={bankDetails.bankName}
+                    onChange={handleBankDetailsChange}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-800"
+                    placeholder="e.g. HDFC Bank, SBI"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Account Number</label>
+                  <input 
+                    type="text" 
+                    name="accountNumber"
+                    value={bankDetails.accountNumber}
+                    onChange={handleBankDetailsChange}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-800"
+                    placeholder="Enter account number"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">IFSC Code</label>
+                  <input 
+                    type="text" 
+                    name="ifscCode"
+                    value={bankDetails.ifscCode}
+                    onChange={handleBankDetailsChange}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 uppercase text-slate-800"
+                    placeholder="Enter IFSC code"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-3 pt-2">
+                <button 
+                  type="submit" 
+                  disabled={isSavingBank}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-70"
+                >
+                  {isSavingBank ? 'Saving...' : <><FiSave /> Save Details</>}
+                </button>
+                {hasBankDetails && (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setIsEditingBank(false);
+                      // Form state resets automatically on next re-render or we just keep what was typed.
+                      // Ideally we could re-fetch or keep original, but cancel is fine as is.
+                    }}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-2 rounded-lg font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </form>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+              <div>
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Account Name</p>
+                <p className="text-slate-800 font-medium">{bankDetails.accountName}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Bank Name</p>
+                <p className="text-slate-800 font-medium">{bankDetails.bankName}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Account Number</p>
+                <p className="text-slate-800 font-medium font-mono">{bankDetails.accountNumber}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">IFSC Code</p>
+                <p className="text-slate-800 font-medium font-mono uppercase">{bankDetails.ifscCode}</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

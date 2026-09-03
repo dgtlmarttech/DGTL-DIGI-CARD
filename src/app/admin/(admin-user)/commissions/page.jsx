@@ -27,12 +27,14 @@ export default function AdminCommissionsPage() {
         // Fetch Referrer Info
         let referrerName = 'Unknown';
         let referrerPhone = '';
+        let referrerBankDetails = null;
         if (data.referrerUserId) {
           const userSnap = await getDoc(doc(db, 'users', data.referrerUserId));
           if (userSnap.exists()) {
             const u = userSnap.data();
             referrerName = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email;
             referrerPhone = u.mobile || '';
+            referrerBankDetails = u.bankDetails || null;
           } else {
             const userQ = query(collection(db, 'users'), where('uid', '==', data.referrerUserId));
             const userQS = await getDocs(userQ);
@@ -40,6 +42,7 @@ export default function AdminCommissionsPage() {
               const u = userQS.docs[0].data();
               referrerName = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email;
               referrerPhone = u.mobile || '';
+              referrerBankDetails = u.bankDetails || null;
             } else {
               const affSnap = await getDoc(doc(db, 'affiliates', data.referrerUserId));
               if (affSnap.exists()) {
@@ -73,7 +76,8 @@ export default function AdminCommissionsPage() {
           ...data,
           referrerName,
           referrerPhone,
-          referredName
+          referredName,
+          referrerBankDetails
         });
       }
       
@@ -175,7 +179,21 @@ export default function AdminCommissionsPage() {
                     {new Date(comm.createdAt).toLocaleDateString()}<br/>
                     <span className="text-xs text-slate-400">{new Date(comm.createdAt).toLocaleTimeString()}</span>
                   </td>
-                  <td className="px-6 py-4 font-medium text-slate-800">{comm.referrerName}</td>
+                  <td className="px-6 py-4">
+                    <div className="font-medium text-slate-800">{comm.referrerName}</div>
+                    {comm.referrerBankDetails ? (
+                      <div className="mt-1.5 p-2 bg-slate-50 border border-slate-100 rounded-lg text-[11px] text-slate-600 space-y-0.5 w-max">
+                        <div className="text-slate-700 font-semibold">{comm.referrerBankDetails.bankName}</div>
+                        <div className="font-mono">A/c: <span className="font-medium text-slate-800">{comm.referrerBankDetails.accountNumber}</span></div>
+                        <div className="font-mono">IFSC: <span className="font-medium text-slate-800 uppercase">{comm.referrerBankDetails.ifscCode}</span></div>
+                        <div>Name: {comm.referrerBankDetails.accountName}</div>
+                      </div>
+                    ) : (
+                      <div className="mt-1.5 text-[11px] text-orange-500 bg-orange-50 px-2 py-1 rounded-md inline-block">
+                        No bank details added
+                      </div>
+                    )}
+                  </td>
                   <td className="px-6 py-4">{comm.referrerPhone || '-'}</td>
                   <td className="px-6 py-4">{comm.referredName}</td>
                   <td className="px-6 py-4">

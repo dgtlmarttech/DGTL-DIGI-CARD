@@ -25,7 +25,11 @@ const UserLayout = ({ children }) => {
     
     // Redirect to pricing page only if user has no access (trial expired + no paid plan)
     // hasAccess = true for: active paid subscription OR active 7-day free trial
-    if (!hasAccess && pathname !== '/payment') {
+    // Exception: /dashboard/refer-and-earn is always accessible regardless of subscription status
+    const isAllowedWithoutAccess =
+      pathname === '/payment' ||
+      pathname.startsWith('/dashboard/refer-and-earn');
+    if (!hasAccess && !isAllowedWithoutAccess) {
       router.push('/payment');
       return;
     }

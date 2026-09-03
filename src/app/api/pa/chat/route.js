@@ -48,8 +48,8 @@ const tools = [
         properties: {
           title: { type: "string", description: "A brief title for the meeting (e.g. 'Meeting with Rahul')" },
           summary: { type: "string", description: "The transcribed summary or notes about the meeting." },
-          actionItems: { 
-            type: "array", 
+          actionItems: {
+            type: "array",
             items: { type: "string" },
             description: "A list of follow-ups or action items extracted from the note, if any."
           }
@@ -125,7 +125,7 @@ ${context || 'No data available.'}
           const taskDate = args.date || isoToday;
           const taskTime = args.time || '';
           const recurrence = args.recurrence || 'none';
-          
+
           await adminDb.collection('todos').add({
             userId: decodedToken.uid,
             title: args.title,
@@ -144,11 +144,11 @@ ${context || 'No data available.'}
           });
         } else if (toolCall.function.name === 'complete_task') {
           const args = JSON.parse(toolCall.function.arguments);
-          
+
           // Security Check: Verify task belongs to user
           const taskRef = adminDb.collection('todos').doc(args.taskId);
           const taskSnap = await taskRef.get();
-          
+
           if (taskSnap.exists && taskSnap.data().userId === decodedToken.uid) {
             await taskRef.update({ status: 'completed' });
             messages.push({
@@ -158,7 +158,7 @@ ${context || 'No data available.'}
               content: "Task marked as completed successfully."
             });
           } else {
-             messages.push({
+            messages.push({
               tool_call_id: toolCall.id,
               role: "tool",
               name: "complete_task",
@@ -167,7 +167,7 @@ ${context || 'No data available.'}
           }
         } else if (toolCall.function.name === 'add_meeting_note') {
           const args = JSON.parse(toolCall.function.arguments);
-          
+
           await adminDb.collection('meetingNotes').add({
             userId: decodedToken.uid,
             title: args.title,
@@ -187,7 +187,7 @@ ${context || 'No data available.'}
           });
         }
       }
-      
+
       // Make second call to OpenAI to get the final spoken confirmation
       completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
