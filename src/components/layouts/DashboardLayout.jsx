@@ -176,10 +176,10 @@ const DashboardLayout = ({ children, pageTitle }) => {
               <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-4">
                 <h4 className="text-indigo-950 font-semibold text-sm mb-1">Need Help?</h4>
                 <p className="text-slate-500 text-[11px] mb-3 leading-relaxed">Our support team is here to help you.</p>
-                <button className="flex items-center justify-center w-full gap-2 py-2 px-3 bg-white border border-indigo-200 text-indigo-700 rounded-xl text-[13px] font-medium hover:bg-indigo-50 transition-colors shadow-sm">
+                <a href="mailto:contact@dgtlmart.com" className="flex items-center justify-center w-full gap-2 py-2 px-3 bg-white border border-indigo-200 text-indigo-700 rounded-xl text-[13px] font-medium hover:bg-indigo-50 transition-colors shadow-sm cursor-pointer">
                   <HeadphonesIcon className="w-[14px] h-[14px]" />
                   Contact Support
-                </button>
+                </a>
               </div>
             </div>
           )}
@@ -307,10 +307,10 @@ const DashboardLayout = ({ children, pageTitle }) => {
               <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-4">
                 <h4 className="text-indigo-950 font-semibold text-sm mb-1">Need Help?</h4>
                 <p className="text-slate-500 text-[11px] mb-3 leading-relaxed">Our support team is here to help you.</p>
-                <button className="flex items-center justify-center w-full gap-2 py-2 px-3 bg-white border border-indigo-200 text-indigo-700 rounded-xl text-[13px] font-medium hover:bg-indigo-50 transition-colors shadow-sm">
+                <a href="mailto:contact@dgtlmart.com" className="flex items-center justify-center w-full gap-2 py-2 px-3 bg-white border border-indigo-200 text-indigo-700 rounded-xl text-[13px] font-medium hover:bg-indigo-50 transition-colors shadow-sm cursor-pointer">
                   <HeadphonesIcon className="w-[14px] h-[14px]" />
                   Contact Support
-                </button>
+                </a>
               </div>
             </div>
         </div>
